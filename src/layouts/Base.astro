@@ -1,0 +1,50 @@
+---
+import '../styles/global.css';
+const { title = 'JJ House — Director · Producer · VFX + Edit', desc = 'JJ House: Director, Producer, VFX + Edit. Multidisciplinary creative.', bare = false } = Astro.props;
+const path = Astro.url.pathname.replace(/\/$/, '') || '/';
+const nav = [
+  ['/director', 'Director'],
+  ['/producer', 'Producer'],
+  ['/vfx-edit', 'VFX + Edit'],
+  ['/for-fun', 'For Fun'],
+];
+const year = new Date().getFullYear();
+---
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>{title}</title>
+    <meta name="description" content={desc} />
+    <meta property="og:title" content={title} />
+    <meta property="og:description" content={desc} />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&display=swap" rel="stylesheet" />
+  </head>
+  <body>
+    <header class="site-nav">
+      <a class="brand" href="/">JJ HOUSE</a>
+      <nav>
+        {!bare && nav.map(([href, label]) => (
+          <a href={href} aria-current={path === href ? 'page' : undefined}>{label}</a>
+        ))}
+        <a href="mailto:jj@jjhouse.me">Contact</a>
+      </nav>
+    </header>
+    <main>
+      <slot />
+    </main>
+    <footer class="footer">
+      <div class="wrap">
+        <span>© {year} JJ House</span>
+        <span style="display:flex;gap:18px;flex-wrap:wrap">
+          <a href="https://www.imdb.com/name/nm7420692/" target="_blank" rel="noopener">IMDb</a>
+          <a href="https://www.instagram.com/jj.duplex/" target="_blank" rel="noopener">Instagram</a>
+          <a href="mailto:jj@jjhouse.me">jj@jjhouse.me</a>
+        </span>
+      </div>
+    </footer>
+  </body>
+</html>

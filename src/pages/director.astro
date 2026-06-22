@@ -1,0 +1,9 @@
+---
+import Base from '../layouts/Base.astro';
+import ReelSection from '../components/ReelSection.astro';
+import data from '../data/reels.json';
+const s = data['director'];
+---
+<Base title="Director — JJ House" desc={s.lede}>
+  <ReelSection section={s} />
+</Base>

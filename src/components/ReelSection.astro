@@ -1,0 +1,30 @@
+---
+const { section } = Astro.props;
+function src(r) {
+  return r.type === 'youtube'
+    ? `https://www.youtube.com/embed/${r.id}?rel=0`
+    : `https://player.vimeo.com/video/${r.id}?byline=0&portrait=0`;
+}
+---
+<section class="section">
+  <div class="wrap">
+    <h1>{section.title}</h1>
+    <p class="lede">{section.lede}</p>
+    <div class="reelgrid">
+      {section.reels.map((r) => (
+        <div class="reel">
+          <div class="frame">
+            <iframe
+              src={src(r)}
+              loading="lazy"
+              title={r.title}
+              allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
+              allowfullscreen
+            ></iframe>
+          </div>
+          <div class="cap">{r.title}</div>
+        </div>
+      ))}
+    </div>
+  </div>
+</section>

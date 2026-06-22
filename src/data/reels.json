@@ -1,0 +1,60 @@
+{
+  "director": {
+    "title": "Director",
+    "lede": "Films, music videos, commercials, and documentary — directed.",
+    "reels": [
+      { "type": "youtube", "id": "nC3fdpPx-II", "title": "Untitled — to label" },
+      { "type": "youtube", "id": "8hCo3Clc3p0", "title": "Untitled — to label" },
+      { "type": "youtube", "id": "GmR0udi-U4w", "title": "Untitled — to label" },
+      { "type": "vimeo", "id": "473983493", "title": "Untitled — to label" },
+      { "type": "youtube", "id": "od3eho24iMg", "title": "Untitled — to label" },
+      { "type": "vimeo", "id": "275978454", "title": "Untitled — to label" },
+      { "type": "vimeo", "id": "461595656", "title": "Untitled — to label" },
+      { "type": "vimeo", "id": "317890995", "title": "Untitled — to label" },
+      { "type": "vimeo", "id": "131557743", "title": "Untitled — to label" }
+    ]
+  },
+  "producer": {
+    "title": "Producer",
+    "lede": "Producing across film, video, music video, commercial, and documentary. West of 20.",
+    "reels": [
+      { "type": "youtube", "id": "9uZmdPdPDCk", "title": "Untitled — to label" },
+      { "type": "youtube", "id": "2tvW25Qu5WE", "title": "Untitled — to label" },
+      { "type": "youtube", "id": "wxaJ8aiURgU", "title": "Untitled — to label" },
+      { "type": "youtube", "id": "hw_Gtwdnp1Q", "title": "Untitled — to label" },
+      { "type": "youtube", "id": "qNMOEDY1Nis", "title": "Untitled — to label" },
+      { "type": "youtube", "id": "SDZKKRij1S8", "title": "Untitled — to label" },
+      { "type": "vimeo", "id": "504664994", "title": "Untitled — to label" },
+      { "type": "youtube", "id": "0db-9K35bAI", "title": "Untitled — to label" }
+    ]
+  },
+  "vfx-edit": {
+    "title": "VFX + Edit",
+    "lede": "Visual effects and editing — 3D, AI, and compositing workflows.",
+    "reels": [
+      { "type": "youtube", "id": "09Vc3EMFn-M", "title": "Untitled — to label" },
+      { "type": "youtube", "id": "7-rpKp9ADFI", "title": "Untitled — to label" },
+      { "type": "youtube", "id": "Ar9mp5dE6qA", "title": "Untitled — to label" },
+      { "type": "youtube", "id": "dhYM5zMvFQk", "title": "Untitled — to label" },
+      { "type": "youtube", "id": "jmqzbG-bdMU", "title": "Untitled — to label" },
+      { "type": "youtube", "id": "mjP-si5Fy6k", "title": "Untitled — to label" },
+      { "type": "youtube", "id": "oofsf4qKjYE", "title": "Untitled — to label" },
+      { "type": "youtube", "id": "le_TNS_bhKk", "title": "Untitled — to label" },
+      { "type": "youtube", "id": "lP5OX-zEgrw", "title": "Untitled — to label" },
+      { "type": "youtube", "id": "JsYJYUQgT7k", "title": "Untitled — to label" },
+      { "type": "youtube", "id": "6scnR0CXOSg", "title": "Untitled — to label" }
+    ]
+  },
+  "for-fun": {
+    "title": "For Fun",
+    "lede": "Experiments, 3D oddities, and the for-the-love-of-it stuff. The playground.",
+    "reels": [
+      { "type": "youtube", "id": "ocLeJCUDHT4", "title": "Untitled — to label" },
+      { "type": "vimeo", "id": "828167458", "title": "Untitled — to label" },
+      { "type": "youtube", "id": "xbVL0cAl8Do", "title": "Untitled — to label" },
+      { "type": "youtube", "id": "yjzSOBHWjCg", "title": "Untitled — to label" },
+      { "type": "youtube", "id": "fTGzqjDaQoc", "title": "Untitled — to label" },
+      { "type": "youtube", "id": "ej4dfaH5Po4", "title": "Untitled — to label" }
+    ]
+  }
+}

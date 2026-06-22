@@ -1,0 +1,109 @@
+---
+---
+<div id="hero-stage" class="hero-wrap">
+  <div class="hero-overlay">
+    <div class="n">JJ HOUSE</div>
+    <div class="s">a multidisciplinary house — spin it</div>
+  </div>
+  <div class="hero-enter"><span id="hero-face">Director</span> — click to enter</div>
+</div>
+
+<script is:inline src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+<script is:inline>
+(function(){
+  var stage=document.getElementById('hero-stage');
+  if(!window.THREE||!stage){return;}
+  var faces=[
+    {col:0xffcf6b, phi:0,            url:'/director', name:'Director'},
+    {col:0x6bd0ff, phi:Math.PI/2,    url:'/vfx-edit', name:'VFX + Edit'},
+    {col:0xff9b6b, phi:Math.PI,      url:'/producer', name:'Producer'},
+    {col:0xb39bff, phi:Math.PI*1.5,  url:'/for-fun',  name:'For Fun'}
+  ];
+  var faceEl=document.getElementById('hero-face');
+  var W=stage.clientWidth,H=stage.clientHeight;
+  var scene=new THREE.Scene();
+  var sky=document.createElement('canvas');sky.width=4;sky.height=256;var sctx=sky.getContext('2d');
+  var skyTex=new THREE.CanvasTexture(sky);scene.background=skyTex;
+  function drawSky(a,b,c){var g=sctx.createLinearGradient(0,0,0,256);g.addColorStop(0,a);g.addColorStop(0.5,b);g.addColorStop(1,c);sctx.fillStyle=g;sctx.fillRect(0,0,4,256);skyTex.needsUpdate=true;}
+  scene.fog=new THREE.Fog(0xb4cce6,34,170);
+  var cam=new THREE.PerspectiveCamera(74,W/H,0.1,400);
+  var baseX=0,baseY=6.6,baseZ=9.6;cam.position.set(baseX,baseY,baseZ);cam.lookAt(0,-0.4,-5);
+  var rdr=new THREE.WebGLRenderer({antialias:true});rdr.setSize(W,H);rdr.setPixelRatio(Math.min(window.devicePixelRatio,2));stage.appendChild(rdr.domElement);
+  var amb=new THREE.AmbientLight(0xc4d6f0,0.95);scene.add(amb);
+  var sun=new THREE.DirectionalLight(0xfff2da,1.1);sun.position.set(6,9,4);scene.add(sun);
+  scene.add(new THREE.HemisphereLight(0xd6e4f1,0x4a5840,0.55));
+  var stg=new THREE.BufferGeometry(),sn=320,spz=new Float32Array(sn*3);
+  for(var s=0;s<sn;s++){spz[s*3]=(Math.random()-.5)*160;spz[s*3+1]=12+Math.random()*70;spz[s*3+2]=(Math.random()-.5)*160-20;}
+  stg.setAttribute('position',new THREE.BufferAttribute(spz,3));
+  var stars=new THREE.Points(stg,new THREE.PointsMaterial({color:0xffffff,size:0.15,transparent:true,opacity:0}));scene.add(stars);
+  function soft(){var c=document.createElement('canvas');c.width=c.height=128;var g=c.getContext('2d');var rg=g.createRadialGradient(64,64,2,64,64,62);rg.addColorStop(0,'rgba(255,255,255,.92)');rg.addColorStop(.55,'rgba(244,248,255,.34)');rg.addColorStop(1,'rgba(255,255,255,0)');g.fillStyle=rg;g.fillRect(0,0,128,128);return new THREE.CanvasTexture(c);}
+  var cloudTex=soft(),clouds=[];
+  for(var i=0;i<12;i++){var below=i<8;var sz=below?(7+Math.random()*8):(5+Math.random()*4);
+    var m=new THREE.Mesh(new THREE.PlaneGeometry(sz,sz),new THREE.MeshBasicMaterial({map:cloudTex,transparent:true,depthWrite:false,opacity:below?0.55:0.3}));
+    m.rotation.x=-Math.PI/2;m.rotation.z=Math.random()*Math.PI;m.position.set((Math.random()-.5)*44,below?(-3-Math.random()*5):(5+Math.random()*3),-42+Math.random()*50);scene.add(m);clouds.push(m);}
+  var fg=[];
+  for(var q=0;q<5;q++){var sm=new THREE.SpriteMaterial({map:cloudTex,transparent:true,opacity:0,depthWrite:false});var sp=new THREE.Sprite(sm);sp.scale.set(16,11,1);sp.position.set((Math.random()-.5)*10,1+Math.random()*4,-26);sp.userData={next:2+Math.random()*16,on:false};scene.add(sp);fg.push(sp);}
+  var gc=document.createElement('canvas');gc.width=gc.height=256;var gg=gc.getContext('2d');gg.fillStyle='#586a44';gg.fillRect(0,0,256,256);for(var k=0;k<70;k++){gg.fillStyle='rgba(0,0,0,'+(Math.random()*0.10)+')';gg.fillRect(Math.random()*256,Math.random()*256,10+Math.random()*48,8+Math.random()*30);}for(var k2=0;k2<26;k2++){gg.fillStyle='rgba(120,150,170,'+(Math.random()*0.08)+')';gg.fillRect(Math.random()*256,Math.random()*256,18+Math.random()*60,10+Math.random()*22);}
+  var gt=new THREE.CanvasTexture(gc);gt.wrapS=gt.wrapT=THREE.RepeatWrapping;gt.repeat.set(26,26);
+  var gGeo=new THREE.PlaneGeometry(760,760,90,90),gp=gGeo.attributes.position,curv=0.00068;
+  for(var vi=0;vi<gp.count;vi++){var gx=gp.getX(vi),gy=gp.getY(vi);gp.setZ(vi,-curv*(gx*gx+gy*gy));}
+  gGeo.computeVertexNormals();
+  var ground=new THREE.Mesh(gGeo,new THREE.MeshStandardMaterial({map:gt,roughness:1}));ground.rotation.x=-Math.PI/2;ground.position.y=-9;scene.add(ground);
+  var house=new THREE.Group();
+  house.add(new THREE.Mesh(new THREE.BoxGeometry(3,2,2.4),new THREE.MeshStandardMaterial({color:0xefeef5,roughness:0.78})));
+  var roof=new THREE.Mesh(new THREE.ConeGeometry(2.45,1.25,4),new THREE.MeshStandardMaterial({color:0x2c2746,roughness:0.6}));roof.position.y=1.62;roof.rotation.y=Math.PI/4;house.add(roof);
+  house.add(new THREE.Mesh(new THREE.BoxGeometry(3.02,0.12,2.42),new THREE.MeshStandardMaterial({color:0x9a8bb5,roughness:0.6}))).position.y=-1.0;
+  var halos=[];
+  faces.forEach(function(r){var nx=Math.sin(r.phi),nz=Math.cos(r.phi);
+    var win=new THREE.Mesh(new THREE.PlaneGeometry(1.5,0.95),new THREE.MeshBasicMaterial({color:r.col}));win.position.set(nx*1.21,0.2,nz*1.21);win.rotation.y=r.phi;house.add(win);
+    var halo=new THREE.Mesh(new THREE.PlaneGeometry(1.9,1.3),new THREE.MeshBasicMaterial({color:r.col,transparent:true,opacity:0.12,blending:THREE.AdditiveBlending,depthWrite:false}));halo.position.set(nx*1.23,0.2,nz*1.23);halo.rotation.y=r.phi;house.add(halo);halos.push(halo);});
+  scene.add(house);
+  var ph=[
+    {t:[0x05060f,0x0c1330,0x213553],fog:0x0b1530,amb:0.40,sun:0.30,sc:0x5a6ca0,ni:1.0},
+    {t:[0x141f3e,0x6a6aa0,0xe7b3a0],fog:0xb7a3bf,amb:0.70,sun:0.90,sc:0xffd6ad,ni:0.2},
+    {t:[0x0c1c40,0x3f6ea8,0xd6e4f1],fog:0xb4cce6,amb:0.95,sun:1.10,sc:0xfff2da,ni:0.0},
+    {t:[0x241a4a,0xb85c3a,0xf2bd78],fog:0xd99a66,amb:0.70,sun:1.00,sc:0xffae66,ni:0.15}
+  ];
+  ph.forEach(function(p){p.c0=new THREE.Color(p.t[0]);p.c1=new THREE.Color(p.t[1]);p.c2=new THREE.Color(p.t[2]);p.fc=new THREE.Color(p.fog);p.scc=new THREE.Color(p.sc);});
+  var now=new Date(),hr=now.getHours()+now.getMinutes()/60,P=(hr/6)%4,seg=Math.floor(P)%4,f=P-Math.floor(P),A=ph[seg],B=ph[(seg+1)%4];
+  function lp(a,b,x){return a+(b-a)*x;}
+  drawSky(A.c0.clone().lerp(B.c0,f).getStyle(),A.c1.clone().lerp(B.c1,f).getStyle(),A.c2.clone().lerp(B.c2,f).getStyle());
+  scene.fog.color.copy(A.fc.clone().lerp(B.fc,f));
+  amb.intensity=lp(A.amb,B.amb,f);sun.intensity=lp(A.sun,B.sun,f);sun.color.copy(A.scc.clone().lerp(B.scc,f));
+  var night=lp(A.ni,B.ni,f);stars.material.opacity=night;for(var hh=0;hh<halos.length;hh++)halos[hh].material.opacity=0.1+night*0.55;
+  var AX=new THREE.Vector3(1,0,0),AY=new THREE.Vector3(0,1,0),AZ=new THREE.Vector3(0,0,1);
+  var dragging=false,lastX=0,lastY=0,moved=0,velY=0,t=0,active=-1;
+  var camDir=new THREE.Vector3(),nrm=new THREE.Vector3(),ray=new THREE.Raycaster(),ndc=new THREE.Vector2();
+  function pt(e){var s=e.touches&&e.touches[0]?e.touches[0]:(e.changedTouches&&e.changedTouches[0]?e.changedTouches[0]:e);return {x:s.clientX,y:s.clientY};}
+  function frontUrl(){camDir.copy(cam.position).sub(house.position).normalize();var best=-2,url=faces[0].url;for(var i=0;i<faces.length;i++){nrm.set(Math.sin(faces[i].phi),0,Math.cos(faces[i].phi)).applyQuaternion(house.quaternion);var d=nrm.dot(camDir);if(d>best){best=d;url=faces[i].url;}}return url;}
+  function hitsHouse(e){var r=stage.getBoundingClientRect(),p=pt(e);ndc.x=((p.x-r.left)/r.width)*2-1;ndc.y=-((p.y-r.top)/r.height)*2+1;ray.setFromCamera(ndc,cam);return ray.intersectObject(house,true).length>0;}
+  function dn(e){dragging=true;var p=pt(e);lastX=p.x;lastY=p.y;moved=0;stage.style.cursor='grabbing';}
+  function mv(e){if(!dragging)return;var p=pt(e);var dx=p.x-lastX,dy=p.y-lastY;lastX=p.x;lastY=p.y;moved+=Math.abs(dx)+Math.abs(dy);
+    house.rotateOnWorldAxis(AY,dx*0.01);house.rotateOnWorldAxis(AX,dy*0.01);velY=dx*0.01;}
+  function up(e){if(dragging&&moved<6&&hitsHouse(e)){window.location.href=frontUrl();}dragging=false;stage.style.cursor='grab';}
+  stage.addEventListener('mousedown',dn);window.addEventListener('mousemove',mv);window.addEventListener('mouseup',up);
+  stage.addEventListener('touchstart',dn,{passive:true});window.addEventListener('touchmove',mv,{passive:true});window.addEventListener('touchend',up);
+  window.addEventListener('resize',function(){W=stage.clientWidth;H=stage.clientHeight;cam.aspect=W/H;cam.updateProjectionMatrix();rdr.setSize(W,H);});
+  var shake=0,nextShake=3+Math.random()*4;
+  function loop(){
+    t+=0.016;
+    if(!dragging){house.rotateOnWorldAxis(AZ,0.0034);house.rotateOnWorldAxis(AY,0.0012+velY);velY*=0.95;}
+    house.position.y=0.6+Math.sin(t*0.7)*0.13;
+    gt.offset.y+=0.0016;
+    if(t>nextShake){shake=0.09;nextShake=t+4+Math.random()*6;}
+    shake*=0.86;
+    cam.position.set(baseX+(Math.random()-.5)*shake,baseY+(Math.random()-.5)*shake,baseZ);
+    cam.lookAt((Math.random()-.5)*shake*0.4,-0.4+(Math.random()-.5)*shake*0.4,-5);
+    camDir.copy(cam.position).sub(house.position).normalize();
+    var best=-2,bi=0;for(var i=0;i<faces.length;i++){nrm.set(Math.sin(faces[i].phi),0,Math.cos(faces[i].phi)).applyQuaternion(house.quaternion);var d=nrm.dot(camDir);if(d>best){best=d;bi=i;}}
+    if(bi!==active){active=bi;faceEl.textContent=faces[bi].name;}
+    for(var c2=0;c2<clouds.length;c2++){clouds[c2].position.z+=0.24;if(clouds[c2].position.z>16){clouds[c2].position.z=-44;clouds[c2].position.x=(Math.random()-.5)*44;}}
+    for(var fq=0;fq<fg.length;fq++){var s2=fg[fq];
+      if(!s2.userData.on){ if(t>s2.userData.next){s2.userData.on=true;s2.position.set((Math.random()-.5)*9,0.5+Math.random()*4.5,-26);s2.scale.set(13+Math.random()*8,9+Math.random()*6,1);} }
+      else{ s2.position.z+=0.42; var d2=Math.abs(s2.position.z-baseZ); s2.material.opacity=Math.max(0,0.5*(1-d2/15)); if(s2.position.z>baseZ+9){s2.userData.on=false;s2.material.opacity=0;s2.userData.next=t+7+Math.random()*13;} }
+    }
+    rdr.render(scene,cam);requestAnimationFrame(loop);
+  }
+  loop();
+})();
+</script>
