@@ -4,6 +4,6 @@ import ReelSection from '../components/ReelSection.astro';
 import data from '../data/reels.json';
 const s = data['producer'];
 ---
-<Base title="Producer — JJ House" desc={s.lede}>
+<Base title="Producer — JJ House" desc={s.lede} bare={true}>
   <ReelSection section={s} />
 </Base>

@@ -1,109 +1,780 @@
 ---
 ---
-<div id="hero-stage" class="hero-wrap">
-  <div class="hero-overlay">
-    <div class="n">JJ HOUSE</div>
-    <div class="s">a multidisciplinary house — spin it</div>
+<div id="stage">
+    <div class="ov"><div class="n">JJ HOUSE</div><div class="s">make yourself at home</div></div>
+    <div class="hint" id="hint">move to frame &middot; hold to record &middot; drag to spin</div>
+    <div id="flash"></div>
+      <button id="fmtcard" type="button"><b>&#9167;</b> FORMAT CARD</button>
+    <div id="postit" aria-label="Shot list">
+      <img class="pi-base" src="/postit/base.webp" alt="">
+      <img class="pi-el" id="ck-director" src="/postit/ck-director.webp" alt="" style="left:5.65%;top:21.39%;width:12.04%">
+      <img class="pi-el" id="ck-producer" src="/postit/ck-producer.webp" alt="" style="left:6.16%;top:37.84%;width:9.72%">
+      <img class="pi-el" id="ck-vfx" src="/postit/ck-vfx.webp" alt="" style="left:3.75%;top:54.64%;width:11.25%">
+      <img class="pi-el" id="ck-fun" src="/postit/ck-fun.webp" alt="" style="left:5.37%;top:70.46%;width:11.57%">
+      <img class="pi-el" id="ic-director" src="/postit/ic-director.webp" alt="" style="left:56.34%;top:24.46%;width:10.05%">
+      <img class="pi-el" id="ic-producer" src="/postit/ic-producer.webp" alt="" style="left:55.42%;top:40.19%;width:9.07%">
+      <img class="pi-el" id="ic-vfx" src="/postit/ic-vfx.webp" alt="" style="left:54.31%;top:54.83%;width:8.43%">
+      <img class="pi-el" id="ic-fun" src="/postit/ic-fun.webp" alt="" style="left:51.76%;top:66.5%;width:17.22%">
+      <img class="pi-el" id="ar-director" src="/postit/ar-director.webp" alt="" style="left:71.16%;top:23.63%;width:16.3%">
+      <img class="pi-el" id="ar-producer" src="/postit/ar-producer.webp" alt="" style="left:70.6%;top:41.31%;width:16.11%">
+      <img class="pi-el" id="ar-vfx" src="/postit/ar-vfx.webp" alt="" style="left:70.65%;top:54.59%;width:16.44%">
+      <img class="pi-el" id="ar-fun" src="/postit/ar-fun.webp" alt="" style="left:69.81%;top:72.66%;width:15.83%">
+      <a class="pi-row" id="row-director" data-key="director" href="/director" data-url="/director" aria-label="Director — shot 01" style="top:20.8%;height:13.38%"></a>
+      <a class="pi-row" id="row-producer" data-key="producer" href="/producer" data-url="/producer" aria-label="Producer — shot 02" style="top:37.26%;height:13.33%"></a>
+      <a class="pi-row" id="row-vfx" data-key="vfx" href="/vfx-edit" data-url="/vfx-edit" aria-label="VFX and Edit — shot 03" style="top:54%;height:12.89%"></a>
+      <a class="pi-row" id="row-fun" data-key="fun" href="/for-fun" data-url="/for-fun" aria-label="For Fun — shot 04" style="top:65.92%;height:19.73%"></a>
+    </div>
+    <button id="reelbtn" type="button" aria-haspopup="dialog">REEL ▸</button>
+    <div id="reelbox" role="dialog" aria-label="Showreel" aria-hidden="true">
+      <button id="reelx" aria-label="close">✕</button>
+      <div class="rb-f" id="reelframe"></div>
+    </div>
+    <div id="cur" aria-hidden="true"><i></i></div>
+    <div id="bars" aria-hidden="true"><i class="bt"></i><i class="bb"></i></div>
+    <div id="slate" aria-hidden="true"></div>
   </div>
-  <div class="hero-enter"><span id="hero-face">Director</span> — click to enter</div>
-</div>
 
-<script is:inline src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
-<script is:inline>
-(function(){
-  var stage=document.getElementById('hero-stage');
-  if(!window.THREE||!stage){return;}
-  var faces=[
-    {col:0xffcf6b, phi:0,            url:'/director', name:'Director'},
-    {col:0x6bd0ff, phi:Math.PI/2,    url:'/vfx-edit', name:'VFX + Edit'},
-    {col:0xff9b6b, phi:Math.PI,      url:'/producer', name:'Producer'},
-    {col:0xb39bff, phi:Math.PI*1.5,  url:'/for-fun',  name:'For Fun'}
-  ];
-  var faceEl=document.getElementById('hero-face');
-  var W=stage.clientWidth,H=stage.clientHeight;
-  var scene=new THREE.Scene();
-  var sky=document.createElement('canvas');sky.width=4;sky.height=256;var sctx=sky.getContext('2d');
-  var skyTex=new THREE.CanvasTexture(sky);scene.background=skyTex;
-  function drawSky(a,b,c){var g=sctx.createLinearGradient(0,0,0,256);g.addColorStop(0,a);g.addColorStop(0.5,b);g.addColorStop(1,c);sctx.fillStyle=g;sctx.fillRect(0,0,4,256);skyTex.needsUpdate=true;}
-  scene.fog=new THREE.Fog(0xb4cce6,34,170);
-  var cam=new THREE.PerspectiveCamera(74,W/H,0.1,400);
-  var baseX=0,baseY=6.6,baseZ=9.6;cam.position.set(baseX,baseY,baseZ);cam.lookAt(0,-0.4,-5);
-  var rdr=new THREE.WebGLRenderer({antialias:true});rdr.setSize(W,H);rdr.setPixelRatio(Math.min(window.devicePixelRatio,2));stage.appendChild(rdr.domElement);
-  var amb=new THREE.AmbientLight(0xc4d6f0,0.95);scene.add(amb);
-  var sun=new THREE.DirectionalLight(0xfff2da,1.1);sun.position.set(6,9,4);scene.add(sun);
-  scene.add(new THREE.HemisphereLight(0xd6e4f1,0x4a5840,0.55));
-  var stg=new THREE.BufferGeometry(),sn=320,spz=new Float32Array(sn*3);
-  for(var s=0;s<sn;s++){spz[s*3]=(Math.random()-.5)*160;spz[s*3+1]=12+Math.random()*70;spz[s*3+2]=(Math.random()-.5)*160-20;}
-  stg.setAttribute('position',new THREE.BufferAttribute(spz,3));
-  var stars=new THREE.Points(stg,new THREE.PointsMaterial({color:0xffffff,size:0.15,transparent:true,opacity:0}));scene.add(stars);
-  function soft(){var c=document.createElement('canvas');c.width=c.height=128;var g=c.getContext('2d');var rg=g.createRadialGradient(64,64,2,64,64,62);rg.addColorStop(0,'rgba(255,255,255,.92)');rg.addColorStop(.55,'rgba(244,248,255,.34)');rg.addColorStop(1,'rgba(255,255,255,0)');g.fillStyle=rg;g.fillRect(0,0,128,128);return new THREE.CanvasTexture(c);}
-  var cloudTex=soft(),clouds=[];
-  for(var i=0;i<12;i++){var below=i<8;var sz=below?(7+Math.random()*8):(5+Math.random()*4);
-    var m=new THREE.Mesh(new THREE.PlaneGeometry(sz,sz),new THREE.MeshBasicMaterial({map:cloudTex,transparent:true,depthWrite:false,opacity:below?0.55:0.3}));
-    m.rotation.x=-Math.PI/2;m.rotation.z=Math.random()*Math.PI;m.position.set((Math.random()-.5)*44,below?(-3-Math.random()*5):(5+Math.random()*3),-42+Math.random()*50);scene.add(m);clouds.push(m);}
-  var fg=[];
-  for(var q=0;q<5;q++){var sm=new THREE.SpriteMaterial({map:cloudTex,transparent:true,opacity:0,depthWrite:false});var sp=new THREE.Sprite(sm);sp.scale.set(16,11,1);sp.position.set((Math.random()-.5)*10,1+Math.random()*4,-26);sp.userData={next:2+Math.random()*16,on:false};scene.add(sp);fg.push(sp);}
-  var gc=document.createElement('canvas');gc.width=gc.height=256;var gg=gc.getContext('2d');gg.fillStyle='#586a44';gg.fillRect(0,0,256,256);for(var k=0;k<70;k++){gg.fillStyle='rgba(0,0,0,'+(Math.random()*0.10)+')';gg.fillRect(Math.random()*256,Math.random()*256,10+Math.random()*48,8+Math.random()*30);}for(var k2=0;k2<26;k2++){gg.fillStyle='rgba(120,150,170,'+(Math.random()*0.08)+')';gg.fillRect(Math.random()*256,Math.random()*256,18+Math.random()*60,10+Math.random()*22);}
-  var gt=new THREE.CanvasTexture(gc);gt.wrapS=gt.wrapT=THREE.RepeatWrapping;gt.repeat.set(26,26);
-  var gGeo=new THREE.PlaneGeometry(760,760,90,90),gp=gGeo.attributes.position,curv=0.00068;
-  for(var vi=0;vi<gp.count;vi++){var gx=gp.getX(vi),gy=gp.getY(vi);gp.setZ(vi,-curv*(gx*gx+gy*gy));}
-  gGeo.computeVertexNormals();
-  var ground=new THREE.Mesh(gGeo,new THREE.MeshStandardMaterial({map:gt,roughness:1}));ground.rotation.x=-Math.PI/2;ground.position.y=-9;scene.add(ground);
-  var house=new THREE.Group();
-  house.add(new THREE.Mesh(new THREE.BoxGeometry(3,2,2.4),new THREE.MeshStandardMaterial({color:0xefeef5,roughness:0.78})));
-  var roof=new THREE.Mesh(new THREE.ConeGeometry(2.45,1.25,4),new THREE.MeshStandardMaterial({color:0x2c2746,roughness:0.6}));roof.position.y=1.62;roof.rotation.y=Math.PI/4;house.add(roof);
-  house.add(new THREE.Mesh(new THREE.BoxGeometry(3.02,0.12,2.42),new THREE.MeshStandardMaterial({color:0x9a8bb5,roughness:0.6}))).position.y=-1.0;
-  var halos=[];
-  faces.forEach(function(r){var nx=Math.sin(r.phi),nz=Math.cos(r.phi);
-    var win=new THREE.Mesh(new THREE.PlaneGeometry(1.5,0.95),new THREE.MeshBasicMaterial({color:r.col}));win.position.set(nx*1.21,0.2,nz*1.21);win.rotation.y=r.phi;house.add(win);
-    var halo=new THREE.Mesh(new THREE.PlaneGeometry(1.9,1.3),new THREE.MeshBasicMaterial({color:r.col,transparent:true,opacity:0.12,blending:THREE.AdditiveBlending,depthWrite:false}));halo.position.set(nx*1.23,0.2,nz*1.23);halo.rotation.y=r.phi;house.add(halo);halos.push(halo);});
-  scene.add(house);
-  var ph=[
-    {t:[0x05060f,0x0c1330,0x213553],fog:0x0b1530,amb:0.40,sun:0.30,sc:0x5a6ca0,ni:1.0},
-    {t:[0x141f3e,0x6a6aa0,0xe7b3a0],fog:0xb7a3bf,amb:0.70,sun:0.90,sc:0xffd6ad,ni:0.2},
-    {t:[0x0c1c40,0x3f6ea8,0xd6e4f1],fog:0xb4cce6,amb:0.95,sun:1.10,sc:0xfff2da,ni:0.0},
-    {t:[0x241a4a,0xb85c3a,0xf2bd78],fog:0xd99a66,amb:0.70,sun:1.00,sc:0xffae66,ni:0.15}
-  ];
-  ph.forEach(function(p){p.c0=new THREE.Color(p.t[0]);p.c1=new THREE.Color(p.t[1]);p.c2=new THREE.Color(p.t[2]);p.fc=new THREE.Color(p.fog);p.scc=new THREE.Color(p.sc);});
-  var now=new Date(),hr=now.getHours()+now.getMinutes()/60,P=(hr/6)%4,seg=Math.floor(P)%4,f=P-Math.floor(P),A=ph[seg],B=ph[(seg+1)%4];
-  function lp(a,b,x){return a+(b-a)*x;}
-  drawSky(A.c0.clone().lerp(B.c0,f).getStyle(),A.c1.clone().lerp(B.c1,f).getStyle(),A.c2.clone().lerp(B.c2,f).getStyle());
-  scene.fog.color.copy(A.fc.clone().lerp(B.fc,f));
-  amb.intensity=lp(A.amb,B.amb,f);sun.intensity=lp(A.sun,B.sun,f);sun.color.copy(A.scc.clone().lerp(B.scc,f));
-  var night=lp(A.ni,B.ni,f);stars.material.opacity=night;for(var hh=0;hh<halos.length;hh++)halos[hh].material.opacity=0.1+night*0.55;
-  var AX=new THREE.Vector3(1,0,0),AY=new THREE.Vector3(0,1,0),AZ=new THREE.Vector3(0,0,1);
-  var dragging=false,lastX=0,lastY=0,moved=0,velY=0,t=0,active=-1;
-  var camDir=new THREE.Vector3(),nrm=new THREE.Vector3(),ray=new THREE.Raycaster(),ndc=new THREE.Vector2();
-  function pt(e){var s=e.touches&&e.touches[0]?e.touches[0]:(e.changedTouches&&e.changedTouches[0]?e.changedTouches[0]:e);return {x:s.clientX,y:s.clientY};}
-  function frontUrl(){camDir.copy(cam.position).sub(house.position).normalize();var best=-2,url=faces[0].url;for(var i=0;i<faces.length;i++){nrm.set(Math.sin(faces[i].phi),0,Math.cos(faces[i].phi)).applyQuaternion(house.quaternion);var d=nrm.dot(camDir);if(d>best){best=d;url=faces[i].url;}}return url;}
-  function hitsHouse(e){var r=stage.getBoundingClientRect(),p=pt(e);ndc.x=((p.x-r.left)/r.width)*2-1;ndc.y=-((p.y-r.top)/r.height)*2+1;ray.setFromCamera(ndc,cam);return ray.intersectObject(house,true).length>0;}
-  function dn(e){dragging=true;var p=pt(e);lastX=p.x;lastY=p.y;moved=0;stage.style.cursor='grabbing';}
-  function mv(e){if(!dragging)return;var p=pt(e);var dx=p.x-lastX,dy=p.y-lastY;lastX=p.x;lastY=p.y;moved+=Math.abs(dx)+Math.abs(dy);
-    house.rotateOnWorldAxis(AY,dx*0.01);house.rotateOnWorldAxis(AX,dy*0.01);velY=dx*0.01;}
-  function up(e){if(dragging&&moved<6&&hitsHouse(e)){window.location.href=frontUrl();}dragging=false;stage.style.cursor='grab';}
-  stage.addEventListener('mousedown',dn);window.addEventListener('mousemove',mv);window.addEventListener('mouseup',up);
-  stage.addEventListener('touchstart',dn,{passive:true});window.addEventListener('touchmove',mv,{passive:true});window.addEventListener('touchend',up);
-  window.addEventListener('resize',function(){W=stage.clientWidth;H=stage.clientHeight;cam.aspect=W/H;cam.updateProjectionMatrix();rdr.setSize(W,H);});
-  var shake=0,nextShake=3+Math.random()*4;
-  function loop(){
-    t+=0.016;
-    if(!dragging){house.rotateOnWorldAxis(AZ,0.0034);house.rotateOnWorldAxis(AY,0.0012+velY);velY*=0.95;}
-    house.position.y=0.6+Math.sin(t*0.7)*0.13;
-    gt.offset.y+=0.0016;
-    if(t>nextShake){shake=0.09;nextShake=t+4+Math.random()*6;}
-    shake*=0.86;
-    cam.position.set(baseX+(Math.random()-.5)*shake,baseY+(Math.random()-.5)*shake,baseZ);
-    cam.lookAt((Math.random()-.5)*shake*0.4,-0.4+(Math.random()-.5)*shake*0.4,-5);
-    camDir.copy(cam.position).sub(house.position).normalize();
-    var best=-2,bi=0;for(var i=0;i<faces.length;i++){nrm.set(Math.sin(faces[i].phi),0,Math.cos(faces[i].phi)).applyQuaternion(house.quaternion);var d=nrm.dot(camDir);if(d>best){best=d;bi=i;}}
-    if(bi!==active){active=bi;faceEl.textContent=faces[bi].name;}
-    for(var c2=0;c2<clouds.length;c2++){clouds[c2].position.z+=0.24;if(clouds[c2].position.z>16){clouds[c2].position.z=-44;clouds[c2].position.x=(Math.random()-.5)*44;}}
-    for(var fq=0;fq<fg.length;fq++){var s2=fg[fq];
-      if(!s2.userData.on){ if(t>s2.userData.next){s2.userData.on=true;s2.position.set((Math.random()-.5)*9,0.5+Math.random()*4.5,-26);s2.scale.set(13+Math.random()*8,9+Math.random()*6,1);} }
-      else{ s2.position.z+=0.42; var d2=Math.abs(s2.position.z-baseZ); s2.material.opacity=Math.max(0,0.5*(1-d2/15)); if(s2.position.z>baseZ+9){s2.userData.on=false;s2.material.opacity=0;s2.userData.next=t+7+Math.random()*13;} }
+<style is:global>
+    *{margin:0;padding:0;box-sizing:border-box}
+    html,body{height:100%;background:#0b0d12;overflow:hidden;font-family:Georgia,'Times New Roman',serif;color:#f3ece0}
+        #stage{position:fixed;inset:0;cursor:grab;touch-action:none}
+    #stage, #stage *{ -webkit-user-select:none; user-select:none; -webkit-touch-callout:none; -webkit-tap-highlight-color:transparent; }
+    #stage img{ -webkit-user-drag:none; }
+    #fmtcard{ position:fixed; left:50%; bottom:62px; transform:translateX(-50%); z-index:6; display:none; align-items:center; gap:7px; padding:7px 14px; background:rgba(14,12,10,.82); border:1px solid rgba(230,184,115,.45); border-radius:6px; color:#e6b873; font-family:var(--mono),monospace; font-size:12px; letter-spacing:.14em; text-transform:uppercase; cursor:pointer; box-shadow:0 0 16px rgba(230,184,115,.16) }
+    #fmtcard.show{ display:inline-flex }
+    #fmtcard:hover{ background:rgba(30,25,18,.9); color:#f2d0a0 }
+    #fmtcard b{ font-size:14px; line-height:1 }
+    #stage canvas{display:block}
+    .ov{position:fixed;left:42px;top:34px;z-index:5;pointer-events:none;mix-blend-mode:screen;opacity:.94}
+    .ov .n{font-size:46px;letter-spacing:.06em}
+    .ov .s{font-size:16px;font-style:italic;opacity:.8;margin-top:2px}
+    .hint{position:fixed;left:0;right:0;bottom:26px;text-align:center;z-index:5;font-style:italic;font-size:14px;opacity:.7;pointer-events:none}
+    .tag{position:fixed;right:14px;top:12px;z-index:5;font-family:var(--mono),monospace;font-size:11px;letter-spacing:.12em;opacity:.5}
+    #flash{position:fixed;inset:0;z-index:9;background:#fff;opacity:0;pointer-events:none}
+    #flash.on{opacity:1;transition:opacity .14s ease-out}
+    #postit{position:fixed;left:24px;bottom:24px;z-index:7;width:216px;aspect-ratio:2160/2048;transform:rotate(-3deg);filter:drop-shadow(0 10px 20px rgba(0,0,0,.42))}
+    #postit .pi-base{position:absolute;inset:0;width:100%;height:100%;display:block;pointer-events:none}
+    #postit .pi-el{position:absolute;opacity:0;transition:opacity .3s ease;pointer-events:none}
+    #postit .pi-el.show{opacity:1}
+    #postit .pi-row{position:absolute;left:0;width:100%;display:block;cursor:pointer}
+    #bars{position:fixed;inset:0;z-index:8;pointer-events:none}
+    #bars i{position:absolute;left:0;right:0;height:12vh;background:#000;transition:transform .55s cubic-bezier(.7,0,.3,1)}
+    #bars .bt{top:0;transform:translateY(-100%)}
+    #bars .bb{bottom:0;transform:translateY(100%)}
+    #bars.on .bt,#bars.on .bb{transform:translateY(0)}
+    #slate{position:fixed;left:50%;top:14vh;transform:translateX(-50%);z-index:9;font-family:var(--mono),monospace;font-size:13px;letter-spacing:.2em;color:#fff;background:rgba(0,0,0,.55);border:1px solid rgba(255,255,255,.35);padding:8px 16px;border-radius:3px;opacity:0;transition:opacity .3s;pointer-events:none}
+    #slate.on{opacity:1}
+    @media (max-width:640px){
+      .ov{left:16px;top:14px}
+      .ov .n{font-size:30px}
+      .ov .s{font-size:12px}
+      #postit{width:186px;left:12px;bottom:14px}
+      .hint{font-size:11px;bottom:auto;top:56px}
+      .tag{display:none}
+      #fmtcard{bottom:auto;top:14px;left:auto;right:12px;transform:none}
     }
-    rdr.render(scene,cam);requestAnimationFrame(loop);
+  
+    .ov .n,.ov .s{font-family:var(--serif),Georgia,serif}
+    .hint{font-family:var(--serif),Georgia,serif}
+    /* REEL escape hatch — one click to the work, always visible */
+    #reelbtn{position:fixed;right:22px;top:20px;z-index:7;background:rgba(14,12,10,.6);border:1px solid rgba(230,184,115,.5);
+      color:#e6b873;font-family:var(--mono),monospace;font-size:12px;letter-spacing:.18em;padding:9px 16px;border-radius:5px;cursor:pointer;backdrop-filter:blur(6px)}
+    #reelbtn:hover{background:rgba(30,25,18,.85);color:#f2d0a0}
+    #reelbox{position:fixed;inset:0;z-index:40;background:rgba(8,7,10,.9);backdrop-filter:blur(8px);display:none;align-items:center;justify-content:center}
+    #reelbox.on{display:flex}
+    #reelbox .rb-f{position:relative;width:min(92vw,1100px);aspect-ratio:16/9}
+    #reelbox iframe{position:absolute;inset:0;width:100%;height:100%;border:0;border-radius:10px;background:#000}
+    #reelx{position:fixed;top:20px;right:24px;z-index:41;background:transparent;border:1px solid rgba(255,255,255,.3);color:#fff;width:42px;height:42px;border-radius:50%;font-size:16px;cursor:pointer}
+    /* custom viewfinder cursor */
+    @media (pointer:fine){
+      #stage,#stage a,#stage button{cursor:none}
+      #cur{position:fixed;left:0;top:0;z-index:60;width:34px;height:34px;margin:-17px 0 0 -17px;border:1.5px solid rgba(243,236,224,.95);
+        border-radius:50%;pointer-events:none;opacity:0;transition:transform .18s ease,opacity .3s;mix-blend-mode:difference}
+      #cur i{position:absolute;left:50%;top:50%;width:4px;height:4px;margin:-2px 0 0 -2px;background:#ff3b30;border-radius:50%}
+      #cur.on{opacity:1}
+      #cur.big{transform:scale(1.8)}
+    }
+    @media (pointer:coarse){ #cur{display:none} }
+    /* keyboard focus + fallback when WebGL is unavailable */
+    .pi-row:focus-visible,#reelbtn:focus-visible,#fmtcard:focus-visible{outline:2px solid #e6b873;outline-offset:2px}
+    html.no3d #stage{background:linear-gradient(180deg,#2e6f8e 0%,#7fb3bd 55%,#f0e9d4 100%)}
+    html.no3d #cur{display:none}
+    html.no3d #stage,html.no3d #stage a{cursor:auto}</style>
+
+<script>
+  import * as THREE from 'three';
+  import { EffectComposer, RenderPass, EffectPass, BloomEffect, NoiseEffect, VignetteEffect, ChromaticAberrationEffect, ToneMappingEffect, ToneMappingMode, BlendFunction } from 'postprocessing';
+  import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader.js';
+  import { DRACOLoader } from 'three/examples/jsm/loaders/DRACOLoader.js';
+  import { RoomEnvironment } from 'three/examples/jsm/environments/RoomEnvironment.js';
+
+  const stage = document.getElementById('stage');
+  const hintEl = document.getElementById('hint');
+  const flashEl = document.getElementById('flash');
+  const _coarse=matchMedia('(pointer:coarse)').matches || ('ontouchstart' in window); let fnx=0,fny=0,gnx=0,gny=0;
+
+  // REEL escape hatch — works with or without WebGL
+  const REEL_EMBED='https://www.youtube.com/embed/nC3fdpPx-II?rel=0&autoplay=1&playlist=8hCo3Clc3p0,GmR0udi-U4w,09Vc3EMFn-M,2tvW25Qu5WE,9uZmdPdPDCk,jmqzbG-bdMU';  // selects across roles until JJ cuts a true reel
+  const reelBtn=document.getElementById('reelbtn'), reelBox=document.getElementById('reelbox'),
+        reelFrame=document.getElementById('reelframe'), reelX=document.getElementById('reelx');
+  function openReel(){ reelFrame.innerHTML='<iframe src="'+REEL_EMBED+'" allow="autoplay; fullscreen; encrypted-media" allowfullscreen></iframe>'; reelBox.classList.add('on'); reelBox.setAttribute('aria-hidden','false'); }
+  function closeReel(){ reelBox.classList.remove('on'); reelBox.setAttribute('aria-hidden','true'); reelFrame.innerHTML=''; }
+  reelBtn.addEventListener('click',openReel); reelX.addEventListener('click',closeReel);
+  reelBox.addEventListener('click',e=>{ if(e.target===reelBox) closeReel(); });
+  window.addEventListener('keydown',e=>{ if(e.key==='Escape') closeReel(); });
+
+  // custom viewfinder cursor
+  const curEl=document.getElementById('cur');
+  if(curEl&&matchMedia('(pointer:fine)').matches){
+    window.addEventListener('pointermove',e=>{
+      curEl.style.left=e.clientX+'px'; curEl.style.top=e.clientY+'px'; curEl.classList.add('on');
+      curEl.classList.toggle('big', !!(e.target&&e.target.closest&&e.target.closest('a,button')));
+    });
+    document.addEventListener('mouseleave',()=>curEl.classList.remove('on'));
+  }
+
+  // WebGL guard: without it, the page degrades to gradient + working shot-list links
+  const _GL=(()=>{ try{ const c=document.createElement('canvas'); return !!(c.getContext('webgl2')||c.getContext('webgl')); }catch(e){ return false; } })();
+  if(!_GL){ document.documentElement.classList.add('no3d'); hintEl.textContent='tap a shot on the list to step inside'; }
+  if(_GL){
+
+
+
+
+  const PIK=['director','producer','vfx','fun'];
+  const SLATE={director:'SC 01 · “DIRECTOR” · TK 1',producer:'SC 02 · “PRODUCER” · TK 1',vfx:'SC 03 · “VFX + EDIT” · TK 1',fun:'SC 04 · “FOR FUN” · TK 1'};
+  const barsEl=document.getElementById('bars'), slateEl=document.getElementById('slate');
+  const reduceMotion=matchMedia('(prefers-reduced-motion: reduce)').matches;
+  PIK.forEach(k=>{ const row=document.getElementById('row-'+k), ar=document.getElementById('ar-'+k); if(!row) return;
+    row.addEventListener('mouseenter',()=>{ if(ar) ar.classList.add('show'); });
+    row.addEventListener('mouseleave',()=>{ if(ar&&!_coarse) ar.classList.remove('show'); });
+    row.addEventListener('click',e=>{ e.preventDefault(); if(cut.active) return; ensureAudio(); startCut(k, row.dataset.url); });
+  });
+  window.addEventListener('keydown',e=>{                     // 1–4 = shots, R = reel
+    if(e.target&&/INPUT|TEXTAREA/.test(e.target.tagName)) return;
+    const i=parseInt(e.key)-1;
+    if(i>=0&&i<4&&!cut.active){ ensureAudio(); const row=document.getElementById('row-'+PIK[i]); if(row) startCut(PIK[i],row.dataset.url); }
+    if(e.key==='r'||e.key==='R') openReel();
+  });
+  { const fc=document.getElementById('fmtcard'); if(fc) fc.addEventListener('click',()=>{ const orig=fc.innerHTML; fc.innerHTML='FORMATTING...'; setTimeout(()=>{ try{ document.cookie='jjvisits=;path=/;max-age=0'; }catch(e){} for(const s of shots){ s.captured=false; s.prog=0; } fc.innerHTML=orig; refreshPostIt(); }, 700); }); }
+  refreshPostIt();
+  const clamp=(v,a,b)=>Math.max(a,Math.min(b,v));
+  const lerp=(a,b,x)=>a+(b-a)*x;
+  let actx=null;
+  function ensureAudio(){ if(!actx){ try{ actx=new (window.AudioContext||window.webkitAudioContext)(); }catch(e){} } if(actx&&actx.state==='suspended') actx.resume(); }
+  function boop(freq,dur,vol){ if(!actx) return; const o=actx.createOscillator(),g=actx.createGain(); o.type='sine'; o.frequency.value=freq; o.connect(g); g.connect(actx.destination); const n=actx.currentTime; g.gain.setValueAtTime(0.0001,n); g.gain.exponentialRampToValueAtTime(vol,n+0.012); g.gain.exponentialRampToValueAtTime(0.0001,n+dur); o.start(n); o.stop(n+dur+0.03); }
+
+  let W=stage.clientWidth, H=stage.clientHeight;
+  const scene=new THREE.Scene();
+  const sky=document.createElement('canvas'); sky.width=4; sky.height=256; const sctx=sky.getContext('2d');
+  const skyTex=new THREE.CanvasTexture(sky); scene.background=skyTex;
+  function drawSky(a,b,c){ const g=sctx.createLinearGradient(0,0,0,256); g.addColorStop(0,a); g.addColorStop(0.5,b); g.addColorStop(1,c); sctx.fillStyle=g; sctx.fillRect(0,0,4,256); skyTex.needsUpdate=true; }
+  scene.fog=new THREE.Fog(0xb4cce6,40,230);
+
+  const cam=new THREE.PerspectiveCamera(74,W/H,0.05,400);
+  const baseX=0, baseY=6.6, baseZ=9.6; cam.position.set(baseX,baseY,baseZ); cam.lookAt(0,-0.4,-5);
+  scene.add(cam); // so the camera-mounted rig renders
+
+  const rdr=new THREE.WebGLRenderer({antialias:true,powerPreference:'high-performance'});
+  rdr.setSize(W,H); rdr.setPixelRatio(Math.min(window.devicePixelRatio, matchMedia('(pointer:coarse)').matches?1.35:1.75)); rdr.toneMapping=THREE.NoToneMapping;
+  stage.appendChild(rdr.domElement);
+
+  const composer=new EffectComposer(rdr);
+  composer.addPass(new RenderPass(scene,cam));
+  const bloom=new BloomEffect({intensity:0.6,luminanceThreshold:0.8,luminanceSmoothing:0.3,mipmapBlur:true,radius:0.7});
+  const ca=new ChromaticAberrationEffect({offset:new THREE.Vector2(0.0007,0.0007),radialModulation:false});
+  const vig=new VignetteEffect({darkness:0.62,offset:0.28});
+  const tone=new ToneMappingEffect({mode:ToneMappingMode.ACES_FILMIC});
+  const _smallScreen = matchMedia('(pointer:coarse)').matches || window.innerWidth < 700;
+  const GRAIN_BASE = _smallScreen ? 0.13 : 0.18;   // AD note: grain was flaring on pale sky
+  const grain=new NoiseEffect({blendFunction:BlendFunction.OVERLAY}); grain.blendMode.opacity.value=GRAIN_BASE;
+  composer.addPass(new EffectPass(cam,bloom,ca,vig,tone,grain));
+
+  const ambL=new THREE.AmbientLight(0xc4d6f0,0.85); scene.add(ambL);
+  const sun=new THREE.DirectionalLight(0xfff2da,1.25); sun.position.set(6,9,4); scene.add(sun);
+  scene.add(new THREE.HemisphereLight(0xd6e4f1,0x4a5840,0.5));
+
+  // stars
+  const stg=new THREE.BufferGeometry(); const sn=320, spz=new Float32Array(sn*3);
+  for(let s=0;s<sn;s++){ spz[s*3]=(Math.random()-.5)*160; spz[s*3+1]=12+Math.random()*70; spz[s*3+2]=(Math.random()-.5)*160-20; }
+  stg.setAttribute('position',new THREE.BufferAttribute(spz,3));
+  const stars=new THREE.Points(stg,new THREE.PointsMaterial({color:0xffffff,size:0.16,transparent:true,opacity:0})); scene.add(stars);
+
+  // sun + moon — deep-background celestial clock (real local time; spun fast by the Producer timelapse)
+  let displayHr=12;
+  function discSprite(inner,outer,glow){
+    const c=document.createElement('canvas'); c.width=c.height=256; const g=c.getContext('2d');
+    const rg=g.createRadialGradient(128,128,10,128,128,128);
+    rg.addColorStop(0,inner); rg.addColorStop(0.42,inner); rg.addColorStop(0.5,outer); rg.addColorStop(1,'rgba(0,0,0,0)');
+    g.fillStyle=rg; g.fillRect(0,0,256,256);
+    const tx=new THREE.CanvasTexture(c); tx.colorSpace=THREE.SRGBColorSpace;
+    const sp=new THREE.Sprite(new THREE.SpriteMaterial({map:tx,transparent:true,fog:false,depthWrite:false,opacity:glow}));
+    scene.add(sp); return sp;
+  }
+  const sunDisc=discSprite('rgba(255,242,208,1)','rgba(255,207,138,0.85)',1);  sunDisc.scale.setScalar(17);
+  const moonDisc=discSprite('rgba(238,242,252,1)','rgba(170,180,216,0.7)',0.95); moonDisc.scale.setScalar(11);
+  function placeSky(){
+    const a=(displayHr/24)*Math.PI*2 - Math.PI*0.5;   // noon = top of arc
+    const el=Math.sin(a);
+    sunDisc.position.set(Math.cos(a)*95, el*24+9, -130);             // shallow arc: stays inside the letterbox
+    moonDisc.position.set(Math.cos(a+Math.PI)*95, -el*24+9, -130);
+    sunDisc.material.opacity=Math.max(0,Math.min(1,(el+0.12)*4));    // CT note: only one body owns the sky
+    moonDisc.material.opacity=Math.max(0,Math.min(0.95,(-el+0.12)*4));
+  }
+
+  // clouds
+  const loader=new THREE.TextureLoader();
+  const mk=f=>{ const tx=loader.load(f); if('colorSpace' in tx) tx.colorSpace=THREE.SRGBColorSpace; return tx; };
+  const puffyTexs=['/clouds/c01.webp','/clouds/c02.webp','/clouds/c03.webp','/clouds/c04.webp','/clouds/c05.webp','/clouds/c06.webp','/clouds/c07.webp','/clouds/c08.webp','/clouds/c09.webp','/clouds/c10.webp','/clouds/c11.webp','/clouds/c12.webp'].map(mk);
+  const clouds=[];
+  function spawnCloud(c,initial){
+    const r=Math.random();
+    const lane=r<0.44?0:(r<0.87?1:2);
+    let x,depth,speed,s;
+    if(lane===0){ x=(Math.random()<0.5?-1:1)*(34+Math.random()*44); depth=-26-Math.random()*26; speed=0.03+Math.random()*0.07; s=16+Math.random()*16; }
+    else if(lane===1){ x=(Math.random()<0.5?-1:1)*(13+Math.random()*22); depth=-12-Math.random()*28; speed=0.1+Math.random()*0.32; s=10+Math.random()*12; }
+    else { x=(Math.random()-0.5)*11; depth=-8-Math.random()*20; speed=0.16+Math.random()*0.4; s=9+Math.random()*10; }
+    c.material.map=puffyTexs[Math.floor(Math.random()*puffyTexs.length)]; c.material.needsUpdate=true;
+    const yy=Math.max(-5+Math.random()*18,-11+s*0.5); c.position.set(x,yy,initial?(-12-Math.random()*170):(-160-Math.random()*60));
+    c.scale.set(s*1.5,s,1);
+    c.userData.speed=speed; c.userData.maxop=0.95; c.userData.age=0; c.material.opacity=0;
+  }
+  const CLOUD_N=_coarse?14:22;
+  for(let i=0;i<CLOUD_N;i++){ const sp=new THREE.Sprite(new THREE.SpriteMaterial({transparent:true,depthWrite:false,opacity:0})); spawnCloud(sp,true); scene.add(sp); clouds.push(sp); }
+
+  // ground
+  const gc=document.createElement('canvas'); gc.width=gc.height=512; const gg=gc.getContext('2d');
+  gg.fillStyle='#9aa0a0'; gg.fillRect(0,0,512,512);   // neutral base — phase palette supplies the hue
+  const tones=['#8b9190','#a5aaa6','#949a95','#b0b3aa','#878e8c','#a39f92'];
+  for(let n=0;n<48;n++){ const x=Math.random()*512,y=Math.random()*512,r=40+Math.random()*130; const rg=gg.createRadialGradient(x,y,0,x,y,r); rg.addColorStop(0,tones[n%tones.length]); rg.addColorStop(1,'rgba(0,0,0,0)'); gg.globalAlpha=0.5; gg.fillStyle=rg; gg.beginPath(); gg.arc(x,y,r,0,7); gg.fill(); }
+  gg.globalAlpha=1; gg.lineWidth=1; gg.strokeStyle='rgba(226,217,196,0.05)';
+  for(let c=0;c<28;c++){ gg.beginPath(); const yy=c*512/28; for(let x=0;x<=512;x+=8){ const off=Math.sin(x*0.018+c)*12+Math.sin(x*0.045+c*1.7)*6; (x===0)?gg.moveTo(x,yy+off):gg.lineTo(x,yy+off); } gg.stroke(); }
+  for(let d=0;d<500;d++){ gg.fillStyle='rgba(0,0,0,'+(Math.random()*0.07)+')'; gg.fillRect(Math.random()*512,Math.random()*512,2,2); }
+  const gt=new THREE.CanvasTexture(gc); gt.wrapS=gt.wrapT=THREE.RepeatWrapping; gt.repeat.set(12,12);
+  const gGeo=new THREE.PlaneGeometry(760,760,90,90), gp=gGeo.attributes.position, curv=0.00068;
+  for(let vi=0;vi<gp.count;vi++){ const gx=gp.getX(vi),gy=gp.getY(vi); gp.setZ(vi,-curv*(gx*gx+gy*gy)); }
+  gGeo.computeVertexNormals();
+  const ground=new THREE.Mesh(gGeo,new THREE.MeshStandardMaterial({map:gt,roughness:1})); ground.rotation.x=-Math.PI/2; ground.position.y=-12; scene.add(ground);
+
+  // env + house
+  const house=new THREE.Group(); scene.add(house);
+  const glassMats=[]; const houseMats=[]; let currentNight=0;
+  function setGlassNight(n){ for(let i=0;i<glassMats.length;i++) glassMats[i].emissiveIntensity=0.55+n*1.5; }
+  // aurora "interior" — drifting palette light behind every window; swaps to reel-driven video when clips land
+  const aur=document.createElement('canvas'); aur.width=aur.height=128; const aurG=aur.getContext('2d');
+  const auroraTex=new THREE.CanvasTexture(aur); auroraTex.colorSpace=THREE.SRGBColorSpace;
+  const AUR_COLS=['#8d98d9','#2e6f8e','#ffcf8a','#b06a77'];
+  function drawAurora(tt){
+    aurG.fillStyle='#0c0f1c'; aurG.fillRect(0,0,128,128);
+    for(let i=0;i<4;i++){
+      const x=64+Math.sin(tt*0.23+i*1.7)*46, y=64+Math.cos(tt*0.17+i*2.3)*46, r=34+Math.sin(tt*0.31+i)*14;
+      const g=aurG.createRadialGradient(x,y,2,x,y,r);
+      g.addColorStop(0,AUR_COLS[i]); g.addColorStop(1,'rgba(0,0,0,0)');
+      aurG.globalAlpha=0.55; aurG.fillStyle=g; aurG.beginPath(); aurG.arc(x,y,r,0,7); aurG.fill();
+    }
+    aurG.globalAlpha=1; auroraTex.needsUpdate=true;
+  }
+  const pmrem=new THREE.PMREMGenerator(rdr);
+  const envTex=pmrem.fromScene(new RoomEnvironment(),0.04).texture;
+  const draco=new DRACOLoader(); draco.setDecoderPath('https://www.gstatic.com/draco/v1/decoders/');
+  const gltfLoader=new GLTFLoader(); gltfLoader.setDRACOLoader(draco);
+  gltfLoader.load('/house_anchored.glb',(g)=>{
+    const root=g.scene;
+    root.traverse(o=>{
+      if(!o.isMesh||!o.material) return;
+      const mats=Array.isArray(o.material)?o.material:[o.material];
+      mats.forEach(m=>{
+        if(!m||!m.color) return;
+        houseMats.push(m);
+        const isGlass=/glass|lite|_gl/i.test(m.name||'');
+        if(isGlass){ // WINDOWS: something is going on in there — animated aurora interior, deeper at night
+          m.color.set(0x0d1018); m.envMap=envTex; m.envMapIntensity=0.5; m.metalness=0.2; m.roughness=0.2;
+          if(!m.emissive) m.emissive=new THREE.Color(0xffffff); else m.emissive.set(0xffffff);
+          m.emissiveMap=auroraTex; m.emissiveIntensity=0.55;
+          glassMats.push(m); }
+        else { // CLAY RENDER: one french-vanilla body, monochrome & matte — the palette does the coloring
+          m.color.set(0xf2ebdb); m.map=null; m.metalness=0; m.roughness=0.9; m.needsUpdate=true; }
+      });
+    });
+    const box=new THREE.Box3().setFromObject(root); const c=box.getCenter(new THREE.Vector3()); const s=box.getSize(new THREE.Vector3());
+    root.position.sub(c); root.scale.setScalar(9.0/Math.max(s.x,s.y,s.z));
+    house.add(root); setGlassNight(currentNight);
+    root.traverse(o=>{ if(o.name && o.name.indexOf('ANCHOR_')===0){ const k=o.name.slice(7).toLowerCase().split('.')[0]; const mp={director:['Director','/director'],producer:['Producer','/producer'],vfx:['VFX + Edit','/vfx-edit'],fun:['Fun Stuff','/for-fun']}; if(mp[k]) shots.push({node:o,key:k,label:mp[k][0],url:mp[k][1],captured:false,prog:0,_ndc:null,_lined:false}); } }); try{ const _v=getVisits(); shots.forEach(s=>{ if((_v[s.key]||0)>=1) s.captured=true; }); }catch(e){} refreshPostIt();
+  });
+
+  // ===== CAMERA RIG VIEWMODEL =====
+  const RIG_W=640, RIG_H=400;                 // monitor feed resolution (1.6:1)
+  const rt=new THREE.WebGLRenderTarget(RIG_W,RIG_H,{ samples:2 });
+  rt.texture.colorSpace=THREE.SRGBColorSpace;
+  const lensCam=new THREE.PerspectiveCamera(72, RIG_W/RIG_H, 0.05, 400); scene.add(lensCam);
+
+  // HUD overlay composited into the render target
+  const hud=document.createElement('canvas'); hud.width=RIG_W; hud.height=RIG_H; const hx=hud.getContext('2d');
+  const hudTex=new THREE.CanvasTexture(hud); hudTex.colorSpace=THREE.SRGBColorSpace;
+  const hudScene=new THREE.Scene();
+  const hudCam=new THREE.OrthographicCamera(-1,1,1,-1,0,1);
+  const hudQuad=new THREE.Mesh(new THREE.PlaneGeometry(2,2), new THREE.MeshBasicMaterial({map:hudTex,transparent:true,depthTest:false,depthWrite:false}));
+  hudScene.add(hudQuad);
+
+  const rigPivot=new THREE.Group(); cam.add(rigPivot); rigPivot.visible=false;
+  let screenMesh=null; let recLightMat=null;
+  const rigBasePos=new THREE.Vector3(0,-0.12,-0.86);
+  let rigScale=3.1;
+  gltfLoader.load('/rig.glb',(g)=>{
+    const r=g.scene;
+    r.traverse(o=>{
+      if(!o.isMesh) return;
+      const m=o.material;
+      const nm=(m&&m.name)||''; if(nm==='RIG_Sleeve') o.visible=false;
+      if(nm==='RIG_RecLight'||/recLIGHT/i.test(o.name)){ o.material=o.material.clone(); o.material.emissive=new THREE.Color(0xff2412); o.material.emissiveIntensity=0; recLightMat=o.material; }
+      if(nm==='RIG_Screen'||/Screen/i.test(o.name)){
+        screenMesh=o;
+        o.material=new THREE.MeshBasicMaterial({map:rt.texture, toneMapped:false, side:THREE.DoubleSide});
+        const uv=o.geometry.attributes.uv;   // clean baked UVs (aligned to the screen); flip to read upright + forward
+        if(uv){ for(let i=0;i<uv.count;i++){ uv.setXY(i, 1.0-uv.getX(i), 1.0-uv.getY(i)); } uv.needsUpdate=true; }
+      }
+    });
+    // normalize: center, then face the screen toward the camera (rotate 180 about Y)
+    let s=rigScale; const ctr=new THREE.Vector3();
+    if(screenMesh){
+      r.updateMatrixWorld(true);
+      const sbox=new THREE.Box3().setFromObject(screenMesh); sbox.getCenter(ctr);
+      const ssz=sbox.getSize(new THREE.Vector3()); const sw=Math.max(ssz.x,ssz.y,ssz.z);
+      s=0.58/(sw||0.25);
+    } else { const box=new THREE.Box3().setFromObject(r); box.getCenter(ctr); }
+    r.position.sub(ctr);
+    rigPivot.add(r);
+    rigPivot.rotation.y=Math.PI;
+    rigBaseScale=s; applyResponsive();
+    rigPivot.position.copy(rigBasePos);
+    rigPivot.visible=true; makePostIt();
+  });
+
+  // LED ticker marquee — Blender-built housing, live scrolling production status
+  let tickerGrp=null, tickerTex=null;
+  {
+    const tc=document.createElement('canvas'); tc.width=2048; tc.height=96; const tg=tc.getContext('2d');
+    tg.fillStyle='#0a0c14'; tg.fillRect(0,0,2048,96);
+    tg.font='700 46px "IBM Plex Mono",ui-monospace,monospace'; tg.fillStyle='#ffcf8a'; tg.textBaseline='middle';
+    tg.fillText('NOW SHOOTING: “THE HOUSE” · DAY 1 · SC 01 DIRECTOR · SC 02 PRODUCER · SC 03 VFX + EDIT · SC 04 FOR FUN · ', 0, 50);
+    tg.strokeStyle='rgba(0,0,0,0.5)'; tg.lineWidth=1.4;
+    for(let x=0;x<=2048;x+=5){ tg.beginPath(); tg.moveTo(x,0); tg.lineTo(x,96); tg.stroke(); }
+    for(let y=0;y<=96;y+=5){ tg.beginPath(); tg.moveTo(0,y); tg.lineTo(2048,y); tg.stroke(); }
+    tickerTex=new THREE.CanvasTexture(tc); tickerTex.colorSpace=THREE.SRGBColorSpace;
+    tickerTex.wrapS=tickerTex.wrapT=THREE.RepeatWrapping; tickerTex.repeat.set(0.42,-1);   // exported screen UVs are flipped vertically only
+  }
+  gltfLoader.load('/ticker.glb',(g)=>{
+    const r=g.scene;
+    r.traverse(o=>{ if(o.isMesh&&/TICKER_Screen/i.test(o.name)) o.material=new THREE.MeshBasicMaterial({map:tickerTex,toneMapped:false}); });
+    r.scale.setScalar(1.2); r.rotation.y=0.30; scene.add(r); tickerGrp=r;
+  });
+
+  // neon "JJ HOUSE" (Procedural Signs) — same sign, two realities:
+  // floating landmark in the sky (memory) + rigged fixture in the volume's black void (record)
+  let neonStage=null;   // JJ verdict: no floating sign in the sky. The neon lives ONLY in the volume — a stage fixture.
+  gltfLoader.load('/neon.glb',(g)=>{
+    neonStage=g.scene;
+    neonStage.traverse(m=>{ if(m.isMesh&&m.material&&m.material.emissive&&m.material.emissiveIntensity>0){
+      m.material=m.material.clone(); m.material.emissiveIntensity=2.2; } });
+    neonStage.scale.setScalar(2.4); neonStage.position.set(0,11.2,-19);
+    buildStage(); stageGroup.add(neonStage);
+  });
+
+  // day/night phases
+  // LOCKED PALETTE — Kirkpatrick register: rich harmonious ramps, one hue family per phase.
+  // Only two things on the whole site may break palette: window glow (amber) + REC red.
+  const ph=[
+    { t:[0x10142e,0x232a52,0x45518c], fog:0x232a52, gnd:0x3a4166, amb:0.40, sun:0.35, sc:0x8d98d9, ni:1.0 },  // indigo night
+    { t:[0x2a2547,0xb06a77,0xf2b48c], fog:0xcf9284, gnd:0x8a6a6e, amb:0.62, sun:0.95, sc:0xf7bd93, ni:0.2 },  // violet-coral dawn
+    { t:[0x2e6f8e,0x7fb3bd,0xf0e9d4], fog:0xa9c4c2, gnd:0x6f8a7c, amb:0.85, sun:1.15, sc:0xfff2da, ni:0.0 },  // teal-cream day
+    { t:[0x33203f,0xc2705a,0xf0c07a], fog:0xcf8a5f, gnd:0x8a6350, amb:0.62, sun:1.05, sc:0xf7b579, ni:0.15 }  // plum-gold dusk
+  ];
+  ph.forEach(p=>{ p.c0=new THREE.Color(p.t[0]); p.c1=new THREE.Color(p.t[1]); p.c2=new THREE.Color(p.t[2]); p.fc=new THREE.Color(p.fog); p.scc=new THREE.Color(p.sc); p.gndc=new THREE.Color(p.gnd); });
+  const lpf=(a,b,x)=>a+(b-a)*x;
+  let currentNightGlow=0;
+  function applyTOD(hr){                      // hour-of-day -> whole sky/light/fog state (reused by Producer timelapse)
+    displayHr=((hr%24)+24)%24;
+    const PP=(hr/6)%4, segN=((Math.floor(PP)%4)+4)%4, ff=PP-Math.floor(PP), A=ph[segN], B=ph[(segN+1)%4];
+    drawSky(A.c0.clone().lerp(B.c0,ff).getStyle(), A.c1.clone().lerp(B.c1,ff).getStyle(), A.c2.clone().lerp(B.c2,ff).getStyle());
+    scene.fog.color.copy(A.fc.clone().lerp(B.fc,ff));
+    ambL.intensity=lpf(A.amb,B.amb,ff); sun.intensity=lpf(A.sun,B.sun,ff); sun.color.copy(A.scc.clone().lerp(B.scc,ff));
+    ground.material.color.copy(A.gndc.clone().lerp(B.gndc,ff));   // ground rides the same ramp
+    const night=lpf(A.ni,B.ni,ff); stars.material.opacity=night; currentNight=night; currentNightGlow=night; setGlassNight(night);
+  }
+  const realHr=()=>{ const n=new Date(); return n.getHours()+n.getMinutes()/60; };
+  applyTOD(realHr());
+
+  // interaction
+  const AX=new THREE.Vector3(1,0,0),AY=new THREE.Vector3(0,1,0),AZ=new THREE.Vector3(0,0,1);
+  let dragging=false, px=0,py=0,sx=0,sy=0,moved=0, t=0, spinning=false, velX=0, velY=0;
+  let recording=false, holdTimer=null; let aimYaw=0,aimPitch=0,pushIn=0; let recCX=0,recCY=0;
+  const shots=[]; const shotHUD=[]; let activeShot=null, capturing=false, capShudder=0; const _av=new THREE.Vector3(); const capClock=new THREE.Clock(); const _aw=new THREE.Vector3(), _hc=new THREE.Vector3(); let focusZoom=0; let postItTex=null, postItCtx=null, postItMesh=null; let rigBaseScale=1;
+  // cursor in [-1,1]
+  let mnx=0,mny=0, emnx=0,emny=0;     // raw + eased
+  let reveal=0;                        // 0..1 corner reveal
+  function pos(e){ const s=e.touches&&e.touches[0]?e.touches[0]:(e.changedTouches&&e.changedTouches[0]?e.changedTouches[0]:e); return {x:s.clientX,y:s.clientY}; }
+  function setCursor(e){ const r=stage.getBoundingClientRect(), p=pos(e); fnx=clamp(((p.x-r.left)/r.width)*2-1,-1,1); fny=clamp(((p.y-r.top)/r.height)*2-1,-1,1); }
+  function startRec(){ recording=true; recCX=mnx; recCY=mny; hintEl.style.opacity='0.25'; boop(900,0.10,0.05); setTimeout(()=>boop(1350,0.09,0.04),85); }
+  function stopRec(){ recording=false; hintEl.style.opacity=''; boop(520,0.09,0.04); }
+  function getVisits(){ try{ const m=document.cookie.match(/jjvisits=([^;]+)/); if(!m) return {}; const o={}; decodeURIComponent(m[1]).split(',').forEach(p=>{ const a=p.split(':'); if(a[0]) o[a[0]]=parseInt(a[1])||0; }); return o; }catch(e){ return {}; } }
+  function setVisits(o){ try{ document.cookie='jjvisits='+encodeURIComponent(Object.keys(o).map(k=>k+':'+o[k]).join(','))+';path=/;max-age=31536000'; }catch(e){} }
+  function addVisit(k){ const v=getVisits(); v[k]=(v[k]||0)+1; setVisits(v); }
+
+  function doCapture(sh){ if(window.__NAV===false){ capturing=false; sh.prog=1; return; } sh.captured=true; activeShot=null; refreshPostIt(); boop(2000,0.05,0.07); setTimeout(()=>boop(1400,0.05,0.05),55); if(flashEl) flashEl.classList.add('on'); setTimeout(()=>{ window.location.href=sh.url; }, 520); }
+  function refreshPostIt(){ const v=getVisits(); for(const k of PIK){ const n=v[k]||0; const ck=document.getElementById('ck-'+k); if(ck) ck.classList.toggle('show',n>=1); const ic=document.getElementById('ic-'+k); if(ic) ic.classList.toggle('show',n>=2); if(_coarse){ const ar=document.getElementById('ar-'+k); if(ar) ar.classList.add('show'); } } const fc=document.getElementById('fmtcard'); if(fc) fc.classList.toggle('show', PIK.every(k=>(v[k]||0)>=1)); }
+  // ===== CUT SCENES (shot-list navigation) — full cutaways =====
+  const cut={active:false,t:0,key:null,url:null,dur:2.4,fired:false};
+  let cloudMul=1, wfOn=false;
+  function setWireframe(on){ if(wfOn===on) return; wfOn=on; for(const m of houseMats) m.wireframe=on; }
+
+  // --- VFX greenscreen stage (built lazily, hidden until the glitch) ---
+  let stageGroup=null, stageOn=false, stageWall=null, stageLedTex=null;
+  // the record layer: JJ's actual footage, playable on the volume wall
+  const CLIPS=['/clips/clip-soju.mp4','/clips/clip-fj-spycraft.mp4','/clips/clip-fj-benches.mp4'];
+  let wallVideo=null, wallVidTex=null;
+  function makeWallVideo(){
+    if(wallVideo) return;
+    wallVideo=document.createElement('video');
+    wallVideo.muted=true; wallVideo.loop=true; wallVideo.playsInline=true;
+    wallVideo.src=CLIPS[Math.floor(Math.random()*CLIPS.length)];
+    wallVidTex=new THREE.VideoTexture(wallVideo); wallVidTex.colorSpace=THREE.SRGBColorSpace;
+  }
+  // Producer's flowery field — ground rises to meet the house; palette-flower scatter
+  let meadow=null;
+  const GROUND_Y=-12, MEADOW_Y=0.18;
+  function meadowMode(on){
+    if(on&&!meadow){
+      const n=900, pos=new Float32Array(n*3), col=new Float32Array(n*3);
+      const swatches=[0xf0e9d4,0xffcf8a,0xc2705a,0xb06a77,0x8d98d9].map(c=>new THREE.Color(c));
+      for(let i=0;i<n;i++){
+        const r=4+Math.random()*42, a=Math.random()*Math.PI*2;
+        pos[i*3]=Math.cos(a)*r; pos[i*3+1]=MEADOW_Y+0.12; pos[i*3+2]=Math.sin(a)*r;
+        const c=swatches[Math.floor(Math.random()*swatches.length)];
+        col[i*3]=c.r; col[i*3+1]=c.g; col[i*3+2]=c.b;
+      }
+      const g=new THREE.BufferGeometry();
+      g.setAttribute('position',new THREE.BufferAttribute(pos,3));
+      g.setAttribute('color',new THREE.BufferAttribute(col,3));
+      meadow=new THREE.Points(g,new THREE.PointsMaterial({size:0.32,vertexColors:true,sizeAttenuation:true}));
+      scene.add(meadow);
+    }
+    if(meadow) meadow.visible=on;
+    ground.position.y=on?MEADOW_Y:GROUND_Y;
+  }
+  const _bgSky=skyTex, _fogNear=scene.fog.near, _fogFar=scene.fog.far, _fogColor=scene.fog.color.clone();
+  function ledTexture(){
+    // studio-clean LED volume wall gone full green: module grid + faint pixel pitch
+    const c=document.createElement('canvas'); c.width=1024; c.height=512; const g=c.getContext('2d');
+    g.fillStyle='#2fbf5a'; g.fillRect(0,0,1024,512);
+    const vg=g.createLinearGradient(0,0,0,512); vg.addColorStop(0,'rgba(255,255,255,0.10)'); vg.addColorStop(0.5,'rgba(255,255,255,0)'); vg.addColorStop(1,'rgba(0,0,0,0.10)');
+    g.fillStyle=vg; g.fillRect(0,0,1024,512);
+    g.strokeStyle='rgba(0,0,0,0.13)'; g.lineWidth=1.5;                    // module seams
+    for(let x=0;x<=1024;x+=64){ g.beginPath(); g.moveTo(x,0); g.lineTo(x,512); g.stroke(); }
+    for(let y=0;y<=512;y+=64){ g.beginPath(); g.moveTo(0,y); g.lineTo(1024,y); g.stroke(); }
+    g.fillStyle='rgba(0,0,0,0.05)';                                        // pixel pitch shimmer
+    for(let x=2;x<1024;x+=8) for(let y=2;y<512;y+=8) g.fillRect(x,y,1.2,1.2);
+    const tx=new THREE.CanvasTexture(c); tx.colorSpace=THREE.SRGBColorSpace;
+    tx.wrapS=tx.wrapT=THREE.RepeatWrapping; tx.repeat.set(3,1);
+    return tx;
+  }
+  function buildStage(){
+    if(stageGroup) return;
+    stageGroup=new THREE.Group();
+    const led=ledTexture();
+    // curved LED volume wall
+    const wall=new THREE.Mesh(
+      new THREE.CylinderGeometry(24,24,22,64,1,true,Math.PI*0.55,Math.PI*0.9),
+      new THREE.MeshBasicMaterial({map:led,side:THREE.BackSide,toneMapped:false}));
+    wall.position.set(0,2,0); stageGroup.add(wall); stageWall=wall; stageLedTex=led;
+    // ceiling LED panel hung over the set
+    const ceil=new THREE.Mesh(new THREE.PlaneGeometry(20,14),
+      new THREE.MeshBasicMaterial({map:led,toneMapped:false,side:THREE.DoubleSide}));
+    ceil.rotation.x=Math.PI/2; ceil.position.set(0,12.5,-2); stageGroup.add(ceil);
+    // clean soundstage floor
+    const floor=new THREE.Mesh(new THREE.CircleGeometry(40,64),
+      new THREE.MeshStandardMaterial({color:0x8e9296,roughness:0.35,metalness:0.05}));
+    floor.rotation.x=-Math.PI/2; floor.position.y=-9.5; stageGroup.add(floor);
+    // truss hint above the ceiling panel
+    const tm=new THREE.MeshStandardMaterial({color:0x3c4044,roughness:0.6,metalness:0.6});
+    for(const tz of [-8,-2,4]){ const truss=new THREE.Mesh(new THREE.BoxGeometry(22,0.4,0.4),tm);
+      truss.position.set(0,13.6,tz); stageGroup.add(truss); }
+    // tracking crosses on the wall
+    const xc=document.createElement('canvas'); xc.width=xc.height=64; const xg=xc.getContext('2d');
+    xg.strokeStyle='rgba(240,245,240,0.9)'; xg.lineWidth=6;
+    xg.beginPath(); xg.moveTo(32,8); xg.lineTo(32,56); xg.moveTo(8,32); xg.lineTo(56,32); xg.stroke();
+    const xt=new THREE.CanvasTexture(xc);
+    for(let i=0;i<14;i++){
+      const sp=new THREE.Sprite(new THREE.SpriteMaterial({map:xt,transparent:true,opacity:0.8}));
+      const a=Math.PI*(0.62+Math.random()*0.72), r=22.6;
+      sp.position.set(Math.cos(a)*r,(Math.random()*14-4),Math.sin(a)*r); sp.scale.setScalar(0.8);
+      stageGroup.add(sp);
+    }
+    // suspension wires — attach to the house so they ride the bob
+    const wm=new THREE.MeshBasicMaterial({color:0x15140f});
+    for(const wx of [-0.9,0.9]){
+      const wire=new THREE.Mesh(new THREE.CylinderGeometry(0.012,0.012,16,6),wm);
+      wire.position.set(wx,9.2,0); house.add(wire); wire.visible=false; wire.userData.isWire=true;
+    }
+    stageGroup.visible=false; scene.add(stageGroup);
+  }
+  function stageMode(on){
+    if(stageOn===on) return; stageOn=on; buildStage();
+    stageGroup.visible=on;
+    ground.visible=!on; stars.visible=!on;
+    for(const c of clouds) c.visible=!on;
+    house.traverse(o=>{ if(o.userData&&o.userData.isWire) o.visible=on; });
+    if(on){ scene.background=new THREE.Color(0x0c0d10); scene.fog.near=500; scene.fog.far=900;   // black soundstage beyond the volume
+      ambL.intensity=1.1; ambL.color.set(0xdfe6ea); sun.intensity=0.5; sun.color.set(0xf2fff2); setGlassNight(0); }
+    else { scene.background=_bgSky; scene.fog.near=_fogNear; scene.fog.far=_fogFar; scene.fog.color.copy(_fogColor);
+      ambL.color.set(0xc4d6f0); applyTOD(realHr());
+      if(stageWall&&stageLedTex){ stageWall.material.map=stageLedTex; stageWall.material.needsUpdate=true; }
+      if(wallVideo) wallVideo.pause(); }
+  }
+
+  function startCut(key,url){
+    if(reduceMotion){ if(flashEl) flashEl.classList.add('on'); setTimeout(()=>{ window.location.href=url; },260); return; }
+    cut.active=true; cut.t=0; cut.key=key; cut.url=url; cut.fired=false; cut._w1=0; cut._w2=0; cut._w3=0;
+    cut.dur=({director:4.2, producer:5.4, vfx:4.8, fun:2.8})[key]||3.0;
+    dragging=false; recording=false;
+    if(key!=='fun'){ rigPivot.visible=false; barsEl.classList.add('on'); }   // full cutaway: the movie, not the monitor
+    slateEl.textContent=SLATE[key]||''; slateEl.classList.add('on');
+    hintEl.style.opacity='0';
+    boop(700,0.08,0.05); setTimeout(()=>boop(1050,0.07,0.05),110); // clap sticks
+  }
+  const easeIO=x=>x<0.5?2*x*x:1-Math.pow(-2*x+2,2)/2;
+  function makePostIt(){ refreshPostIt(); }
+  function applyResponsive(){ if(!rigPivot) return; const fw=2*Math.abs(rigBasePos.z)*Math.tan(37*Math.PI/180)*cam.aspect; const tgt=Math.min(0.58, fw*0.64); rigPivot.scale.setScalar(rigBaseScale*(tgt/0.58)); }
+  function dn(e){ if(cut.active) return; ensureAudio(); dragging=true; const p=pos(e); px=sx=p.x; py=sy=p.y; moved=0; spinning=false; velX=0; velY=0; stage.style.cursor='grabbing';
+    holdTimer=setTimeout(()=>{ if(!spinning) startRec(); },500);
+  }
+  function mv(e){ setCursor(e); if(recording) return; if(!dragging) return; const p=pos(e); const dx=p.x-px, dy=p.y-py; px=p.x; py=p.y; moved=Math.hypot(p.x-sx,p.y-sy);
+    if(moved>6){ spinning=true; if(holdTimer){clearTimeout(holdTimer); holdTimer=null;}
+      house.rotateOnWorldAxis(AY,dx*0.0008); house.rotateOnWorldAxis(AX,dy*0.0008);
+      velY=clamp(dx*0.0008,-0.04,0.04); velX=clamp(dy*0.0008,-0.04,0.04);
+    }
+  }
+  function up(e){ if(holdTimer){clearTimeout(holdTimer); holdTimer=null;} if(recording) stopRec(); dragging=false; stage.style.cursor='grab'; }
+  stage.addEventListener('mousedown',dn); window.addEventListener('mousemove',mv); window.addEventListener('mouseup',up);
+  stage.addEventListener('touchstart',dn,{passive:true}); window.addEventListener('touchmove',mv,{passive:true}); window.addEventListener('touchend',up);
+  window.addEventListener('resize',()=>{ W=stage.clientWidth; H=stage.clientHeight; cam.aspect=W/H; cam.updateProjectionMatrix(); rdr.setSize(W,H); composer.setSize(W,H); applyResponsive(); });
+  window.addEventListener('pageshow',()=>{ if(flashEl) flashEl.classList.remove('on'); cut.active=false; cut.fired=false; barsEl.classList.remove('on'); slateEl.classList.remove('on'); ca.offset.set(0.0007,0.0007); grain.blendMode.opacity.value=GRAIN_BASE; cloudMul=1; house.position.x=0; try{ stageMode(false); setWireframe(false); meadowMode(false); applyTOD(realHr()); }catch(e){} if(rigPivot.children.length) rigPivot.visible=true; hintEl.style.opacity=''; recording=false; capturing=false; pushIn=0; activeShot=null; try{ const v=getVisits(); for(const s of shots){ s.prog=0; s.captured=(v[s.key]||0)>=1; } }catch(e){} refreshPostIt(); });
+
+  // HUD draw
+  let tcFrames=0;
+  function two(n){ return (n<10?'0':'')+n; }
+  function drawHUD(){
+    hx.clearRect(0,0,RIG_W,RIG_H);
+    const m=26;
+    // corner brackets
+    hx.strokeStyle='rgba(235,240,245,0.85)'; hx.lineWidth=2; const bl=26;
+    const cs=[[m,m,1,1],[RIG_W-m,m,-1,1],[m,RIG_H-m,1,-1],[RIG_W-m,RIG_H-m,-1,-1]];
+    cs.forEach(([x,y,sxg,syg])=>{ hx.beginPath(); hx.moveTo(x,y+syg*bl); hx.lineTo(x,y); hx.lineTo(x+sxg*bl,y); hx.stroke(); });
+    // center reticle
+    hx.strokeStyle='rgba(235,240,245,0.5)'; hx.lineWidth=1.5;
+    const cx=RIG_W/2, cy=RIG_H/2;
+    hx.beginPath(); hx.moveTo(cx-12,cy); hx.lineTo(cx-4,cy); hx.moveTo(cx+4,cy); hx.lineTo(cx+12,cy);
+    hx.moveTo(cx,cy-12); hx.lineTo(cx,cy-4); hx.moveTo(cx,cy+4); hx.lineTo(cx,cy+12); hx.stroke();
+    // thirds (faint)
+    hx.strokeStyle='rgba(235,240,245,0.12)'; hx.lineWidth=1;
+    for(let i=1;i<3;i++){ hx.beginPath(); hx.moveTo(RIG_W*i/3,m); hx.lineTo(RIG_W*i/3,RIG_H-m); hx.stroke(); hx.beginPath(); hx.moveTo(m,RIG_H*i/3); hx.lineTo(RIG_W-m,RIG_H*i/3); hx.stroke(); }
+    // top-left REC / STBY + timecode
+    hx.font='600 17px "IBM Plex Mono", ui-monospace, monospace'; hx.textBaseline='middle';
+    if(recording){ tcFrames++; const blink=(Math.floor(t*2)%2===0);
+      if(blink){ hx.fillStyle='#ff3b30'; hx.beginPath(); hx.arc(m+8,m+14,7,0,7); hx.fill(); }
+      hx.fillStyle='#ff3b30'; hx.fillText('REC', m+24, m+14);
+    } else { hx.strokeStyle='rgba(235,240,245,0.7)'; hx.lineWidth=2; hx.beginPath(); hx.arc(m+8,m+14,7,0,7); hx.stroke();
+      hx.fillStyle='rgba(235,240,245,0.7)'; hx.fillText('STBY', m+24, m+14);
+    }
+    const ff2=tcFrames%24, ss=Math.floor(tcFrames/24)%60, mm=Math.floor(tcFrames/1440)%60, hh=Math.floor(tcFrames/86400)%24;
+    hx.fillStyle='rgba(235,240,245,0.9)'; hx.font='600 16px "IBM Plex Mono", ui-monospace, monospace';
+    hx.fillText(two(hh)+':'+two(mm)+':'+two(ss)+':'+two(ff2), RIG_W-128, m+14);
+    // bottom readout
+    hx.fillStyle='rgba(235,240,245,0.7)'; hx.font='600 14px "IBM Plex Mono", ui-monospace, monospace';
+    hx.fillText('4K  24fps  f2.8  ISO 800', m+2, RIG_H-m-6);
+    hx.fillText('A-CAM', RIG_W-92, RIG_H-m-6);
+    for(const m of shotHUD){
+      const sx=(m.x*0.5+0.5)*RIG_W, sy=(0.5-m.y*0.5)*RIG_H; const R=20;
+      hx.save(); hx.globalAlpha=m.on?1:0.25; hx.textAlign='center';
+      hx.strokeStyle=m.lined?'rgba(255,210,120,0.95)':'rgba(235,240,245,0.6)'; hx.lineWidth=2.5; hx.beginPath(); hx.arc(sx,sy,R,0,7); hx.stroke();
+      if(m.prog>0){ hx.strokeStyle='#ff3b30'; hx.lineWidth=4; hx.beginPath(); hx.arc(sx,sy,R,-Math.PI/2,-Math.PI/2+m.prog*Math.PI*2); hx.stroke(); }
+      hx.fillStyle=m.lined?'rgba(255,210,120,0.95)':'rgba(235,240,245,0.7)'; hx.beginPath(); hx.arc(sx,sy,2.5,0,7); hx.fill();
+      // label with dark plate for legibility (esp. small screens)
+      hx.font='700 16px "IBM Plex Mono", ui-monospace, monospace';
+      const lbl=m.label.toUpperCase(), tw=hx.measureText(lbl).width, ly=sy+R+18;
+      hx.fillStyle='rgba(8,10,14,0.72)'; const px2=8,py2=5;
+      if(hx.roundRect){ hx.beginPath(); hx.roundRect(sx-tw/2-px2, ly-11-py2/2, tw+px2*2, 22+py2, 4); hx.fill(); } else { hx.fillRect(sx-tw/2-px2, ly-11-py2/2, tw+px2*2, 22+py2); }
+      hx.fillStyle=m.lined?'rgba(255,215,130,1)':'rgba(240,244,248,0.95)'; hx.fillText(lbl, sx, ly);
+      hx.restore();
+    }
+    hx.textAlign='left';
+    hudTex.needsUpdate=true;
+  }
+
+  // lens cam state (lagged)
+  const lensPos=new THREE.Vector3(baseX,baseY,baseZ);
+  const lensTarget=new THREE.Vector3(0,2.5,0);
+  const tmpV=new THREE.Vector3(); const lensQuat=new THREE.Quaternion(); const tmpQ=new THREE.Quaternion(); lensQuat.copy(cam.quaternion);
+
+  // ===== ONBOARDING: first-visit demo + staged hints =====
+  let interacted=false;
+  stage.addEventListener('pointerdown',()=>{ interacted=true; },{once:true,capture:true});
+  const HOLD_WORD=_coarse?'hold':'click + hold';
+  function setHint(s){ hintEl.innerHTML=s; hintEl.style.opacity='0'; setTimeout(()=>{ if(!recording&&!cut.active) hintEl.style.opacity='0.85'; },350); setTimeout(()=>hintEl.style.transition='opacity .5s',0); }
+  const firstVisit=!/jjseen=1/.test(document.cookie);
+  if(firstVisit && !reduceMotion){
+    try{ document.cookie='jjseen=1;path=/;max-age=31536000'; }catch(e){}
+    setHint('you’re holding the camera — move to look around');
+    setTimeout(()=>{ if(interacted) return;                      // tiny auto-demo: camera pans + REC blips once
+      recording=true; recCX=0; recCY=0; let dt0=0;
+      const demo=setInterval(()=>{ dt0+=0.05; gnx=Math.sin(dt0*2.2)*0.35; gny=Math.sin(dt0*1.4)*0.15;
+        if(dt0>1.7){ clearInterval(demo); gnx=0; gny=0; recording=false;
+          setHint('press and hold to record a shot · line one up to step inside'); } },50);
+    },3200);
+    setTimeout(()=>{ if(!cut.active) setHint('in a hurry? the SHOT LIST ↙ is always open'); },11000);
+  } else {
+    setHint('move to frame · press and hold to record a shot · or tap the shot list ↙');
+  }
+
+  // ambient "record layer" leak: every so often the windows flicker from memory (aurora) to record (footage)
+  let nextFlick=16+Math.random()*10, flickOn=false, flickEnd=0;
+
+  let shake=0, nextShake=3+Math.random()*4;
+  function loop(){
+    t+=0.016; const dt=Math.min(capClock.getDelta(),0.05);
+    // eased cursor
+    mnx=Math.max(-1,Math.min(1,fnx+gnx)); mny=Math.max(-1,Math.min(1,fny+gny)); emnx=lerp(emnx,mnx,0.08); emny=lerp(emny,mny,0.08);
+    pushIn=lerp(pushIn, recording?1:0, 0.05);
+    if(recLightMat){ const rl=(recording||cut.active)?(2.6+Math.sin(t*5)*0.5):0.0; recLightMat.emissiveIntensity=lerp(recLightMat.emissiveIntensity, rl, 0.3); }
+
+    // house idle spin + drag inertia (weightier: momentum carries far longer)
+    if((!dragging || recording) && !(cut.active&&cut.key==='producer')){ house.rotateOnWorldAxis(AY,velY); house.rotateOnWorldAxis(AX,velX); velY*=0.95; velX*=0.95;
+      house.rotateOnWorldAxis(AY,0.0010); }
+    house.position.y=(cut.active&&cut.key==='producer')?2.3:2.5+Math.sin(t*0.7)*0.13;
+    placeSky(); if((t*30|0)%2===0) drawAurora(t);
+    if(!reduceMotion && t>nextFlick && !flickOn && !cut.active && glassMats.length){
+      makeWallVideo(); wallVideo.play().then(()=>{
+        for(const m of glassMats){ m.emissiveMap=wallVidTex; m.needsUpdate=true; }
+        flickOn=true; flickEnd=t+0.9;
+      }).catch(()=>{});
+      nextFlick=t+20+Math.random()*22;
+    }
+    if(flickOn && t>flickEnd){
+      for(const m of glassMats){ m.emissiveMap=auroraTex; m.needsUpdate=true; }
+      flickOn=false; if(wallVideo&&!stageOn) wallVideo.pause();
+    }
+    sunDisc.visible=!stageOn; moonDisc.visible=!stageOn;
+    if(tickerGrp){ tickerGrp.visible=!stageOn&&!(cut.active&&cut.key!=='fun');
+      tickerGrp.position.set(-8.4, house.position.y-4.6+Math.sin(t*0.5+1)*0.18, -4.5);
+      tickerTex.offset.x=(t*0.028)%1; }
+    gt.offset.y+=0.0016;
+
+    if(!cut.active){
+      // camera: idle shake + AIM toward cursor (point the rig where you look) + push-in on record
+      if(t>nextShake){ shake=0.0; nextShake=t+4+Math.random()*6; } shake*=0.86;
+      aimYaw=lerp(aimYaw, recording?clamp(-(emnx-recCX)*0.7,-0.5,0.5):-emnx*0.13, 0.08); aimPitch=lerp(aimPitch, recording?clamp((emny-recCY)*0.5,-0.38,0.38):emny*0.09, 0.08);
+      const _csh=shake; cam.position.set(baseX+(Math.random()-.5)*_csh, baseY+(Math.random()-.5)*_csh, baseZ);
+      cam.lookAt((Math.random()-.5)*shake*0.4, -0.4+(Math.random()-.5)*shake*0.4, -5);
+      cam.rotateY(aimYaw); cam.rotateX(aimPitch);
+      cam.fov=lerp(cam.fov, 74 - pushIn*20, 0.08);
+    } else {
+      // ===== CUT SCENES: full cutaways — we're watching the movie now =====
+      cut.t+=dt; const p=Math.min(1,cut.t/cut.dur), e=easeIO(p);
+      if(cut.key==='director'){
+        // "the wide" — truly locked off, super wide; the house flies through frame right to left
+        cam.fov=44;
+        cam.position.set(0, 3.0, 34); cam.lookAt(0, 4.5, 0);
+        house.position.x=16-32*p;
+      } else if(cut.key==='producer'){
+        // "the timelapse" — house at rest in a flowery field, camera unmoving, the day rips by
+        meadowMode(true);
+        cam.fov=46; cam.position.set(0, 3.4, 27); cam.lookAt(0, 2.2, 0);
+        applyTOD(realHr()+p*24);
+        cloudMul=9;                                    // peaceful: the day drifts, doesn't rip
+      } else if(cut.key==='vfx'){
+        // "the plate" — two shots. SHOT 1: locked wide in the sky… one clean glitch… hold on the volume.
+        // SHOT 2: cut to BTS coverage angle of the stage.
+        if(p<0.70){ cam.fov=42; cam.position.set(0, 2.8, 21); cam.lookAt(0, 2.8, 0); }
+        else { cam.fov=38; cam.position.set(0, 5.5, 47); cam.lookAt(0, 3.2, 0); }   // SHOT 2: extreme wide — whole volume in the black soundstage
+        if(p<0.40){ if(stageOn) stageMode(false); }
+        else if(p<0.45){                               // THE glitch — brief, singular
+          if(!cut._w1){ cut._w1=1; boop(160,0.09,0.07); }
+          const fl=Math.floor(p*160)%2===0; if(fl!==stageOn) stageMode(fl);
+          ca.offset.set(0.010,0.008); grain.blendMode.opacity.value=0.7;
+          setWireframe(Math.floor(p*240)%3===0);
+        } else {                                        // …and hold. Let the reveal breathe.
+          if(!stageOn) stageMode(true);
+          setWireframe(false);
+          ca.offset.set(0.0007,0.0007);
+          grain.blendMode.opacity.value=lerp(grain.blendMode.opacity.value,GRAIN_BASE,0.15);
+          if(!cut._w2&&p>=0.70){ cut._w2=1; boop(700,0.06,0.04); }   // soft cut to shot 2
+          if(!cut._w3&&p>=0.56){ cut._w3=1; makeWallVideo();          // the wall starts PLAYING JJ's work
+            wallVideo.play().catch(()=>{});
+            if(stageWall&&wallVidTex){ stageWall.material.map=wallVidTex; stageWall.material.needsUpdate=true; } }
+        }
+      } else if(cut.key==='fun'){
+        // "the toy plane" — hands keep the camera; a kid swooping it around the house
+        const ang=e*Math.PI*1.5-0.4, r=11.5-4.5*Math.sin(e*Math.PI);
+        cam.position.set(Math.sin(ang)*r, 4.2+Math.sin(e*6.0)*1.5, Math.cos(ang)*r);
+        cam.lookAt(0, 2.5+Math.sin(e*9)*0.3, 0);
+        cam.rotateZ(Math.sin(e*4.5)*0.16);
+        cam.fov=66+Math.sin(e*Math.PI)*14;
+        if(!cut._w1&&p>0.3){ cut._w1=1; boop(320,0.25,0.03); }
+        if(!cut._w2&&p>0.7){ cut._w2=1; boop(260,0.25,0.03); }
+      }
+      if(p>=1&&!cut.fired){ cut.fired=true; slateEl.classList.remove('on'); boop(2000,0.05,0.07);
+        if(flashEl) flashEl.classList.add('on'); setTimeout(()=>{ window.location.href=cut.url; },380); }
+    }
+    cam.updateProjectionMatrix();
+
+    // rig viewmodel: subtle handheld sway (rig points where the camera aims)
+    if(rigPivot.visible){
+      rigPivot.position.lerp(tmpV.set(rigBasePos.x+emnx*0.04, rigBasePos.y-emny*0.025 + pushIn*0.13, rigBasePos.z + pushIn*0.05),0.16);
+      rigPivot.rotation.y=lerp(rigPivot.rotation.y, Math.PI + emnx*0.05, 0.12);
+      rigPivot.rotation.x=lerp(rigPivot.rotation.x, emny*0.04, 0.12);
+    }
+
+    // lens camera: framed on the house, pans with the cursor, lagged a beat ("through the monitor" delay)
+    cam.updateMatrixWorld();
+    cam.getWorldPosition(tmpV); lensPos.lerp(tmpV,0.10); focusZoom=lerp(focusZoom, activeShot?(0.3+0.7*activeShot.prog):0, 0.08);
+    const _lx=recording?clamp((emnx-recCX)*3.2,-3,3):0, _ly=recording?clamp((emny-recCY)*2.4,-2.2,2.2):0; lensTarget.lerp(tmpV.set(_lx, 2.5 - _ly, 0), 0.06);
+    lensCam.position.copy(lensPos); lensCam.fov=72-focusZoom*32; lensCam.updateProjectionMatrix(); lensCam.lookAt(lensTarget);
+
+    // --- SHOTS: lined-up detection + capture meter (recording only) ---
+    shotHUD.length=0;
+    if(recording && shots.length){
+      lensCam.updateMatrixWorld(); house.getWorldPosition(_hc);
+      let best=null, bestD=1e9;
+      for(const sh of shots){ if(sh.captured) continue;
+        sh.node.getWorldPosition(_aw); _av.copy(_aw).project(lensCam);
+        const facing=_aw.clone().sub(_hc).normalize().dot(lensPos.clone().sub(_hc).normalize());
+        const on=facing>0.08 && _av.z<1 && Math.abs(_av.x)<1.3 && Math.abs(_av.y)<1.3;
+        sh._ndc={x:_av.x,y:_av.y,on:on}; sh._lined=false;
+        const d=Math.hypot(_av.x,_av.y); if(on && d<bestD){ bestD=d; best=sh; } }
+      const LOCK_IN=0.16, LOCK_OUT=0.28; if(best){ let f=(LOCK_OUT-bestD)/(LOCK_OUT-LOCK_IN); f=Math.max(-1,Math.min(1,f)); best.prog=Math.max(0,Math.min(1, best.prog+f*dt/3.0)); best._lined=f>0; activeShot=(best.prog>0.001||f>0)?best:null; } else activeShot=null;
+      for(const sh of shots){ if(sh!==best && !sh.captured) sh.prog=Math.max(0,sh.prog-dt/1.6); }
+      capShudder=activeShot?activeShot.prog:0;
+      for(const sh of shots){ if(!sh.captured && sh._ndc) shotHUD.push({x:sh._ndc.x,y:sh._ndc.y,on:sh._ndc.on,label:sh.label,prog:sh.prog,lined:sh._lined}); }
+      if(activeShot && activeShot.prog>=1 && !capturing){ capturing=true; doCapture(activeShot); }
+    } else { capShudder=0; if(!recording){ for(const sh of shots) sh.prog=Math.max(0,sh.prog-0.05); } }
+
+    // ---- PASS 1: house feed -> render target (rig hidden), then HUD overlay ----
+    drawHUD();
+    const wasVisible=rigPivot.visible; rigPivot.visible=false;
+    rdr.setRenderTarget(rt); rdr.clear(); rdr.render(scene,lensCam);
+    rdr.autoClear=false; rdr.render(hudScene,hudCam); rdr.autoClear=true;
+    rdr.setRenderTarget(null);
+    rigPivot.visible=wasVisible;
+
+    // clouds
+    if(!cut.active) cloudMul=1;
+    for(let ci=0;ci<clouds.length;ci++){ const c=clouds[ci]; c.position.z+=c.userData.speed*cloudMul; c.userData.age+=0.016;
+      const dz=c.position.z-baseZ; let op=c.userData.maxop; if(dz>-3) op=Math.max(0,c.userData.maxop*(1-(dz+3)/6));
+      op*=clamp(c.userData.age/0.8,0,1); c.material.opacity=op; if(c.position.z>baseZ+6) spawnCloud(c,false); }
+
+    // ---- PASS 2: full view with rig viewmodel ----
+    composer.render();
+    requestAnimationFrame(loop);
   }
   loop();
-})();
-</script>
+  } // end WebGL guard
+  </script>

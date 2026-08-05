@@ -1,0 +1,162 @@
+---
+/*
+  PlanetHero — alternative hero object (the "Exotic" water-world globe).
+  Vanilla three.js + pmndrs postprocessing, matching HouseHero conventions.
+  Textures live in /public/planet (albedo, normal, rough, emissive, clouds — ~1MB total).
+  Day/night city lights track the visitor's REAL local time.
+*/
+---
+<div id="planet-stage" class="planet-wrap">
+  <div class="planet-overlay">
+    <div class="n">JJ HOUSE</div>
+    <div class="s">a multidisciplinary house</div>
+  </div>
+  <div class="planet-hint" id="planet-hint">drag to spin</div>
+</div>
+
+<script>
+import * as THREE from 'three';
+import { EffectComposer, RenderPass, EffectPass, BloomEffect, NoiseEffect, VignetteEffect, ChromaticAberrationEffect, ToneMappingEffect, ToneMappingMode, BlendFunction } from 'postprocessing';
+
+const stage = document.getElementById('planet-stage');
+if (stage) {
+  let W = stage.clientWidth, H = stage.clientHeight;
+  const scene = new THREE.Scene();
+
+  // --- space backdrop ---
+  const sky = document.createElement('canvas'); sky.width = 4; sky.height = 256;
+  const sctx = sky.getContext('2d');
+  const g = sctx.createLinearGradient(0,0,0,256);
+  g.addColorStop(0,'#04050c'); g.addColorStop(0.6,'#070a16'); g.addColorStop(1,'#0a1020');
+  sctx.fillStyle = g; sctx.fillRect(0,0,4,256);
+  scene.background = new THREE.CanvasTexture(sky);
+
+  const cam = new THREE.PerspectiveCamera(42, W/H, 0.1, 200);
+  cam.position.set(0,0,27);
+
+  const rdr = new THREE.WebGLRenderer({ antialias:true, powerPreference:'high-performance' });
+  rdr.setSize(W,H); rdr.setPixelRatio(Math.min(window.devicePixelRatio,2));
+  rdr.toneMapping = THREE.NoToneMapping;
+  stage.appendChild(rdr.domElement);
+
+  const composer = new EffectComposer(rdr);
+  composer.addPass(new RenderPass(scene, cam));
+  const bloom = new BloomEffect({ intensity:1.05, luminanceThreshold:0.5, luminanceSmoothing:0.3, mipmapBlur:true, radius:0.78 });
+  const ca = new ChromaticAberrationEffect({ offset:new THREE.Vector2(0.0006,0.0006), radialModulation:false });
+  const vig = new VignetteEffect({ darkness:0.7, offset:0.3 });
+  const tone = new ToneMappingEffect({ mode: ToneMappingMode.ACES_FILMIC });
+  const grain = new NoiseEffect({ blendFunction: BlendFunction.OVERLAY }); grain.blendMode.opacity.value = 0.18;
+  composer.addPass(new EffectPass(cam, bloom, ca, vig, tone, grain));
+
+  // --- lights ---
+  const amb = new THREE.AmbientLight(0x223348, 0.35); scene.add(amb);
+  const sun = new THREE.DirectionalLight(0xfff4e6, 3.0); scene.add(sun);
+
+  // sun direction tied to visitor's local time (terminator + city lights track the clock)
+  const sunDir = new THREE.Vector3(1,0.25,0.5).normalize();
+  const uSunDir = { value: sunDir };
+  function updateSun(){
+    const now = new Date(); const hr = now.getHours() + now.getMinutes()/60;
+    const a = (hr/24) * Math.PI * 2;
+    sunDir.set(Math.cos(a), 0.28, Math.sin(a)).normalize();
+    sun.position.copy(sunDir).multiplyScalar(50);
+  }
+  updateSun();
+
+  // --- stars ---
+  const sgeo = new THREE.BufferGeometry(); const SN = 700; const spz = new Float32Array(SN*3);
+  for(let i=0;i<SN;i++){ const r=70+Math.random()*40, th=Math.random()*Math.PI*2, ph=Math.acos(Math.random()*2-1);
+    spz[i*3]=r*Math.sin(ph)*Math.cos(th); spz[i*3+1]=r*Math.cos(ph); spz[i*3+2]=r*Math.sin(ph)*Math.sin(th); }
+  sgeo.setAttribute('position', new THREE.BufferAttribute(spz,3));
+  scene.add(new THREE.Points(sgeo, new THREE.PointsMaterial({ color:0xffffff, size:0.14, sizeAttenuation:true, transparent:true, opacity:0.85 })));
+
+  // --- textures ---
+  const loader = new THREE.TextureLoader();
+  const tx = (f, srgb) => { const t = loader.load(f); t.colorSpace = srgb ? THREE.SRGBColorSpace : THREE.NoColorSpace; t.anisotropy = 4; return t; };
+  const albedo = tx('/planet/albedo.webp', true);
+  const normal = tx('/planet/normal.webp', false);
+  const rough  = tx('/planet/rough.webp',  false);
+  const emis   = tx('/planet/emissive.webp', true);
+  const cloudT = tx('/planet/clouds.webp', false);
+
+  const R = 7;
+  const spinGroup = new THREE.Group(); spinGroup.rotation.set(0.2,-1.0,0); scene.add(spinGroup);
+
+  // --- planet surface with day/night city-light mask ---
+  const pMat = new THREE.MeshStandardMaterial({
+    map:albedo, normalMap:normal, roughnessMap:rough, roughness:1.0, metalness:0.0,
+    emissive:new THREE.Color(0xffffff), emissiveMap:emis, emissiveIntensity:2.4
+  });
+  pMat.normalScale.set(1,1); // flip .y to (1,-1) if relief looks inverted
+  pMat.onBeforeCompile = (sh) => {
+    sh.uniforms.uSunDir = uSunDir;
+    sh.vertexShader = 'varying vec3 vWNrm;\n' + sh.vertexShader.replace(
+      '#include <beginnormal_vertex>',
+      '#include <beginnormal_vertex>\n  vWNrm = mat3(modelMatrix) * objectNormal;'
+    );
+    sh.fragmentShader = 'varying vec3 vWNrm;\nuniform vec3 uSunDir;\n' + sh.fragmentShader.replace(
+      '#include <emissivemap_fragment>',
+      '#include <emissivemap_fragment>\n  float ndl = dot(normalize(vWNrm), normalize(uSunDir));\n  totalEmissiveRadiance *= 1.0 - smoothstep(-0.10, 0.12, ndl);'
+    );
+  };
+  const planet = new THREE.Mesh(new THREE.SphereGeometry(R,128,64), pMat); spinGroup.add(planet);
+
+  // --- cloud shell ---
+  const cMat = new THREE.MeshStandardMaterial({ color:0xffffff, alphaMap:cloudT, transparent:true, depthWrite:false, roughness:1, metalness:0 });
+  const clouds = new THREE.Mesh(new THREE.SphereGeometry(R*1.012,96,48), cMat); spinGroup.add(clouds);
+
+  // --- atmosphere fresnel rim ---
+  const aMat = new THREE.ShaderMaterial({
+    transparent:true, blending:THREE.AdditiveBlending, side:THREE.FrontSide, depthWrite:false,
+    uniforms:{ uColor:{ value:new THREE.Color(0x39a3ff) }, uSunDir:uSunDir },
+    vertexShader:`varying vec3 vN; varying vec3 vV; varying vec3 vW;
+      void main(){ vec4 wp = modelMatrix*vec4(position,1.0); vW = normalize(mat3(modelMatrix)*normal);
+        vN = normalize(normalMatrix*normal); vec4 mv = viewMatrix*wp; vV = normalize(-mv.xyz);
+        gl_Position = projectionMatrix*mv; }`,
+    fragmentShader:`varying vec3 vN; varying vec3 vV; varying vec3 vW; uniform vec3 uColor; uniform vec3 uSunDir;
+      void main(){ float rim = pow(1.0 - max(dot(vN,vV),0.0), 3.0);
+        float day = clamp(dot(normalize(vW), normalize(uSunDir))*0.5 + 0.55, 0.0, 1.0);
+        gl_FragColor = vec4(uColor*rim*(0.35 + 0.95*day), rim); }`
+  });
+  const atmo = new THREE.Mesh(new THREE.SphereGeometry(R*1.035,96,48), aMat); scene.add(atmo);
+
+  // --- drag to spin (with inertia) ---
+  let dragging=false, px=0, py=0, vx=0, vy=0, hintGone=false;
+  const hintEl = document.getElementById('planet-hint');
+  const pp = e => { const s = e.touches&&e.touches[0] ? e.touches[0] : e; return { x:s.clientX, y:s.clientY }; };
+  const dn = e => { dragging=true; const p=pp(e); px=p.x; py=p.y; vx=vy=0; if(!hintGone){ hintGone=true; if(hintEl) hintEl.style.opacity='0'; } };
+  const mv = e => { if(!dragging) return; const p=pp(e); const dx=p.x-px, dy=p.y-py; px=p.x; py=p.y;
+    spinGroup.rotation.y += dx*0.005;
+    spinGroup.rotation.x = Math.max(-0.9, Math.min(0.9, spinGroup.rotation.x + dy*0.005));
+    vx = dx*0.005; vy = dy*0.005; };
+  const up = () => { dragging=false; };
+  stage.addEventListener('mousedown',dn); window.addEventListener('mousemove',mv); window.addEventListener('mouseup',up);
+  stage.addEventListener('touchstart',dn,{passive:true}); window.addEventListener('touchmove',mv,{passive:true}); window.addEventListener('touchend',up);
+  window.addEventListener('resize',()=>{ W=stage.clientWidth; H=stage.clientHeight; cam.aspect=W/H; cam.updateProjectionMatrix(); rdr.setSize(W,H); composer.setSize(W,H); });
+
+  function loop(){
+    if(!dragging){
+      spinGroup.rotation.y += vx || 0.0009;
+      spinGroup.rotation.x = Math.max(-0.9, Math.min(0.9, spinGroup.rotation.x + vy));
+      vx *= 0.95; vy *= 0.95;
+      if(Math.abs(vx) < 0.0009) vx = 0;
+      if(Math.abs(vy) < 0.0005) vy = 0;
+    }
+    clouds.rotation.y += 0.00025; // clouds drift relative to the surface
+    composer.render();
+    requestAnimationFrame(loop);
+  }
+  loop();
+}
+</script>
+
+<style is:global>
+  .planet-wrap{ position:relative; width:100%; height:100svh; min-height:560px; overflow:hidden; background:#04050c; cursor:grab; }
+  .planet-wrap:active{ cursor:grabbing; }
+  #planet-stage canvas{ display:block; width:100%; height:100%; }
+  .planet-overlay{ position:absolute; top:8%; left:0; width:100%; text-align:center; pointer-events:none; z-index:2; mix-blend-mode:screen; }
+  .planet-overlay .n{ font-family:'Fraunces',serif; font-weight:400; letter-spacing:0.14em; font-size:clamp(28px,5vw,64px); color:#f3eee4; }
+  .planet-overlay .s{ font-family:'Inter',sans-serif; font-weight:400; letter-spacing:0.28em; text-transform:uppercase; font-size:clamp(9px,1.1vw,12px); color:#aeb8c8; margin-top:0.4em; }
+  .planet-hint{ position:absolute; bottom:7%; left:0; width:100%; text-align:center; pointer-events:none; z-index:2;
+    font-family:'Inter',sans-serif; font-weight:400; letter-spacing:0.26em; text-transform:uppercase; font-size:11px; color:#8a94a6; transition:opacity .6s ease; }
+</style>

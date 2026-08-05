@@ -9,6 +9,8 @@
     "preview": "astro preview"
   },
   "dependencies": {
-    "astro": "latest"
+    "astro": "latest",
+    "postprocessing": "^6.39.1",
+    "three": "^0.184.0"
   }
 }

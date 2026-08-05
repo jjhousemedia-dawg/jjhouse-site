@@ -1,0 +1,243 @@
+---
+// /journey-test — PREVIZ of "The Launch": the one-page scroll-journey overhaul.
+// Blocking pass: camera grammar + beats. Placeholder copy. Not linked from the site.
+---
+<div id="stage"></div>
+<div id="tc">00:00:00:00</div>
+<div id="rec">● REC</div>
+<div class="beat" data-a="0.00" data-b="0.10">
+  <h1>JJ HOUSE</h1><p>make yourself at home</p><p class="s">scroll ↓</p>
+</div>
+<div class="beat" data-a="0.14" data-b="0.28">
+  <h2>Every hat. One head.</h2>
+  <p>[COPY BEAT 1 — the reframe: gaffer, grip, editor, producer, director. JJ writes this.]</p>
+</div>
+<div class="beat" data-a="0.32" data-b="0.44">
+  <h2>Look around.</h2>
+  <p class="s">free camera — drag to orbit</p>
+</div>
+<div class="beat" data-a="0.47" data-b="0.58">
+  <h2>Memories &amp; records.</h2>
+  <p>[COPY BEAT 3 — the thesis. JJ writes this.]</p>
+</div>
+<div class="beat" data-a="0.62" data-b="0.73">
+  <h2>The work.</h2>
+  <p class="s">free camera — the record layer</p>
+</div>
+<div class="beat" data-a="0.93" data-b="1.01">
+  <h2>Safe landing, every time.</h2>
+  <p><a class="cta" href="mailto:jj@jjhouse.me">START A PROJECT</a></p>
+</div>
+<div id="bars"><i class="t"></i><i class="b"></i></div>
+
+<style is:global>
+  *{margin:0;padding:0;box-sizing:border-box}
+  html{scroll-behavior:auto}
+  body{background:#10142e;height:900vh;font-family:var(--serif,Georgia),Georgia,serif;color:#f3efe9}
+  #stage{position:fixed;inset:0}
+  #tc{position:fixed;right:22px;top:18px;z-index:5;font-family:var(--mono,ui-monospace),monospace;font-size:12px;letter-spacing:.18em;color:#e6b873;opacity:.85}
+  #rec{position:fixed;left:22px;top:18px;z-index:5;font-family:var(--mono,ui-monospace),monospace;font-size:12px;letter-spacing:.18em;color:#ff3b30;opacity:0;transition:opacity .25s}
+  #rec.on{opacity:1;animation:blink 1s steps(2) infinite}
+  @keyframes blink{50%{opacity:.25}}
+  .beat{position:fixed;left:6vw;bottom:12vh;z-index:5;max-width:440px;opacity:0;transition:opacity .4s;pointer-events:none}
+  .beat h1{font-weight:300;font-size:clamp(44px,6vw,84px);letter-spacing:.04em}
+  .beat h2{font-weight:300;font-size:clamp(30px,4vw,54px);letter-spacing:.02em}
+  .beat p{margin-top:10px;font-size:16px;line-height:1.55;color:#d8d3c8}
+  .beat .s{font-style:italic;opacity:.7;font-size:14px}
+  .beat .cta{display:inline-block;pointer-events:auto;margin-top:8px;font-family:var(--mono,ui-monospace),monospace;font-size:13px;letter-spacing:.16em;color:#1c150a;background:#e6b873;padding:12px 22px;border-radius:6px;text-decoration:none}
+  #bars{position:fixed;inset:0;z-index:4;pointer-events:none}
+  #bars i{position:absolute;left:0;right:0;height:0;background:#000;transition:height .5s}
+  #bars .t{top:0}#bars .b{bottom:0}
+</style>
+
+<script>
+  import * as THREE from 'three';
+  import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader.js';
+  import { DRACOLoader } from 'three/examples/jsm/loaders/DRACOLoader.js';
+
+  const stage=document.getElementById('stage');
+  let W=innerWidth,H=innerHeight;
+  const scene=new THREE.Scene();
+  const cam=new THREE.PerspectiveCamera(50,W/H,0.1,600);
+  const rdr=new THREE.WebGLRenderer({antialias:true});
+  rdr.setSize(W,H); rdr.setPixelRatio(Math.min(devicePixelRatio,1.75));
+  stage.appendChild(rdr.domElement);
+
+  // ---------- world (lean rebuild of the hero vocabulary) ----------
+  const PALETTE={night:['#10142e','#232a52','#45518c'],dawn:['#2a2547','#b06a77','#f2b48c'],day:['#2e6f8e','#7fb3bd','#f0e9d4']};
+  const sky=document.createElement('canvas'); sky.width=4; sky.height=256; const sctx=sky.getContext('2d');
+  const skyTex=new THREE.CanvasTexture(sky); scene.background=skyTex;
+  function drawSky(cols,blend=0,cols2=null){
+    const g=sctx.createLinearGradient(0,0,0,256);
+    const mix=(a,b,f)=>{const pa=parseInt(a.slice(1),16),pb=parseInt(b.slice(1),16);
+      return '#'+[16,8,0].map(s=>Math.round(((pa>>s&255)*(1-f))+((pb>>s&255)*f)).toString(16).padStart(2,'0')).join('');};
+    for(let i=0;i<3;i++){ g.addColorStop(i*0.5, cols2?mix(cols[i],cols2[i],blend):cols[i]); }
+    sctx.fillStyle=g; sctx.fillRect(0,0,4,256); skyTex.needsUpdate=true;
+  }
+  drawSky(PALETTE.night);
+  scene.fog=new THREE.Fog(0x232a52,40,240);
+  const amb=new THREE.AmbientLight(0xc4d6f0,0.7); scene.add(amb);
+  const sun=new THREE.DirectionalLight(0xfff2da,1.0); sun.position.set(6,10,5); scene.add(sun);
+
+  // ground + meadow
+  const gnd=new THREE.Mesh(new THREE.CircleGeometry(300,64),new THREE.MeshStandardMaterial({color:0x3a4166,roughness:1}));
+  gnd.rotation.x=-Math.PI/2; gnd.position.y=0; scene.add(gnd);
+  const fl=(()=>{ const n=700,p=new Float32Array(n*3),c=new Float32Array(n*3);
+    const sw=[0xf0e9d4,0xffcf8a,0xc2705a,0x8d98d9].map(x=>new THREE.Color(x));
+    for(let i=0;i<n;i++){ const r=6+Math.random()*60,a=Math.random()*7;
+      p[i*3]=Math.cos(a)*r; p[i*3+1]=0.15; p[i*3+2]=Math.sin(a)*r;
+      const cc=sw[i%4]; c[i*3]=cc.r; c[i*3+1]=cc.g; c[i*3+2]=cc.b; }
+    const g=new THREE.BufferGeometry(); g.setAttribute('position',new THREE.BufferAttribute(p,3)); g.setAttribute('color',new THREE.BufferAttribute(c,3));
+    return new THREE.Points(g,new THREE.PointsMaterial({size:0.3,vertexColors:true})); })();
+  scene.add(fl);
+
+  // clouds (billboards)
+  const cloudTex=(()=>{ const c=document.createElement('canvas'); c.width=c.height=128; const g=c.getContext('2d');
+    const rg=g.createRadialGradient(64,64,4,64,64,64); rg.addColorStop(0,'rgba(255,255,255,.95)'); rg.addColorStop(1,'rgba(255,255,255,0)');
+    g.fillStyle=rg; g.fillRect(0,0,128,128); return new THREE.CanvasTexture(c); })();
+  const clouds=[];
+  for(let i=0;i<18;i++){ const s=new THREE.Sprite(new THREE.SpriteMaterial({map:cloudTex,transparent:true,opacity:0.75,depthWrite:false}));
+    s.position.set((Math.random()-.5)*160, 18+Math.random()*40, (Math.random()-.5)*160);
+    s.scale.setScalar(14+Math.random()*18); scene.add(s); clouds.push(s); }
+
+  // neighborhood (glyph houses, hidden until descent)
+  const hood=new THREE.Group(); scene.add(hood); hood.visible=false;
+  const chalk=new THREE.MeshStandardMaterial({color:0xf2ebdb,roughness:0.9});
+  const slate=new THREE.MeshStandardMaterial({color:0x2e3450,roughness:0.8});
+  for(let i=0;i<8;i++){
+    const b=new THREE.Mesh(new THREE.BoxGeometry(3,2.2,2.6),chalk);
+    const tri=new THREE.Shape(); tri.moveTo(-1.7,0); tri.lineTo(1.7,0); tri.lineTo(0,1.3); tri.closePath();
+    const r=new THREE.Mesh(new THREE.ExtrudeGeometry(tri,{depth:2.8,bevelEnabled:false}),slate); r.position.set(0,1.1,-1.4);
+    const h=new THREE.Group(); h.add(b); h.add(r);
+    const ang=(i/8)*Math.PI*2, rad=26+(i%3)*8;
+    h.position.set(Math.cos(ang)*rad,1.1,Math.sin(ang)*rad);
+    h.rotation.y=Math.random()*Math.PI; hood.add(h);
+  }
+
+  // LED volume (rules-break beat)
+  const volume=new THREE.Group(); scene.add(volume); volume.visible=false;
+  const ledC=document.createElement('canvas'); ledC.width=512; ledC.height=256; const lg=ledC.getContext('2d');
+  lg.fillStyle='#2fbf5a'; lg.fillRect(0,0,512,256);
+  lg.strokeStyle='rgba(0,0,0,.15)'; for(let x=0;x<=512;x+=32){lg.beginPath();lg.moveTo(x,0);lg.lineTo(x,256);lg.stroke();}
+  for(let y=0;y<=256;y+=32){lg.beginPath();lg.moveTo(0,y);lg.lineTo(512,y);lg.stroke();}
+  const ledTex=new THREE.CanvasTexture(ledC);
+  const wall=new THREE.Mesh(new THREE.CylinderGeometry(30,30,26,48,1,true,Math.PI*0.6,Math.PI*0.8),
+    new THREE.MeshBasicMaterial({map:ledTex,side:THREE.BackSide,toneMapped:false}));
+  wall.position.y=6; volume.add(wall);
+  const vfloor=new THREE.Mesh(new THREE.CircleGeometry(40,48),new THREE.MeshStandardMaterial({color:0x8e9296,roughness:0.4}));
+  vfloor.rotation.x=-Math.PI/2; vfloor.position.y=-0.02; volume.add(vfloor);
+
+  // the house
+  const house=new THREE.Group(); scene.add(house);
+  const draco=new DRACOLoader(); draco.setDecoderPath('https://www.gstatic.com/draco/v1/decoders/');
+  const loader=new GLTFLoader(); loader.setDRACOLoader(draco);
+  const houseMats=[];
+  loader.load('/house_anchored.glb',(g)=>{
+    const root=g.scene;
+    root.traverse(o=>{ if(o.isMesh&&o.material){ const ms=Array.isArray(o.material)?o.material:[o.material];
+      ms.forEach(m=>{ if(!m||!m.color) return; houseMats.push(m);
+        if(/glass|lite|_gl/i.test(m.name||'')){ m.color.set(0x0d1018); m.emissive=new THREE.Color(0xffcf8a); m.emissiveIntensity=1.2; }
+        else { m.color.set(0xf2ebdb); m.map=null; m.metalness=0; m.roughness=0.9; } }); } });
+    const box=new THREE.Box3().setFromObject(root), c=box.getCenter(new THREE.Vector3()), s=box.getSize(new THREE.Vector3());
+    root.position.sub(c); root.scale.setScalar(9/Math.max(s.x,s.y,s.z));
+    house.add(root);
+  });
+
+  // ---------- the scroll timeline ----------
+  // camera keys: [p, camX,camY,camZ, lookX,lookY,lookZ, fov, letterbox(0/1)]
+  const KEYS=[
+    [0.00,  4.5, 2.2, 9,   0, 2.2, 0,  40, 0],   // still life: close on door, night
+    [0.12,  6, 3.5, 14,    0, 2.5, 0,  46, 1],   // pull back — something stirs
+    [0.22,  8, 12, 22,     0, 9, 0,   50, 1],    // craning up with the launch
+    [0.32,  12, 16, 18,    0, 15, 0,  52, 0],    // CHECKPOINT A base framing (flight)
+    [0.44,  12, 16, 18,    0, 15, 0,  52, 1],
+    [0.50,  0, 8, 26,      0, 6, 0,   46, 1],    // rules break: the volume
+    [0.62,  16, 4, 20,     0, 5, 0,   48, 0],    // CHECKPOINT B base framing (stage)
+    [0.73,  16, 4, 20,     0, 5, 0,   48, 1],
+    [0.82,  10, 22, 30,    0, 8, 0,   50, 1],    // descent begins, high wide
+    [0.93,  7, 4, 18,      0, 2.2, 0, 44, 1],    // gliding in over the neighborhood
+    [1.00,  5, 2.6, 12,    0, 2.0, 0, 42, 0],    // settled. golden hour.
+  ];
+  const lerp=(a,b,f)=>a+(b-a)*f;
+  // linear within segments — smoothness comes from the damped scrub, so key
+  // boundaries no longer reset easing curves (this was the "jumpy" feel)
+  function sampleKeys(p){
+    let i=0; while(i<KEYS.length-2 && KEYS[i+1][0]<p) i++;
+    const A=KEYS[i],B=KEYS[i+1];
+    const f=Math.max(0,Math.min(1,(p-A[0])/((B[0]-A[0])||1)));
+    return A.map((v,k)=>k===0?p:lerp(v,B[k],f));
+  }
+  // CAPTURED SHOTS — scroll crosses a mark and the scene briefly films itself:
+  // a composed 1.8s move independent of scroll velocity, then control returns.
+  const SHOTS=[{at:0.13,dur:1.8,done:false},{at:0.47,dur:1.8,done:false},{at:0.94,dur:2.0,done:false}];
+  let shot=null, shotT=0;
+  // beats where the camera unlocks for free-look
+  const FREE=[[0.32,0.44],[0.62,0.73]];
+
+  let target=0, p=0, orbX=0, orbY=0, tOrbX=0, tOrbY=0, dragging=false, lx=0, ly=0;
+  addEventListener('scroll',()=>{ target=scrollY/(document.body.scrollHeight-innerHeight); },{passive:true});
+  addEventListener('mousedown',e=>{ dragging=true; lx=e.clientX; ly=e.clientY; });
+  addEventListener('mousemove',e=>{ if(dragging){ tOrbX+=(e.clientX-lx)*0.005; tOrbY=Math.max(-0.5,Math.min(0.5,tOrbY+(e.clientY-ly)*0.003)); lx=e.clientX; ly=e.clientY; } });
+  addEventListener('mouseup',()=>dragging=false);
+  addEventListener('resize',()=>{ W=innerWidth;H=innerHeight;cam.aspect=W/H;cam.updateProjectionMatrix();rdr.setSize(W,H); });
+
+  const beats=[...document.querySelectorAll('.beat')];
+  const tcEl=document.getElementById('tc');
+  const barT=document.querySelector('#bars .t'), barB=document.querySelector('#bars .b');
+  const two=n=>(n<10?'0':'')+n;
+
+  const recEl=document.getElementById('rec');
+  let t=0;
+  function loop(){
+    t+=0.016;
+    if(!shot){ const s=SHOTS.find(s=>!s.done&&p>=s.at); if(s){ s.done=true; shot=s; shotT=0; recEl.classList.add('on'); } }
+    if(shot){ shotT+=0.016; if(shotT>=shot.dur){ shot=null; recEl.classList.remove('on'); } }
+    if(!shot) p=lerp(p,target,0.045);                  // damped scrub — the "one take" feel (frozen while a shot is captured)
+    const K=sampleKeys(p);
+    // world state by progress
+    const launch=Math.max(0,Math.min(1,(p-0.10)/0.14));
+    const eL=launch<.5?2*launch*launch:1-Math.pow(-2*launch+2,2)/2;
+    const inVolume=p>0.46&&p<0.60;
+    const landing=Math.max(0,Math.min(1,(p-0.80)/0.16));
+    const eLand=landing<.5?2*landing*landing:1-Math.pow(-2*landing+2,2)/2;
+    let hy=1.15+eL*14;                                  // launch: ground → sky
+    if(landing>0) hy=15.15-eLand*13.0;                  // descent: sky → settled
+    if(!inVolume) hy+=Math.sin(t*0.7)*0.12*Math.min(1,eL)*(1-eLand);
+    house.position.y=hy;
+    house.rotation.y+= (p>0.12&&p<0.80?0.0012:0.0002);
+    // register shifts
+    volume.visible=inVolume; gnd.visible=!inVolume; fl.visible=!inVolume&&p<0.5; hood.visible=p>0.78;
+    clouds.forEach(c=>c.visible=!inVolume&&p>0.14);
+    if(inVolume){ scene.background=new THREE.Color(0x0c0d10); scene.fog.near=400; }
+    else { scene.background=skyTex; scene.fog.near=40;
+      if(p<0.30) drawSky(PALETTE.night);
+      else if(p<0.60) drawSky(PALETTE.night,Math.min(1,(p-0.30)/0.3),PALETTE.dawn);
+      else drawSky(PALETTE.dawn,Math.min(1,(p-0.60)/0.3),PALETTE.day);
+    }
+    // wireframe flash entering the volume
+    const wf=(p>0.455&&p<0.475);
+    houseMats.forEach(m=>{ if(m.wireframe!==wf) m.wireframe=wf; });
+    // camera: keyframed, plus orbit inside FREE windows
+    const free=FREE.some(([a,b])=>p>=a&&p<=b);
+    orbX=lerp(orbX,free?tOrbX:0,0.08); orbY=lerp(orbY,free?tOrbY:0,0.08);
+    if(!free){ tOrbX*=0.95; tOrbY*=0.95; }
+    const R=Math.hypot(K[1],K[3]);
+    const baseA=Math.atan2(K[1],K[3]);
+    cam.position.set(Math.sin(baseA+orbX)*R, K[2]+orbY*8, Math.cos(baseA+orbX)*R);
+    cam.lookAt(K[4],K[5]+ (house.position.y-2.2)*(p>0.1&&p<0.9?0.9:0), K[6]+ (p>0.1&&p<0.9?0:0));
+    // captured-shot override: slow confident push-in while scroll is held
+    let fovAdj=0;
+    if(shot){ const q=Math.min(1,shotT/shot.dur), eq=q<.5?2*q*q:1-Math.pow(-2*q+2,2)/2;
+      fovAdj=-7*eq; cam.position.y+=eq*0.6; }
+    cam.fov=K[7]+fovAdj; cam.updateProjectionMatrix();
+    // letterbox + copy + timecode
+    const lb=shot?9:K[8]*7;
+    barT.style.height=lb+'vh'; barB.style.height=lb+'vh';
+    beats.forEach(b=>{ const a=+b.dataset.a, z=+b.dataset.b; b.style.opacity=(p>=a&&p<=z)?1:0; });
+    const fr=Math.floor(p*24*60);
+    tcEl.textContent='00:'+two(Math.floor(fr/1440))+':'+two(Math.floor(fr/24)%60)+':'+two(fr%24);
+    rdr.render(scene,cam);
+    requestAnimationFrame(loop);
+  }
+  loop();
+</script>

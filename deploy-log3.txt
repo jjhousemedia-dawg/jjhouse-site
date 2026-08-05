@@ -1,0 +1,65 @@
+=== DEPLOY === 
+Vercel CLI 55.0.0 (Node.js 24.16.0)
+Retrieving project…
+Deploying jj-2698s-projects/jjhouse-site
+Uploading [--------------------] (0.0B/91.3KB)
+Uploading [=======-------------] (33.4KB/91.3KB)
+Uploading [===========---------] (52.3KB/91.3KB)
+Uploading [================----] (73.4KB/91.3KB)
+Uploading [====================] (91.3KB/91.3KB)
+  Inspect         https://vercel.com/jj-2698s-projects/jjhouse-site/13v4t5VwBh88B76ZzQr5NLoDfzpw
+  Production      https://jjhouse-site-ifoyo410k-jj-2698s-projects.vercel.app
+https://jjhouse-site-ifoyo410k-jj-2698s-projects.vercel.appBuilding…
+Building…
+Running build in Washington, D.C., USA (East) – iad1
+Build machine configuration: 2 cores, 8 GB
+Retrieving list of deployment files...
+Downloading 145 deployment files...
+Restored build cache from previous deployment (HQ1iB4qc3uSitN1GZxt74p94SRYJ)
+Running "vercel build"
+Vercel CLI 55.0.0
+Installing dependencies...
+up to date in 814ms
+139 packages are looking for funding
+run `npm fund` for details
+Running "npm run build"
+> jjhouse@0.1.0 build
+> astro build
+08:29:24 [types] Generated 56ms
+08:29:24 [build] output: "static"
+08:29:24 [build] mode: "static"
+08:29:24 [build] directory: /vercel/path0/dist/
+08:29:24 [build] Collecting build info...
+08:29:24 [build] ✓ Completed in 81ms.
+08:29:24 [build] Building static entrypoints...
+08:29:26 [vite] ✓ built in 1.70s
+08:29:28 [WARN] [vite]
+(!) Some chunks are larger than 500 kB after minification. Consider:
+- Using dynamic import() to code-split the application
+- Use build.rollupOptions.output.manualChunks to improve chunking: https://rollupjs.org/configuration-options/#output-manualchunks
+- Adjust chunk size limit for this warning via build.chunkSizeWarningLimit.
+08:29:28 [vite] ✓ built in 2.11s
+08:29:28 [build] Rearranging server assets...
+generating static routes
+08:29:28   ├─ /about/index.html (+12ms)
+08:29:28   ├─ /camera-test/index.html (+3ms)
+08:29:28   ├─ /director/index.html (+4ms)
+08:29:28   ├─ /for-fun/index.html (+3ms)
+08:29:28   ├─ /glyph-test/index.html (+3ms)
+08:29:28   ├─ /journey-test/index.html (+2ms)
+08:29:28   ├─ /planet-test/index.html (+6ms)
+08:29:28   ├─ /producer/index.html (+4ms)
+08:29:28   ├─ /vfx-edit/index.html (+3ms)
+08:29:28   ├─ /index.html (+2ms)
+08:29:28 ✓ Completed in 59ms.
+08:29:28 [build] ✓ Completed in 3.95s.
+08:29:28 [build] 10 page(s) built in 4.05s
+08:29:28 [build] Complete!
+Build Completed in /vercel/output [6s]
+Deploying outputs...
+[2K[1A[2K[G  Production      https://jjhouse-site-ifoyo410k-jj-2698s-projects.vercel.app
+Completing…
+▲ Aliased         https://jj.house
+
+✓ Ready in 12s
+EXIT 0 

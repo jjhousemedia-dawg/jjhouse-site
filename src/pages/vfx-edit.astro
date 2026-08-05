@@ -4,6 +4,6 @@ import ReelSection from '../components/ReelSection.astro';
 import data from '../data/reels.json';
 const s = data['vfx-edit'];
 ---
-<Base title="VFX + Edit — JJ House" desc={s.lede}>
+<Base title="VFX + Edit — JJ House" desc={s.lede} bare={true}>
   <ReelSection section={s} />
 </Base>

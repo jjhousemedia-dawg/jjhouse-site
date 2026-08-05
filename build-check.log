@@ -1,0 +1,34 @@
+=== BUILD CHECK === 
+[2m01:27:55[22m [34m[types][39m Generated [2m47ms[22m
+[2m01:27:55[22m [34m[build][39m output: [34m"static"[39m
+[2m01:27:55[22m [34m[build][39m mode: [34m"static"[39m
+[2m01:27:55[22m [34m[build][39m directory: [34mC:\Users\jjhou\jjhouse-site\dist\[39m
+[2m01:27:55[22m [34m[build][39m Collecting build info...
+[2m01:27:55[22m [34m[build][39m [32m✓ Completed in 70ms.[39m
+[2m01:27:55[22m [34m[build][39m Building static entrypoints...
+[2m01:27:56[22m [34m[vite][39m [32m✓ built in 1.34s[39m
+[33m[1m01:27:58[22m [WARN] [vite][39m [33m
+(!) Some chunks are larger than 500 kB after minification. Consider:
+- Using dynamic import() to code-split the application
+- Use build.rollupOptions.output.manualChunks to improve chunking: https://rollupjs.org/configuration-options/#output-manualchunks
+- Adjust chunk size limit for this warning via build.chunkSizeWarningLimit.[39m
+[2m01:27:58[22m [34m[vite][39m [32m✓ built in 2.04s[39m
+[2m01:27:58[22m [34m[build][39m Rearranging server assets...
+
+[42m[30m generating static routes [39m[49m
+[2m01:27:58[22m   [34m├─[39m [2m/about/index.html[22m [2m(+16ms)[22m 
+[2m01:27:58[22m   [34m├─[39m [2m/camera-test/index.html[22m [2m(+5ms)[22m 
+[2m01:27:58[22m   [34m├─[39m [2m/director/index.html[22m [2m(+7ms)[22m 
+[2m01:27:58[22m   [34m├─[39m [2m/for-fun/index.html[22m [2m(+4ms)[22m 
+[2m01:27:58[22m   [34m├─[39m [2m/glyph-test/index.html[22m [2m(+4ms)[22m 
+[2m01:27:58[22m   [34m├─[39m [2m/journey-test/index.html[22m [2m(+4ms)[22m 
+[2m01:27:58[22m   [34m├─[39m [2m/planet-test/index.html[22m [2m(+4ms)[22m 
+[2m01:27:58[22m   [34m├─[39m [2m/producer/index.html[22m [2m(+5ms)[22m 
+[2m01:27:58[22m   [34m├─[39m [2m/vfx-edit/index.html[22m [2m(+5ms)[22m 
+[2m01:27:58[22m   [34m├─[39m [2m/index.html[22m [2m(+5ms)[22m 
+[2m01:27:58[22m [32m✓ Completed in 77ms.
+[39m
+[2m01:27:58[22m [34m[build][39m [32m✓ Completed in 3.53s.[39m
+[2m01:27:58[22m [34m[build][39m 10 page(s) built in [1m3.62s[22m
+[2m01:27:58[22m [34m[build][39m [1mComplete![22m
+BUILD_OK  

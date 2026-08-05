@@ -1,13 +1,117 @@
 ---
 import Base from '../layouts/Base.astro';
 ---
-<Base title="About — JJ House" desc="About JJ House — multidisciplinary creative, director and producer.">
-  <section class="section">
-    <div class="wrap" style="max-width:760px">
-      <h1>About</h1>
-      <p class="lede">JJ House works across video, editing, and digital media — crafting content at the intersection of storytelling, design, and culture. Always exploring new media, dissecting how platforms shape storytelling, and thinking about where content is headed next.</p>
-      <p style="color:var(--muted);max-width:62ch">To him, design is, itself, the idea — the space where new possibilities emerge and take form. Co-founder of West of 20.</p>
-      <p style="margin-top:32px"><a class="btn" href="mailto:jj@jjhouse.me">jj@jjhouse.me</a></p>
+<Base title="About — JJ House" desc="About JJ House — multidisciplinary creative, director and producer." bare={true}>
+  <div id="sat-stage"></div>
+  <a class="ab-back" href="/">↖ back to the house</a>
+  <section class="ab-card" aria-label="About JJ House">
+    <h1>JJ House</h1>
+    <p class="ab-lede">Director &amp; creative producer — video, edit, VFX, and digital media. Making memories and digital records of things.</p>
+    <p class="ab-body">Design is, itself, the idea — the space where new possibilities emerge and take form. Co-founder of <b>West of 20</b>.</p>
+    <div class="ab-actions">
+      <a class="ab-btn" href="mailto:jj@jjhouse.me">SEND TRANSMISSION</a>
+      <a class="ab-lnk" href="https://www.imdb.com/name/nm7420692/" target="_blank" rel="noopener">IMDb</a>
+      <a class="ab-lnk" href="https://www.instagram.com/jj.duplex/" target="_blank" rel="noopener">Instagram</a>
     </div>
+    <div class="ab-tag" id="abTag">UPLINK: ACQUIRING…</div>
   </section>
+</Base>
+
+<style is:global>
+  html,body{height:100%;background:#10142e;overflow:hidden}
+  body.landing main{height:100svh}
+  #sat-stage{position:fixed;inset:0}
+  .ab-back{position:fixed;left:26px;top:22px;z-index:5;font-family:var(--serif);font-style:italic;font-size:15px;color:#cfd4e6;text-shadow:0 1px 10px rgba(0,0,0,.5)}
+  .ab-back:hover{color:#fff}
+  .ab-card{position:fixed;left:50%;bottom:8vh;transform:translateX(-50%);z-index:5;width:min(560px,calc(100vw - 40px));
+    background:rgba(12,15,32,.72);backdrop-filter:blur(10px);border:1px solid rgba(230,184,115,.25);border-radius:10px;padding:26px 28px 20px;color:#f3efe9}
+  .ab-card h1{font-family:var(--serif);font-weight:300;font-size:34px;margin:0 0 8px;letter-spacing:.04em}
+  .ab-lede{font-family:var(--serif);font-style:italic;font-size:16px;color:#e8e0d2;margin:0 0 10px}
+  .ab-body{font-size:14px;color:#b9bdd0;margin:0 0 18px;line-height:1.6}
+  .ab-actions{display:flex;gap:14px;align-items:center;flex-wrap:wrap}
+  .ab-btn{font-family:var(--mono),monospace;font-size:12px;letter-spacing:.16em;color:#1c150a;background:#e6b873;padding:10px 18px;border-radius:5px}
+  .ab-btn:hover{background:#f2d0a0}
+  .ab-lnk{font-size:12px;letter-spacing:.1em;text-transform:uppercase;color:#9ba1bd}
+  .ab-lnk:hover{color:#fff}
+  .ab-tag{margin-top:16px;font-family:var(--mono),monospace;font-size:10px;letter-spacing:.2em;color:#8d98d9;opacity:.8}
+  @media (max-width:640px){ .ab-card{bottom:4vh;padding:20px 18px 16px} .ab-card h1{font-size:27px} }
+</style>
+
+<script>
+  import * as THREE from 'three';
+  const stage=document.getElementById('sat-stage');
+  let W=innerWidth,H=innerHeight;
+  const scene=new THREE.Scene();
+  const cam=new THREE.PerspectiveCamera(58,W/H,0.1,600); cam.position.set(0,0,26);
+  let rdr; try{ rdr=new THREE.WebGLRenderer({antialias:true}); }catch(e){ /* static fallback: card still works */ }
+  if(rdr){
+  rdr.setSize(W,H); rdr.setPixelRatio(Math.min(devicePixelRatio,2)); stage.appendChild(rdr.domElement);
+
+  // palette sky by local time (same ramps as home)
+  const ph=[
+    {t:[0x10142e,0x232a52,0x45518c],ni:1},{t:[0x2a2547,0xb06a77,0xf2b48c],ni:.2},
+    {t:[0x2e6f8e,0x7fb3bd,0xf0e9d4],ni:0},{t:[0x33203f,0xc2705a,0xf0c07a],ni:.15}
+  ].map(p=>({c0:new THREE.Color(p.t[0]),c1:new THREE.Color(p.t[1]),c2:new THREE.Color(p.t[2]),ni:p.ni}));
+  const sky=document.createElement('canvas'); sky.width=4; sky.height=256; const sctx=sky.getContext('2d');
+  const skyTex=new THREE.CanvasTexture(sky); scene.background=skyTex;
+  const now=new Date(),hr=now.getHours()+now.getMinutes()/60,PP=(hr/6)%4,s0=Math.floor(PP)%4,f0=PP-Math.floor(PP),A=ph[s0],B=ph[(s0+1)%4];
+  const g=sctx.createLinearGradient(0,0,0,256);
+  g.addColorStop(0,A.c0.clone().lerp(B.c0,f0).getStyle());
+  g.addColorStop(.55,A.c1.clone().lerp(B.c1,f0).getStyle());
+  g.addColorStop(1,A.c2.clone().lerp(B.c2,f0).getStyle());
+  sctx.fillStyle=g; sctx.fillRect(0,0,4,256); skyTex.needsUpdate=true;
+  const night=A.ni+(B.ni-A.ni)*f0;
+
+  scene.add(new THREE.AmbientLight(0xdfe4f5,0.8));
+  const sun=new THREE.DirectionalLight(0xfff2da,1.1); sun.position.set(8,6,10); scene.add(sun);
+
+  // stars
+  const sn=420,sp=new Float32Array(sn*3);
+  for(let i=0;i<sn;i++){ sp[i*3]=(Math.random()-.5)*220; sp[i*3+1]=(Math.random()-.5)*140; sp[i*3+2]=-60-Math.random()*80; }
+  const sg=new THREE.BufferGeometry(); sg.setAttribute('position',new THREE.BufferAttribute(sp,3));
+  const stars=new THREE.Points(sg,new THREE.PointsMaterial({color:0xffffff,size:0.3,transparent:true,opacity:0.3+night*0.7}));
+  scene.add(stars);
+
+  // the planet below — the world the house flies over
+  const planet=new THREE.Mesh(new THREE.SphereGeometry(60,48,32),
+    new THREE.MeshStandardMaterial({color:0x3a4166,roughness:1,flatShading:true}));
+  planet.position.set(0,-72,-30); scene.add(planet);
+  const rim=new THREE.Mesh(new THREE.SphereGeometry(60.6,48,32),
+    new THREE.MeshBasicMaterial({color:0x8d98d9,transparent:true,opacity:0.14,side:THREE.BackSide}));
+  rim.position.copy(planet.position); scene.add(rim);
+
+  // SATELLITE — clay body, palette panels, blinking beacon
+  const sat=new THREE.Group();
+  const clay=new THREE.MeshStandardMaterial({color:0xf2ebdb,roughness:0.85});
+  const body=new THREE.Mesh(new THREE.CylinderGeometry(0.9,0.9,2.6,10),clay); body.rotation.z=Math.PI/2; sat.add(body);
+  const dish=new THREE.Mesh(new THREE.SphereGeometry(0.85,16,12,0,Math.PI*2,0,Math.PI/2.4),clay);
+  dish.rotation.x=Math.PI/2; dish.position.set(0,1.15,0); sat.add(dish);
+  const panelMat=new THREE.MeshStandardMaterial({color:0x2e6f8e,roughness:0.4,metalness:0.25});
+  for(const sx of [-1,1]){
+    const p=new THREE.Mesh(new THREE.BoxGeometry(3.6,0.06,1.7),panelMat);
+    p.position.set(sx*3.4,0,0); sat.add(p);
+    const arm=new THREE.Mesh(new THREE.CylinderGeometry(0.05,0.05,1.7,6),clay);
+    arm.rotation.z=Math.PI/2; arm.position.set(sx*2.15,0,0); sat.add(arm);
+  }
+  const beaconMat=new THREE.MeshStandardMaterial({color:0x331111,emissive:0xff3b30,emissiveIntensity:0});
+  const beacon=new THREE.Mesh(new THREE.SphereGeometry(0.16,10,8),beaconMat); beacon.position.set(-1.5,0.5,0); sat.add(beacon);
+  scene.add(sat);
+
+  const tag=document.getElementById('abTag');
+  let t=0, uplinked=false;
+  function loop(){
+    t+=0.016;
+    const px=-34+((t*2.2)%68);                       // slow pass, loops
+    sat.position.set(px, 6.5+Math.sin(t*0.6)*0.8, -6);
+    sat.rotation.y=t*0.12; sat.rotation.z=Math.sin(t*0.4)*0.08;
+    beaconMat.emissiveIntensity=(Math.floor(t*1.6)%2===0)?2.4:0.1;
+    stars.rotation.z+=0.00012;
+    if(!uplinked&&t>2.4){ uplinked=true; tag.textContent='UPLINK: LOCKED · TRANSMITTING FROM THE HOUSE'; }
+    rdr.render(scene,cam);
+    requestAnimationFrame(loop);
+  }
+  addEventListener('resize',()=>{W=innerWidth;H=innerHeight;cam.aspect=W/H;cam.updateProjectionMatrix();rdr.setSize(W,H);});
+  loop();
+  }
+</script>
 </Base>

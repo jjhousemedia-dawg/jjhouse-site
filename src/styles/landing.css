@@ -1,0 +1,7 @@
+/* Landing page: no scroll, full-viewport hero, no chrome. Imported by global.css. */
+html, body.landing { overflow: hidden; }
+body.landing { height: 100vh; height: 100svh; margin: 0; }
+body.landing main { height: 100vh; height: 100svh; }
+body.landing .hero-wrap { height: 100vh; height: 100svh; min-height: 0; }
+/* Stop the page from panning/zooming when you flick the house on touch devices */
+.hero-wrap { touch-action: none; overscroll-behavior: none; -webkit-user-select: none; user-select: none; }

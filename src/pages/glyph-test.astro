@@ -1,0 +1,174 @@
+---
+// /glyph-test — abstraction lab: glyph house, shapeshifter readings, cel/toon pass.
+// Not linked from the site. React to it, then we decide what graduates to the hero.
+---
+<div id="stage"></div>
+<div id="ui">
+  <b>THE HOUSE, INFERRED</b>
+  <button data-m="glyph" class="on">glyph</button>
+  <button data-m="construction">under construction</button>
+  <button data-m="exploded">exploded</button>
+  <button data-m="toy">toy</button>
+  <label><input type="checkbox" id="cel" checked> cel shading</label>
+  <label><input type="checkbox" id="tod" checked> time of day</label>
+</div>
+
+<style is:global>
+  *{margin:0;padding:0;box-sizing:border-box}
+  html,body{height:100%;background:#10142e;overflow:hidden}
+  #stage{position:fixed;inset:0}
+  #ui{position:fixed;left:20px;bottom:20px;z-index:5;display:flex;gap:8px;align-items:center;flex-wrap:wrap;
+    font-family:ui-monospace,monospace;font-size:12px;color:#ece7db}
+  #ui b{letter-spacing:.18em;font-size:10px;opacity:.7;width:100%}
+  #ui button{background:rgba(16,20,46,.6);border:1px solid rgba(236,231,219,.35);color:#ece7db;
+    padding:6px 12px;border-radius:999px;cursor:pointer;letter-spacing:.08em}
+  #ui button.on{background:#e6b873;color:#1c150a;border-color:#e6b873}
+  #ui label{display:flex;gap:5px;align-items:center;opacity:.85;cursor:pointer}
+</style>
+
+<script>
+  import * as THREE from 'three';
+
+  const stage=document.getElementById('stage');
+  let W=innerWidth,H=innerHeight;
+  const scene=new THREE.Scene();
+  const cam=new THREE.PerspectiveCamera(42,W/H,0.1,300);
+  cam.position.set(9,5.5,14); cam.lookAt(0,1.6,0);
+  const rdr=new THREE.WebGLRenderer({antialias:true});
+  rdr.setSize(W,H); rdr.setPixelRatio(Math.min(devicePixelRatio,2));
+  stage.appendChild(rdr.domElement);
+
+  // ---- palette (LOCKED) ----
+  const P={chalk:0xe8e0d2,slate:0x2e3450,clay:0xb07a5e,teal:0x2e6f8e,found:0x6a7078,amber:0xffcf8a,sage:0x6f8a7c};
+  const ph=[
+    {t:[0x10142e,0x232a52,0x45518c],fog:0x232a52,gnd:0x3a4166,amb:0.45,sun:0.4},
+    {t:[0x2a2547,0xb06a77,0xf2b48c],fog:0xcf9284,gnd:0x8a6a6e,amb:0.65,sun:0.95},
+    {t:[0x2e6f8e,0x7fb3bd,0xf0e9d4],fog:0xa9c4c2,gnd:0x6f8a7c,amb:0.85,sun:1.15},
+    {t:[0x33203f,0xc2705a,0xf0c07a],fog:0xcf8a5f,gnd:0x8a6350,amb:0.65,sun:1.05}
+  ].map(p=>({...p,c0:new THREE.Color(p.t[0]),c1:new THREE.Color(p.t[1]),c2:new THREE.Color(p.t[2]),
+    fc:new THREE.Color(p.fog),gc:new THREE.Color(p.gnd)}));
+
+  const sky=document.createElement('canvas'); sky.width=4; sky.height=256; const sctx=sky.getContext('2d');
+  const skyTex=new THREE.CanvasTexture(sky); scene.background=skyTex;
+  scene.fog=new THREE.Fog(0x232a52,30,120);
+  function drawSky(a,b,c){const g=sctx.createLinearGradient(0,0,0,256);g.addColorStop(0,a);g.addColorStop(.55,b);g.addColorStop(1,c);sctx.fillStyle=g;sctx.fillRect(0,0,4,256);skyTex.needsUpdate=true;}
+
+  const amb=new THREE.AmbientLight(0xffffff,0.7); scene.add(amb);
+  const sun=new THREE.DirectionalLight(0xfff2da,1.1); sun.position.set(6,10,5); scene.add(sun);
+
+  // ---- toon ramp (3 steps) ----
+  const ramp=new THREE.DataTexture(new Uint8Array([70,70,70,255, 160,160,160,255, 255,255,255,255]),3,1);
+  ramp.needsUpdate=true; ramp.minFilter=ramp.magFilter=THREE.NearestFilter;
+  let CEL=true;
+  const mats=[];
+  function M(color,{emissive=0,rough=0.85}={}){
+    const toon=new THREE.MeshToonMaterial({color,gradientMap:ramp});
+    const std=new THREE.MeshStandardMaterial({color,roughness:rough});
+    if(emissive){ toon.emissive=new THREE.Color(color); toon.emissiveIntensity=emissive;
+      std.emissive=new THREE.Color(color); std.emissiveIntensity=emissive; }
+    const rec={toon,std,holder:{mat:toon}}; mats.push(rec); return rec;
+  }
+  function applyCel(on){ CEL=on; for(const r of mats) r.holder.mat=on?r.toon:r.std;
+    root.traverse(o=>{ if(o.isMesh&&o.userData.rec) o.material=o.userData.rec.holder.mat; }); }
+
+  // outline: inverted hull
+  const outlineMat=new THREE.MeshBasicMaterial({color:0x14121a,side:THREE.BackSide});
+  function mesh(geo,rec,outline=true,fat=0.035){
+    const m=new THREE.Mesh(geo,rec.holder.mat); m.userData.rec=rec;
+    if(outline){ const o=new THREE.Mesh(geo,outlineMat); o.scale.setScalar(1+fat); o.userData.isOutline=true; m.add(o); }
+    return m;
+  }
+
+  // ---- THE GLYPH: six volumes ----
+  const mChalk=M(P.chalk), mSlate=M(P.slate), mClay=M(P.clay), mTeal=M(P.teal),
+        mFound=M(P.found), mGlow=M(P.amber,{emissive:0.9}), mSage=M(P.sage);
+  const root=new THREE.Group(); scene.add(root);
+  const parts=[];  // {mesh, home:{p,r,s}, explodeDir}
+  function part(m,x,y,z,dir){ m.position.set(x,y,z); root.add(m);
+    parts.push({m,home:new THREE.Vector3(x,y,z),dir:dir.clone().normalize()}); return m; }
+
+  // body
+  part(mesh(new THREE.BoxGeometry(3.6,2.2,2.6),mChalk),0,1.1,0,new THREE.Vector3(0,-0.4,0.6));
+  // roof — triangular prism
+  const tri=new THREE.Shape(); tri.moveTo(-2.05,0); tri.lineTo(2.05,0); tri.lineTo(0,1.5); tri.closePath();
+  const roofGeo=new THREE.ExtrudeGeometry(tri,{depth:3.0,bevelEnabled:false}); roofGeo.translate(0,0,-1.5);
+  part(mesh(roofGeo,mSlate),0,2.2,0,new THREE.Vector3(0,1,0));
+  // chimney
+  part(mesh(new THREE.BoxGeometry(0.5,1.6,0.5),mFound),1.1,3.2,-0.5,new THREE.Vector3(0.6,1,-0.3));
+  // porch slab
+  part(mesh(new THREE.BoxGeometry(4.4,0.22,3.4),mClay),0,0.02,0.5,new THREE.Vector3(0,-1,0.4));
+  // door — the accent
+  part(mesh(new THREE.BoxGeometry(0.72,1.5,0.1),mTeal),0.6,0.86,1.33,new THREE.Vector3(0.5,0,1));
+  // window — the amber glow
+  part(mesh(new THREE.BoxGeometry(0.95,0.8,0.1),mGlow,false),-0.85,1.35,1.33,new THREE.Vector3(-0.6,0.2,1));
+  // little tree (sage blob + clay trunk)
+  const tree=new THREE.Group();
+  const blob=mesh(new THREE.IcosahedronGeometry(0.7,0),mSage); blob.position.y=1.15; tree.add(blob);
+  const trunk=mesh(new THREE.CylinderGeometry(0.09,0.12,0.9,5),mClay); trunk.position.y=0.45; tree.add(trunk);
+  part(tree,2.6,0,0.9,new THREE.Vector3(1,0.3,0.5));
+
+  // construction reading: scaffold cage + framing studs (hidden by default)
+  const scaffold=new THREE.Group();
+  const thin=(w,h,d,x,y,z)=>{ const s=mesh(new THREE.BoxGeometry(w,h,d),mClay,false); s.position.set(x,y,z); scaffold.add(s); };
+  for(const sx of [-2.2,2.2]) for(const sz of [-1.6,1.6]) thin(0.09,4.6,0.09,sx,2.3,sz);
+  for(const sy of [1.5,3.0,4.4]){ thin(4.5,0.07,0.07,0,sy,-1.6); thin(4.5,0.07,0.07,0,sy,1.6);
+    thin(0.07,0.07,3.3,-2.2,sy,0); thin(0.07,0.07,3.3,2.2,sy,0); }
+  for(let i=0;i<7;i++) thin(0.07,2.2,0.07,-1.5+i*0.5,1.1,0);   // studs
+  scaffold.visible=false; root.add(scaffold);
+
+  // ground disc
+  const gnd=new THREE.Mesh(new THREE.CylinderGeometry(9,9,0.5,48),new THREE.MeshToonMaterial({color:0x3a4166,gradientMap:ramp}));
+  gnd.position.y=-0.36; scene.add(gnd);
+
+  // ---- shapeshifter state machine ----
+  let mode='glyph', ex=0, exT=0, bounce=0;
+  document.querySelectorAll('#ui button').forEach(b=>b.addEventListener('click',()=>{
+    document.querySelectorAll('#ui button').forEach(x=>x.classList.remove('on'));
+    b.classList.add('on'); mode=b.dataset.m;
+    scaffold.visible=(mode==='construction');
+  }));
+  document.getElementById('cel').addEventListener('change',e=>applyCel(e.target.checked));
+  const todBox=document.getElementById('tod');
+
+  function applyTOD(hr){
+    const PP=(hr/6)%4,s=((Math.floor(PP)%4)+4)%4,f=PP-Math.floor(PP),A=ph[s],B=ph[(s+1)%4];
+    drawSky(A.c0.clone().lerp(B.c0,f).getStyle(),A.c1.clone().lerp(B.c1,f).getStyle(),A.c2.clone().lerp(B.c2,f).getStyle());
+    scene.fog.color.copy(A.fc.clone().lerp(B.fc,f));
+    gnd.material.color.copy(A.gc.clone().lerp(B.gc,f));
+    amb.intensity=A.amb+(B.amb-A.amb)*f; sun.intensity=A.sun+(B.sun-A.sun)*f;
+  }
+
+  let t=0, drag=false,lx=0, rotY=0.6, vel=0;
+  addEventListener('mousedown',e=>{drag=true;lx=e.clientX});
+  addEventListener('mousemove',e=>{if(drag){rotY+=(e.clientX-lx)*0.008;vel=(e.clientX-lx)*0.008;lx=e.clientX}});
+  addEventListener('mouseup',()=>drag=false);
+  addEventListener('resize',()=>{W=innerWidth;H=innerHeight;cam.aspect=W/H;cam.updateProjectionMatrix();rdr.setSize(W,H)});
+
+  function loop(){
+    t+=0.016;
+    if(!drag){rotY+=0.003+vel; vel*=0.94;}
+    root.rotation.y=rotY;
+    // readings
+    exT=(mode==='exploded')?Math.min(1,exT+0.02):Math.max(0,exT-0.03);
+    bounce=(mode==='toy')?Math.min(1,bounce+0.04):Math.max(0,bounce-0.04);
+    const e2=exT<0.5?2*exT*exT:1-Math.pow(-2*exT+2,2)/2;
+    for(const p of parts){
+      p.m.position.copy(p.home).addScaledVector(p.dir,e2*2.6);
+      p.m.rotation.set(0,e2*(p.dir.x*0.7),e2*(p.dir.z*0.4));
+    }
+    if(bounce>0){ const sq=1+Math.sin(t*7)*0.06*bounce;
+      root.scale.set(2-sq<1?1/sq:sq,sq,2-sq<1?1/sq:sq); root.position.y=Math.abs(Math.sin(t*3.5))*0.5*bounce; }
+    else { root.scale.setScalar(1); root.position.y=0; }
+    if(mode==='construction'){ // house half-materialized: body & roof ghost in and out
+      const gh=0.35+0.25*Math.sin(t*1.2);
+      parts[0].m.userData.rec.holder.mat.transparent=true;
+      parts[0].m.userData.rec.holder.mat.opacity=gh;
+      parts[1].m.userData.rec.holder.mat.transparent=true;
+      parts[1].m.userData.rec.holder.mat.opacity=gh;
+    } else { for(const i of [0,1]){ const mm=parts[i].m.userData.rec.holder.mat; mm.transparent=false; mm.opacity=1; } }
+    if(todBox.checked){ applyTOD(((Date.now()/1000)%86400)/3600 + t*0.4); } // gently accelerated day
+    rdr.render(scene,cam);
+    requestAnimationFrame(loop);
+  }
+  applyCel(true); applyTOD(14); loop();
+</script>

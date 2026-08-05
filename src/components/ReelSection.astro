@@ -1,30 +1,190 @@
 ---
 const { section } = Astro.props;
-function src(r) {
-  return r.type === 'youtube'
-    ? `https://www.youtube.com/embed/${r.id}?rel=0`
-    : `https://player.vimeo.com/video/${r.id}?byline=0&portrait=0`;
-}
+const reels = section.reels || [];
+const featured = reels[0];
+const rest = reels.slice(1);
+const thumb = (r) => r.thumb ? r.thumb : (r.type === 'youtube'
+  ? 'https://i.ytimg.com/vi/' + r.id + '/hqdefault.jpg'
+  : 'https://vumbnail.com/' + r.id + '.jpg');
+const two = (n) => (n < 10 ? '0' : '') + n;
+const rooms = [
+  ['/director','01 DIRECTOR'],['/producer','02 PRODUCER'],['/vfx-edit','03 VFX + EDIT'],['/for-fun','04 FOR FUN'],
+];
+const path = Astro.url.pathname.replace(/\/$/, '') || '/';
 ---
-<section class="section">
-  <div class="wrap">
-    <h1>{section.title}</h1>
-    <p class="lede">{section.lede}</p>
-    <div class="reelgrid">
-      {section.reels.map((r) => (
-        <div class="reel">
-          <div class="frame">
-            <iframe
-              src={src(r)}
-              loading="lazy"
-              title={r.title}
-              allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
-              allowfullscreen
-            ></iframe>
-          </div>
-          <div class="cap">{r.title}</div>
-        </div>
+<section class="dl-room">
+  <header class="dl-head">
+    <a class="dl-back" href="/">↖ go outside</a>
+    <nav class="dl-rooms" aria-label="Rooms">
+      {rooms.map(([href,label]) => (
+        <a href={href} aria-current={path === href ? 'page' : undefined}>{label}</a>
       ))}
+    </nav>
+    <h1 data-scramble>{section.title}</h1>
+    {section.lede && <p class="dl-lede">{section.lede}</p>}
+    <div class="dl-view" role="tablist" aria-label="View">
+      <button id="vSheet" aria-pressed="true">SHEET</button>
+      <button id="vIndex" aria-pressed="false">INDEX</button>
     </div>
+  </header>
+
+  <div class="dl-index" id="dlIndex" hidden>
+    {reels.map((r, i) => (
+      <button class="dl-row dl-hv" data-type={r.type} data-id={r.id} data-title={r.title} data-thumb={thumb(r)}>
+        <span class="dl-row-no">{two(i + 1)}</span>
+        <span class="dl-row-title">{r.title}</span>
+        <span class="dl-row-kind">{r.type === 'youtube' ? 'YOUTUBE' : 'VIMEO'}</span>
+        <span class="dl-row-role">{section.title.toUpperCase()}</span>
+      </button>
+    ))}
+    <img class="dl-float" id="dlFloat" alt="" aria-hidden="true" />
+  </div>
+
+  {featured && (
+    <button class="dl-feature dl-hv" data-type={featured.type} data-id={featured.id} data-title={featured.title}>
+      <img src={thumb(featured)} alt={featured.title} loading="eager" />
+      <span class="dl-f-badge">FEATURED · TAKE 01</span>
+      <span class="dl-f-title">{featured.title}</span>
+      <span class="dl-f-play">▶</span>
+    </button>
+  )}
+
+  <div class="dl-sheet">
+    {rest.map((r, i) => (
+      <button class="dl-frame dl-hv" data-type={r.type} data-id={r.id} data-title={r.title} style={`--rot:${((i * 7919) % 5 - 2) * 0.35}deg`}>
+        <span class="dl-fr-num">{two(i + 2)}</span>
+        <span class="dl-fr-media"><img src={thumb(r)} alt={r.title} loading="lazy" /></span>
+        <span class="dl-fr-cap">{r.title}</span>
+      </button>
+    ))}
+  </div>
+
+  <canvas id="dlVeil" aria-hidden="true"></canvas>
+
+  <div class="dl-light" id="dlLight">
+    <button class="dl-close" id="dlClose" aria-label="close">✕</button>
+    <div class="dl-frame-wrap" id="dlFrame"></div>
   </div>
 </section>
+
+<script>
+  // ---- time-of-day palette inheritance: inside matches outside ----
+  const PH=[
+    ['#10142e','#232a52'],  // night
+    ['#2a2547','#8a6a6e'],  // dawn
+    ['#16324a','#4f6d7c'],  // day (interior-dimmed)
+    ['#33203f','#7c4f42'],  // dusk
+  ];
+  const mix=(a,b,f)=>{const pa=parseInt(a.slice(1),16),pb=parseInt(b.slice(1),16);
+    const c=[16,8,0].map(s=>Math.round(((pa>>s&255)*(1-f))+((pb>>s&255)*f)));
+    return '#'+c.map(v=>v.toString(16).padStart(2,'0')).join('');};
+  const now=new Date(), hr=now.getHours()+now.getMinutes()/60, P=(hr/6)%4, s0=Math.floor(P)%4, f0=P-Math.floor(P);
+  const A=PH[s0], B=PH[(s0+1)%4];
+  document.documentElement.style.setProperty('--room-a',mix(A[0],B[0],f0));
+  document.documentElement.style.setProperty('--room-b',mix(A[1],B[1],f0));
+
+  // ---- lightbox ----
+  const light=document.getElementById('dlLight');
+  const frame=document.getElementById('dlFrame');
+  const embed=(type,id,extra='')=>type==='youtube'
+    ? 'https://www.youtube.com/embed/'+id+'?rel=0&autoplay=1'+extra
+    : 'https://player.vimeo.com/video/'+id+'?autoplay=1&byline=0&portrait=0'+extra;
+  function open(el){
+    frame.innerHTML='<iframe src="'+embed(el.dataset.type,el.dataset.id)+'" allow="autoplay; fullscreen; picture-in-picture; encrypted-media" allowfullscreen></iframe>';
+    const tt=document.createElement('div'); tt.className='dl-ltitle'; tt.textContent=el.dataset.title||''; frame.appendChild(tt);
+    light.classList.add('on'); document.body.classList.add('dl-lit');
+  }
+  function close(){ light.classList.remove('on'); document.body.classList.remove('dl-lit'); frame.innerHTML=''; }
+  document.getElementById('dlClose').addEventListener('click',close);
+  light.addEventListener('click',e=>{ if(e.target===light) close(); });
+  window.addEventListener('keydown',e=>{ if(e.key==='Escape') close(); });
+  document.querySelectorAll('.dl-hv').forEach(b=>b.addEventListener('click',()=>open(b)));
+
+  // ---- INDEX / SHEET view toggle (Locomotive register: the filmography as a credits table) ----
+  const idx=document.getElementById('dlIndex');
+  const sheetEls=[document.querySelector('.dl-feature'),document.querySelector('.dl-sheet')].filter(Boolean);
+  const vS=document.getElementById('vSheet'), vI=document.getElementById('vIndex');
+  function setView(v){
+    const isIdx=v==='index';
+    idx.hidden=!isIdx; sheetEls.forEach(e=>e.style.display=isIdx?'none':'');
+    vS.setAttribute('aria-pressed',String(!isIdx)); vI.setAttribute('aria-pressed',String(isIdx));
+    try{ localStorage.setItem('jj-view',v); }catch(e){}
+  }
+  vS.addEventListener('click',()=>setView('sheet'));
+  vI.addEventListener('click',()=>setView('index'));
+  try{ if(localStorage.getItem('jj-view')==='index') setView('index'); }catch(e){}
+  // floating preview follows the hovered row
+  const flo=document.getElementById('dlFloat');
+  if(matchMedia('(pointer:fine)').matches){
+    idx.addEventListener('pointermove',e=>{ flo.style.left=(e.clientX+26)+'px'; flo.style.top=(e.clientY-70)+'px'; });
+    idx.querySelectorAll('.dl-row').forEach(r=>{
+      r.addEventListener('mouseenter',()=>{ flo.src=r.dataset.thumb; flo.classList.add('on'); });
+      r.addEventListener('mouseleave',()=>flo.classList.remove('on'));
+    });
+  }
+
+  // ---- scramble-resolve titles (memory noise -> record text) ----
+  document.querySelectorAll('[data-scramble]').forEach(el=>{
+    const REAL=el.textContent, CH='#%&/!?=+*abcdefkmxz';
+    let fr=0; const total=26;
+    (function tick(){
+      fr++;
+      el.textContent=REAL.split('').map((c,i)=> c===' '?' ':(i<(fr/total)*REAL.length? c : CH[(Math.random()*CH.length)|0])).join('');
+      if(fr<total) setTimeout(tick,34); else el.textContent=REAL;
+    })();
+  });
+
+  // ---- hover = the take rolls (muted preview), desktop only ----
+  const fine=matchMedia('(pointer:fine)').matches;
+  if(fine){
+    document.querySelectorAll('.dl-hv').forEach(b=>{
+      let tm=null, ifr=null;
+      const media=b.querySelector('.dl-fr-media')||b;
+      b.addEventListener('mouseenter',()=>{
+        tm=setTimeout(()=>{
+          const ex=b.dataset.type==='youtube'?'&mute=1&controls=0&playsinline=1&loop=1&playlist='+b.dataset.id:'&muted=1&background=1';
+          ifr=document.createElement('iframe');
+          ifr.className='dl-prev'; ifr.setAttribute('tabindex','-1'); ifr.setAttribute('aria-hidden','true');
+          ifr.allow='autoplay; encrypted-media';
+          ifr.src=embed(b.dataset.type,b.dataset.id,ex);
+          media.appendChild(ifr);
+        },350);
+      });
+      b.addEventListener('mouseleave',()=>{ clearTimeout(tm); if(ifr){ ifr.remove(); ifr=null; } });
+    });
+  }
+
+  // ---- the veil: signal noise your cursor develops into image ----
+  const veil=document.getElementById('dlVeil');
+  const reduce=matchMedia('(prefers-reduced-motion: reduce)').matches;
+  if(veil && fine && !reduce){
+    const vg=veil.getContext('2d');
+    const NW=320, NH=180;
+    const off=document.createElement('canvas'); off.width=NW; off.height=NH; const og=off.getContext('2d');
+    const noise=og.createImageData(NW,NH);
+    let mx=-999,my=-999,vt=0;
+    function size(){ veil.width=innerWidth; veil.height=innerHeight; }
+    size(); addEventListener('resize',size);
+    addEventListener('pointermove',e=>{ mx=e.clientX; my=e.clientY; });
+    (function loop(){
+      vt++;
+      if(vt%2===0){
+        const d=noise.data;
+        for(let i=0;i<d.length;i+=4){ const v=(Math.random()*255)|0; d[i]=d[i+1]=d[i+2]=v; d[i+3]=255; }
+        og.putImageData(noise,0,0);
+        vg.clearRect(0,0,veil.width,veil.height);
+        vg.globalAlpha=0.11; vg.imageSmoothingEnabled=false;
+        vg.drawImage(off,0,0,veil.width,veil.height);
+        vg.globalAlpha=1;
+        // cursor develops the image
+        const R=Math.min(veil.width,veil.height)*0.36;
+        const g=vg.createRadialGradient(mx,my,R*0.15,mx,my,R);
+        g.addColorStop(0,'rgba(0,0,0,1)'); g.addColorStop(1,'rgba(0,0,0,0)');
+        vg.globalCompositeOperation='destination-out';
+        vg.fillStyle=g; vg.beginPath(); vg.arc(mx,my,R,0,7); vg.fill();
+        vg.globalCompositeOperation='source-over';
+      }
+      requestAnimationFrame(loop);
+    })();
+  } else if(veil){ veil.remove(); }
+</script>

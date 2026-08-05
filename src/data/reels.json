@@ -1,60 +1,271 @@
 {
-  "director": {
-    "title": "Director",
-    "lede": "Films, music videos, commercials, and documentary — directed.",
-    "reels": [
-      { "type": "youtube", "id": "nC3fdpPx-II", "title": "Untitled — to label" },
-      { "type": "youtube", "id": "8hCo3Clc3p0", "title": "Untitled — to label" },
-      { "type": "youtube", "id": "GmR0udi-U4w", "title": "Untitled — to label" },
-      { "type": "vimeo", "id": "473983493", "title": "Untitled — to label" },
-      { "type": "youtube", "id": "od3eho24iMg", "title": "Untitled — to label" },
-      { "type": "vimeo", "id": "275978454", "title": "Untitled — to label" },
-      { "type": "vimeo", "id": "461595656", "title": "Untitled — to label" },
-      { "type": "vimeo", "id": "317890995", "title": "Untitled — to label" },
-      { "type": "vimeo", "id": "131557743", "title": "Untitled — to label" }
-    ]
-  },
-  "producer": {
-    "title": "Producer",
-    "lede": "Producing across film, video, music video, commercial, and documentary. West of 20.",
-    "reels": [
-      { "type": "youtube", "id": "9uZmdPdPDCk", "title": "Untitled — to label" },
-      { "type": "youtube", "id": "2tvW25Qu5WE", "title": "Untitled — to label" },
-      { "type": "youtube", "id": "wxaJ8aiURgU", "title": "Untitled — to label" },
-      { "type": "youtube", "id": "hw_Gtwdnp1Q", "title": "Untitled — to label" },
-      { "type": "youtube", "id": "qNMOEDY1Nis", "title": "Untitled — to label" },
-      { "type": "youtube", "id": "SDZKKRij1S8", "title": "Untitled — to label" },
-      { "type": "vimeo", "id": "504664994", "title": "Untitled — to label" },
-      { "type": "youtube", "id": "0db-9K35bAI", "title": "Untitled — to label" }
-    ]
-  },
-  "vfx-edit": {
-    "title": "VFX + Edit",
-    "lede": "Visual effects and editing — 3D, AI, and compositing workflows.",
-    "reels": [
-      { "type": "youtube", "id": "09Vc3EMFn-M", "title": "Untitled — to label" },
-      { "type": "youtube", "id": "7-rpKp9ADFI", "title": "Untitled — to label" },
-      { "type": "youtube", "id": "Ar9mp5dE6qA", "title": "Untitled — to label" },
-      { "type": "youtube", "id": "dhYM5zMvFQk", "title": "Untitled — to label" },
-      { "type": "youtube", "id": "jmqzbG-bdMU", "title": "Untitled — to label" },
-      { "type": "youtube", "id": "mjP-si5Fy6k", "title": "Untitled — to label" },
-      { "type": "youtube", "id": "oofsf4qKjYE", "title": "Untitled — to label" },
-      { "type": "youtube", "id": "le_TNS_bhKk", "title": "Untitled — to label" },
-      { "type": "youtube", "id": "lP5OX-zEgrw", "title": "Untitled — to label" },
-      { "type": "youtube", "id": "JsYJYUQgT7k", "title": "Untitled — to label" },
-      { "type": "youtube", "id": "6scnR0CXOSg", "title": "Untitled — to label" }
-    ]
-  },
-  "for-fun": {
-    "title": "For Fun",
-    "lede": "Experiments, 3D oddities, and the for-the-love-of-it stuff. The playground.",
-    "reels": [
-      { "type": "youtube", "id": "ocLeJCUDHT4", "title": "Untitled — to label" },
-      { "type": "vimeo", "id": "828167458", "title": "Untitled — to label" },
-      { "type": "youtube", "id": "xbVL0cAl8Do", "title": "Untitled — to label" },
-      { "type": "youtube", "id": "yjzSOBHWjCg", "title": "Untitled — to label" },
-      { "type": "youtube", "id": "fTGzqjDaQoc", "title": "Untitled — to label" },
-      { "type": "youtube", "id": "ej4dfaH5Po4", "title": "Untitled — to label" }
-    ]
-  }
+    "director":  {
+                     "title":  "Director",
+                     "lede":  "Films, music videos, commercials, and documentary — directed.",
+                     "reels":  [
+                                   {
+                                       "type":  "youtube",
+                                       "id":  "nC3fdpPx-II",
+                                       "title":  "Redondo Red — Stories to Tell"
+                                   },
+                                   {
+                                       "type":  "youtube",
+                                       "id":  "8hCo3Clc3p0",
+                                       "title":  "Gnome — Sometimes the Grass Is Greener"
+                                   },
+                                   {
+                                       "type":  "youtube",
+                                       "id":  "GmR0udi-U4w",
+                                       "title":  "Redondo Red — Call It"
+                                   },
+                                   {
+                                       "type":  "vimeo",
+                                       "id":  "473983493",
+                                       "title":  "Camila Fitness — Teaser"
+                                   },
+                                   {
+                                       "type":  "youtube",
+                                       "id":  "od3eho24iMg",
+                                       "title":  "ellie d. — Can\u0027t Walk Away"
+                                   },
+                                   {
+                                       "type":  "vimeo",
+                                       "id":  "275978454",
+                                       "title":  "Everyday Boon"
+                                   },
+                                   {
+                                       "type":  "vimeo",
+                                       "id":  "461595656",
+                                       "title":  "Truly Rosé"
+                                   },
+                                   {
+                                       "type":  "vimeo",
+                                       "id":  "317890995",
+                                       "title":  "Modelo — We\u0027re Excited Too"
+                                   },
+                                   {
+                                       "type":  "vimeo",
+                                       "id":  "131557743",
+                                       "title":  "In the Raw"
+                                   }
+                               ]
+                 },
+    "producer":  {
+                     "title":  "Producer",
+                     "lede":  "Producing across film, video, music video, commercial, and documentary. West of 20.",
+                     "reels":  [
+                                   {
+                                       "type":  "youtube",
+                                       "id":  "9uZmdPdPDCk",
+                                       "title":  "FINNEAS — Cleats"
+                                   },
+                                   {
+                                       "type":  "youtube",
+                                       "id":  "2tvW25Qu5WE",
+                                       "title":  "Charli XCX — New Shapes (feat. Christine and the Queens \u0026 Caroline Polachek)"
+                                   },
+                                   {
+                                       "type":  "youtube",
+                                       "id":  "wxaJ8aiURgU",
+                                       "title":  "Magdalena Bay — All You Do"
+                                   },
+                                   {
+                                       "type":  "youtube",
+                                       "id":  "hw_Gtwdnp1Q",
+                                       "title":  "Charli XCX — Beg For You (feat. Rina Sawayama)"
+                                   },
+                                   {
+                                       "type":  "youtube",
+                                       "id":  "qNMOEDY1Nis",
+                                       "title":  "Honey Harper — Boots Mine Gold"
+                                   },
+                                   {
+                                       "type":  "youtube",
+                                       "id":  "SDZKKRij1S8",
+                                       "title":  "Lauren Jauregui — Always Love"
+                                   },
+                                   {
+                                       "type":  "vimeo",
+                                       "id":  "504664994",
+                                       "title":  "Dante — Ghost"
+                                   },
+                                   {
+                                       "type":  "youtube",
+                                       "id":  "0db-9K35bAI",
+                                       "title":  "Marie Monti — Me Duele"
+                                   },
+                                   {
+                                       "type":  "youtube",
+                                       "id":  "ben9qDbrLYU",
+                                       "title":  "Magdalena Bay — Chaeri"
+                                   },
+                                   {
+                                       "type":  "youtube",
+                                       "id":  "ggrYaDxyrGM",
+                                       "title":  "Charli XCX — Baby"
+                                   },
+                                   {
+                                       "type":  "youtube",
+                                       "id":  "Ecm-ylA29X0",
+                                       "title":  "Rebecca Black — Crumbs"
+                                   },
+                                   {
+                                       "type":  "youtube",
+                                       "id":  "1rrbrv9HYXw",
+                                       "title":  "The Districts — Outlaw Love"
+                                   },
+                                   {
+                                       "type":  "youtube",
+                                       "id":  "5hvZW6UH0Vw",
+                                       "title":  "Jordana — Pressure Point"
+                                   },
+                                   {
+                                       "type":  "youtube",
+                                       "id":  "RrhtZNhXumo",
+                                       "title":  "Rebecca Black — Look At You"
+                                   },
+                                   {
+                                       "type":  "youtube",
+                                       "id":  "shfcQKkQSto",
+                                       "title":  "Leah Kate — Used to This"
+                                   },
+                                   {
+                                       "type":  "youtube",
+                                       "id":  "Fzmd0L10CMU",
+                                       "title":  "Leah Kate — Fuck Up the Friendship"
+                                   },
+                                   {
+                                       "type":  "youtube",
+                                       "id":  "QYAcPS0kzVQ",
+                                       "title":  "King Critical — Everything\u0027s Chrome (feat. Key Glock \u0026 Duke Deuce)"
+                                   },
+                                   {
+                                       "type":  "youtube",
+                                       "id":  "eLcllN2FHsc",
+                                       "title":  "ellie d. — Miss You"
+                                   },
+                                   {
+                                       "type":  "youtube",
+                                       "id":  "Q0sk5cfAbk8",
+                                       "title":  "Leah Clark — Not Like Them"
+                                   },
+                                   {
+                                       "type":  "youtube",
+                                       "id":  "dhYM5zMvFQk",
+                                       "title":  "Charli XCX — Used to Know Me"
+                                   },
+                                   {
+                                       "type":  "youtube",
+                                       "id":  "JsYJYUQgT7k",
+                                       "title":  "Charli XCX — Every Rule"
+                                   },
+                                   {
+                                       "type":  "youtube",
+                                       "id":  "mjP-si5Fy6k",
+                                       "title":  "RÜFÜS DU SOL — Music is Better"
+                                   },
+                                   {
+                                       "type":  "youtube",
+                                       "id":  "oofsf4qKjYE",
+                                       "title":  "Jordana — Go Slow"
+                                   }
+                               ]
+                 },
+    "vfx-edit":  {
+                     "title":  "VFX + Edit",
+                     "lede":  "Visual effects and editing — 3D, AI, and compositing workflows.",
+                     "reels":  [
+                                   {
+                                       "type":  "youtube",
+                                       "id":  "09Vc3EMFn-M",
+                                       "title":  "AMIRI — Pacific Flat"
+                                   },
+                                   {
+                                       "type":  "youtube",
+                                       "id":  "7-rpKp9ADFI",
+                                       "title":  "Manchester Orchestra — No Rule"
+                                   },
+                                   {
+                                       "type":  "youtube",
+                                       "id":  "Ar9mp5dE6qA",
+                                       "title":  "Go Slow breakdown", "thumb": "/thumbs/go-slow-breakdown.webp"
+                                   },
+                                   {
+                                       "type":  "youtube",
+                                       "id":  "dhYM5zMvFQk",
+                                       "title":  "Charli XCX — Used to Know Me"
+                                   },
+                                   {
+                                       "type":  "youtube",
+                                       "id":  "jmqzbG-bdMU",
+                                       "title":  "Stone Island — The Badge"
+                                   },
+                                   {
+                                       "type":  "youtube",
+                                       "id":  "mjP-si5Fy6k",
+                                       "title":  "RÜFÜS DU SOL — Music is Better"
+                                   },
+                                   {
+                                       "type":  "youtube",
+                                       "id":  "oofsf4qKjYE",
+                                       "title":  "Jordana — Go Slow"
+                                   },
+                                   {
+                                       "type":  "youtube",
+                                       "id":  "le_TNS_bhKk",
+                                       "title":  "Malbon Golf — Loop"
+                                   },
+                                   {
+                                       "type":  "youtube",
+                                       "id":  "lP5OX-zEgrw",
+                                       "title":  "Hard Luck Love Song — Trailer"
+                                   },
+                                   {
+                                       "type":  "youtube",
+                                       "id":  "JsYJYUQgT7k",
+                                       "title":  "Charli XCX — Every Rule"
+                                   },
+                                   {
+                                       "type":  "youtube",
+                                       "id":  "6scnR0CXOSg",
+                                       "title":  "Hard Luck Love Song — Teaser"
+                                   }
+                               ]
+                 },
+    "for-fun":  {
+                    "title":  "For Fun",
+                    "lede":  "Experiments, 3D oddities, and the for-the-love-of-it stuff. The playground.",
+                    "reels":  [
+                                  {
+                                      "type":  "youtube",
+                                      "id":  "ocLeJCUDHT4",
+                                      "title":  "Portrait Party — Gardengeddon"
+                                  },
+                                  {
+                                      "type":  "vimeo",
+                                      "id":  "828167458",
+                                      "title":  "Mercurial Screensaver"
+                                  },
+                                  {
+                                      "type":  "youtube",
+                                      "id":  "xbVL0cAl8Do",
+                                      "title":  "CUHRABOSCK [Cuck, Chaos, Crab] - short film?", "thumb": "/thumbs/cuhrabosck.webp"
+                                  },
+                                  {
+                                      "type":  "youtube",
+                                      "id":  "yjzSOBHWjCg",
+                                      "title":  "Worry About Future"
+                                  },
+                                  {
+                                      "type":  "youtube",
+                                      "id":  "fTGzqjDaQoc",
+                                      "title":  "James Webb Entropy Spheres"
+                                  },
+                                  {
+                                      "type":  "youtube",
+                                      "id":  "ej4dfaH5Po4",
+                                      "title":  "Life of Illusion"
+                                  }
+                              ]
+                }
 }
