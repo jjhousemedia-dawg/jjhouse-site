@@ -1,0 +1,735 @@
+{
+  "_note": "Project-first. One entry per project; roles is what the works ticker cycles. Generated from the old role-keyed reels.json by scripts/rekey-reels.py. roles are only what the old data supported - 'VFX + Edit' is one token because the old file did not distinguish them. Split into 'Edit' and 'VFX' per project where JJ confirms. anecdote is the 40-60 word making-of, still to write.",
+  "sections": {
+    "director": {
+      "title": "Director",
+      "lede": "Films, music videos, commercials, and documentary — directed."
+    },
+    "producer": {
+      "title": "Producer",
+      "lede": "Producing across film, video, music video, commercial, and documentary. West of 20."
+    },
+    "vfx-edit": {
+      "title": "VFX + Edit",
+      "lede": "Visual effects and editing — 3D, AI, and compositing workflows."
+    },
+    "for-fun": {
+      "title": "For Fun",
+      "lede": "Experiments, 3D oddities, and the for-the-love-of-it stuff. The playground."
+    }
+  },
+  "projects": [
+    {
+      "slug": "redondo-red-stories-to-tell",
+      "title": "Redondo Red — Stories to Tell",
+      "artist": "Redondo Red",
+      "work": "Stories to Tell",
+      "video": {
+        "type": "youtube",
+        "id": "nC3fdpPx-II"
+      },
+      "roles": [
+        "Direct"
+      ],
+      "category": "work",
+      "featured": false,
+      "anecdote": null
+    },
+    {
+      "slug": "gnome-sometimes-the-grass-is-greener",
+      "title": "Gnome — Sometimes the Grass Is Greener",
+      "artist": "Gnome",
+      "work": "Sometimes the Grass Is Greener",
+      "video": {
+        "type": "youtube",
+        "id": "8hCo3Clc3p0"
+      },
+      "roles": [
+        "Direct"
+      ],
+      "category": "work",
+      "featured": false,
+      "anecdote": null
+    },
+    {
+      "slug": "redondo-red-call-it",
+      "title": "Redondo Red — Call It",
+      "artist": "Redondo Red",
+      "work": "Call It",
+      "video": {
+        "type": "youtube",
+        "id": "GmR0udi-U4w"
+      },
+      "roles": [
+        "Direct"
+      ],
+      "category": "work",
+      "featured": false,
+      "anecdote": null
+    },
+    {
+      "slug": "camila-fitness-teaser",
+      "title": "Camila Fitness — Teaser",
+      "artist": "Camila Fitness",
+      "work": "Teaser",
+      "video": {
+        "type": "vimeo",
+        "id": "473983493"
+      },
+      "roles": [
+        "Direct"
+      ],
+      "category": "work",
+      "featured": false,
+      "anecdote": null
+    },
+    {
+      "slug": "ellie-d-cant-walk-away",
+      "title": "ellie d. — Can't Walk Away",
+      "artist": "ellie d.",
+      "work": "Can't Walk Away",
+      "video": {
+        "type": "youtube",
+        "id": "od3eho24iMg"
+      },
+      "roles": [
+        "Direct"
+      ],
+      "category": "work",
+      "featured": false,
+      "anecdote": null
+    },
+    {
+      "slug": "everyday-boon",
+      "title": "Everyday Boon",
+      "artist": null,
+      "work": "Everyday Boon",
+      "video": {
+        "type": "vimeo",
+        "id": "275978454"
+      },
+      "roles": [
+        "Direct"
+      ],
+      "category": "work",
+      "featured": false,
+      "anecdote": null
+    },
+    {
+      "slug": "truly-rose",
+      "title": "Truly Rosé",
+      "artist": null,
+      "work": "Truly Rosé",
+      "video": {
+        "type": "vimeo",
+        "id": "461595656"
+      },
+      "roles": [
+        "Direct"
+      ],
+      "category": "work",
+      "featured": false,
+      "anecdote": null
+    },
+    {
+      "slug": "modelo-were-excited-too",
+      "title": "Modelo — We're Excited Too",
+      "artist": "Modelo",
+      "work": "We're Excited Too",
+      "video": {
+        "type": "vimeo",
+        "id": "317890995"
+      },
+      "roles": [
+        "Direct"
+      ],
+      "category": "work",
+      "featured": false,
+      "anecdote": null
+    },
+    {
+      "slug": "in-the-raw",
+      "title": "In the Raw",
+      "artist": null,
+      "work": "In the Raw",
+      "video": {
+        "type": "vimeo",
+        "id": "131557743"
+      },
+      "roles": [
+        "Direct"
+      ],
+      "category": "work",
+      "featured": false,
+      "anecdote": null
+    },
+    {
+      "slug": "finneas-cleats",
+      "title": "FINNEAS — Cleats",
+      "artist": "FINNEAS",
+      "work": "Cleats",
+      "video": {
+        "type": "youtube",
+        "id": "9uZmdPdPDCk"
+      },
+      "roles": [
+        "Produce"
+      ],
+      "category": "work",
+      "featured": false,
+      "anecdote": null
+    },
+    {
+      "slug": "charli-xcx-new-shapes-feat-christine-and-the-queens-caroline",
+      "title": "Charli XCX — New Shapes (feat. Christine and the Queens & Caroline Polachek)",
+      "artist": "Charli XCX",
+      "work": "New Shapes (feat. Christine and the Queens & Caroline Polachek)",
+      "video": {
+        "type": "youtube",
+        "id": "2tvW25Qu5WE"
+      },
+      "roles": [
+        "Produce"
+      ],
+      "category": "work",
+      "featured": false,
+      "anecdote": null
+    },
+    {
+      "slug": "magdalena-bay-all-you-do",
+      "title": "Magdalena Bay — All You Do",
+      "artist": "Magdalena Bay",
+      "work": "All You Do",
+      "video": {
+        "type": "youtube",
+        "id": "wxaJ8aiURgU"
+      },
+      "roles": [
+        "Produce"
+      ],
+      "category": "work",
+      "featured": false,
+      "anecdote": null
+    },
+    {
+      "slug": "charli-xcx-beg-for-you-feat-rina-sawayama",
+      "title": "Charli XCX — Beg For You (feat. Rina Sawayama)",
+      "artist": "Charli XCX",
+      "work": "Beg For You (feat. Rina Sawayama)",
+      "video": {
+        "type": "youtube",
+        "id": "hw_Gtwdnp1Q"
+      },
+      "roles": [
+        "Produce"
+      ],
+      "category": "work",
+      "featured": false,
+      "anecdote": null
+    },
+    {
+      "slug": "honey-harper-boots-mine-gold",
+      "title": "Honey Harper — Boots Mine Gold",
+      "artist": "Honey Harper",
+      "work": "Boots Mine Gold",
+      "video": {
+        "type": "youtube",
+        "id": "qNMOEDY1Nis"
+      },
+      "roles": [
+        "Produce"
+      ],
+      "category": "work",
+      "featured": false,
+      "anecdote": null
+    },
+    {
+      "slug": "lauren-jauregui-always-love",
+      "title": "Lauren Jauregui — Always Love",
+      "artist": "Lauren Jauregui",
+      "work": "Always Love",
+      "video": {
+        "type": "youtube",
+        "id": "SDZKKRij1S8"
+      },
+      "roles": [
+        "Produce"
+      ],
+      "category": "work",
+      "featured": false,
+      "anecdote": null
+    },
+    {
+      "slug": "dante-ghost",
+      "title": "Dante — Ghost",
+      "artist": "Dante",
+      "work": "Ghost",
+      "video": {
+        "type": "vimeo",
+        "id": "504664994"
+      },
+      "roles": [
+        "Produce"
+      ],
+      "category": "work",
+      "featured": false,
+      "anecdote": null
+    },
+    {
+      "slug": "marie-monti-me-duele",
+      "title": "Marie Monti — Me Duele",
+      "artist": "Marie Monti",
+      "work": "Me Duele",
+      "video": {
+        "type": "youtube",
+        "id": "0db-9K35bAI"
+      },
+      "roles": [
+        "Produce"
+      ],
+      "category": "work",
+      "featured": false,
+      "anecdote": null
+    },
+    {
+      "slug": "magdalena-bay-chaeri",
+      "title": "Magdalena Bay — Chaeri",
+      "artist": "Magdalena Bay",
+      "work": "Chaeri",
+      "video": {
+        "type": "youtube",
+        "id": "ben9qDbrLYU"
+      },
+      "roles": [
+        "Produce"
+      ],
+      "category": "work",
+      "featured": false,
+      "anecdote": null
+    },
+    {
+      "slug": "charli-xcx-baby",
+      "title": "Charli XCX — Baby",
+      "artist": "Charli XCX",
+      "work": "Baby",
+      "video": {
+        "type": "youtube",
+        "id": "ggrYaDxyrGM"
+      },
+      "roles": [
+        "Produce"
+      ],
+      "category": "work",
+      "featured": false,
+      "anecdote": null
+    },
+    {
+      "slug": "rebecca-black-crumbs",
+      "title": "Rebecca Black — Crumbs",
+      "artist": "Rebecca Black",
+      "work": "Crumbs",
+      "video": {
+        "type": "youtube",
+        "id": "Ecm-ylA29X0"
+      },
+      "roles": [
+        "Produce"
+      ],
+      "category": "work",
+      "featured": false,
+      "anecdote": null
+    },
+    {
+      "slug": "the-districts-outlaw-love",
+      "title": "The Districts — Outlaw Love",
+      "artist": "The Districts",
+      "work": "Outlaw Love",
+      "video": {
+        "type": "youtube",
+        "id": "1rrbrv9HYXw"
+      },
+      "roles": [
+        "Produce"
+      ],
+      "category": "work",
+      "featured": false,
+      "anecdote": null
+    },
+    {
+      "slug": "jordana-pressure-point",
+      "title": "Jordana — Pressure Point",
+      "artist": "Jordana",
+      "work": "Pressure Point",
+      "video": {
+        "type": "youtube",
+        "id": "5hvZW6UH0Vw"
+      },
+      "roles": [
+        "Produce"
+      ],
+      "category": "work",
+      "featured": false,
+      "anecdote": null
+    },
+    {
+      "slug": "rebecca-black-look-at-you",
+      "title": "Rebecca Black — Look At You",
+      "artist": "Rebecca Black",
+      "work": "Look At You",
+      "video": {
+        "type": "youtube",
+        "id": "RrhtZNhXumo"
+      },
+      "roles": [
+        "Produce"
+      ],
+      "category": "work",
+      "featured": false,
+      "anecdote": null
+    },
+    {
+      "slug": "leah-kate-used-to-this",
+      "title": "Leah Kate — Used to This",
+      "artist": "Leah Kate",
+      "work": "Used to This",
+      "video": {
+        "type": "youtube",
+        "id": "shfcQKkQSto"
+      },
+      "roles": [
+        "Produce"
+      ],
+      "category": "work",
+      "featured": false,
+      "anecdote": null
+    },
+    {
+      "slug": "leah-kate-fuck-up-the-friendship",
+      "title": "Leah Kate — Fuck Up the Friendship",
+      "artist": "Leah Kate",
+      "work": "Fuck Up the Friendship",
+      "video": {
+        "type": "youtube",
+        "id": "Fzmd0L10CMU"
+      },
+      "roles": [
+        "Produce"
+      ],
+      "category": "work",
+      "featured": false,
+      "anecdote": null
+    },
+    {
+      "slug": "king-critical-everythings-chrome-feat-key-glock-duke-deuce",
+      "title": "King Critical — Everything's Chrome (feat. Key Glock & Duke Deuce)",
+      "artist": "King Critical",
+      "work": "Everything's Chrome (feat. Key Glock & Duke Deuce)",
+      "video": {
+        "type": "youtube",
+        "id": "QYAcPS0kzVQ"
+      },
+      "roles": [
+        "Produce"
+      ],
+      "category": "work",
+      "featured": false,
+      "anecdote": null
+    },
+    {
+      "slug": "ellie-d-miss-you",
+      "title": "ellie d. — Miss You",
+      "artist": "ellie d.",
+      "work": "Miss You",
+      "video": {
+        "type": "youtube",
+        "id": "eLcllN2FHsc"
+      },
+      "roles": [
+        "Produce"
+      ],
+      "category": "work",
+      "featured": false,
+      "anecdote": null
+    },
+    {
+      "slug": "leah-clark-not-like-them",
+      "title": "Leah Clark — Not Like Them",
+      "artist": "Leah Clark",
+      "work": "Not Like Them",
+      "video": {
+        "type": "youtube",
+        "id": "Q0sk5cfAbk8"
+      },
+      "roles": [
+        "Produce"
+      ],
+      "category": "work",
+      "featured": false,
+      "anecdote": null
+    },
+    {
+      "slug": "charli-xcx-used-to-know-me",
+      "title": "Charli XCX — Used to Know Me",
+      "artist": "Charli XCX",
+      "work": "Used to Know Me",
+      "video": {
+        "type": "youtube",
+        "id": "dhYM5zMvFQk"
+      },
+      "roles": [
+        "Produce",
+        "VFX + Edit"
+      ],
+      "category": "work",
+      "featured": false,
+      "anecdote": null
+    },
+    {
+      "slug": "charli-xcx-every-rule",
+      "title": "Charli XCX — Every Rule",
+      "artist": "Charli XCX",
+      "work": "Every Rule",
+      "video": {
+        "type": "youtube",
+        "id": "JsYJYUQgT7k"
+      },
+      "roles": [
+        "Produce",
+        "VFX + Edit"
+      ],
+      "category": "work",
+      "featured": false,
+      "anecdote": null
+    },
+    {
+      "slug": "rufus-du-sol-music-is-better",
+      "title": "RÜFÜS DU SOL — Music is Better",
+      "artist": "RÜFÜS DU SOL",
+      "work": "Music is Better",
+      "video": {
+        "type": "youtube",
+        "id": "mjP-si5Fy6k"
+      },
+      "roles": [
+        "Produce",
+        "VFX + Edit"
+      ],
+      "category": "work",
+      "featured": false,
+      "anecdote": null
+    },
+    {
+      "slug": "jordana-go-slow",
+      "title": "Jordana — Go Slow",
+      "artist": "Jordana",
+      "work": "Go Slow",
+      "video": {
+        "type": "youtube",
+        "id": "oofsf4qKjYE"
+      },
+      "roles": [
+        "Produce",
+        "VFX + Edit"
+      ],
+      "category": "work",
+      "featured": false,
+      "anecdote": null
+    },
+    {
+      "slug": "amiri-pacific-flat",
+      "title": "AMIRI — Pacific Flat",
+      "artist": "AMIRI",
+      "work": "Pacific Flat",
+      "video": {
+        "type": "youtube",
+        "id": "09Vc3EMFn-M"
+      },
+      "roles": [
+        "VFX + Edit"
+      ],
+      "category": "work",
+      "featured": false,
+      "anecdote": null
+    },
+    {
+      "slug": "manchester-orchestra-no-rule",
+      "title": "Manchester Orchestra — No Rule",
+      "artist": "Manchester Orchestra",
+      "work": "No Rule",
+      "video": {
+        "type": "youtube",
+        "id": "7-rpKp9ADFI"
+      },
+      "roles": [
+        "VFX + Edit"
+      ],
+      "category": "work",
+      "featured": false,
+      "anecdote": null
+    },
+    {
+      "slug": "go-slow-breakdown",
+      "title": "Go Slow breakdown",
+      "artist": null,
+      "work": "Go Slow breakdown",
+      "video": {
+        "type": "youtube",
+        "id": "Ar9mp5dE6qA"
+      },
+      "roles": [
+        "VFX + Edit"
+      ],
+      "category": "work",
+      "featured": false,
+      "anecdote": null
+    },
+    {
+      "slug": "stone-island-the-badge",
+      "title": "Stone Island — The Badge",
+      "artist": "Stone Island",
+      "work": "The Badge",
+      "video": {
+        "type": "youtube",
+        "id": "jmqzbG-bdMU"
+      },
+      "roles": [
+        "VFX + Edit"
+      ],
+      "category": "work",
+      "featured": false,
+      "anecdote": null
+    },
+    {
+      "slug": "malbon-golf-loop",
+      "title": "Malbon Golf — Loop",
+      "artist": "Malbon Golf",
+      "work": "Loop",
+      "video": {
+        "type": "youtube",
+        "id": "le_TNS_bhKk"
+      },
+      "roles": [
+        "VFX + Edit"
+      ],
+      "category": "work",
+      "featured": false,
+      "anecdote": null
+    },
+    {
+      "slug": "hard-luck-love-song-trailer",
+      "title": "Hard Luck Love Song — Trailer",
+      "artist": "Hard Luck Love Song",
+      "work": "Trailer",
+      "video": {
+        "type": "youtube",
+        "id": "lP5OX-zEgrw"
+      },
+      "roles": [
+        "VFX + Edit"
+      ],
+      "category": "work",
+      "featured": false,
+      "anecdote": null
+    },
+    {
+      "slug": "hard-luck-love-song-teaser",
+      "title": "Hard Luck Love Song — Teaser",
+      "artist": "Hard Luck Love Song",
+      "work": "Teaser",
+      "video": {
+        "type": "youtube",
+        "id": "6scnR0CXOSg"
+      },
+      "roles": [
+        "VFX + Edit"
+      ],
+      "category": "work",
+      "featured": false,
+      "anecdote": null
+    },
+    {
+      "slug": "portrait-party-gardengeddon",
+      "title": "Portrait Party — Gardengeddon",
+      "artist": "Portrait Party",
+      "work": "Gardengeddon",
+      "video": {
+        "type": "youtube",
+        "id": "ocLeJCUDHT4"
+      },
+      "roles": [],
+      "category": "personal",
+      "featured": false,
+      "anecdote": null
+    },
+    {
+      "slug": "mercurial-screensaver",
+      "title": "Mercurial Screensaver",
+      "artist": null,
+      "work": "Mercurial Screensaver",
+      "video": {
+        "type": "vimeo",
+        "id": "828167458"
+      },
+      "roles": [],
+      "category": "personal",
+      "featured": false,
+      "anecdote": null
+    },
+    {
+      "slug": "cuhrabosck-cuck-chaos-crab-short-film",
+      "title": "CUHRABOSCK [Cuck, Chaos, Crab] - short film?",
+      "artist": null,
+      "work": "CUHRABOSCK [Cuck, Chaos, Crab] - short film?",
+      "video": {
+        "type": "youtube",
+        "id": "xbVL0cAl8Do"
+      },
+      "roles": [],
+      "category": "personal",
+      "featured": false,
+      "anecdote": null
+    },
+    {
+      "slug": "worry-about-future",
+      "title": "Worry About Future",
+      "artist": null,
+      "work": "Worry About Future",
+      "video": {
+        "type": "youtube",
+        "id": "yjzSOBHWjCg"
+      },
+      "roles": [],
+      "category": "personal",
+      "featured": false,
+      "anecdote": null
+    },
+    {
+      "slug": "james-webb-entropy-spheres",
+      "title": "James Webb Entropy Spheres",
+      "artist": null,
+      "work": "James Webb Entropy Spheres",
+      "video": {
+        "type": "youtube",
+        "id": "fTGzqjDaQoc"
+      },
+      "roles": [],
+      "category": "personal",
+      "featured": false,
+      "anecdote": null
+    },
+    {
+      "slug": "life-of-illusion",
+      "title": "Life of Illusion",
+      "artist": null,
+      "work": "Life of Illusion",
+      "video": {
+        "type": "youtube",
+        "id": "ej4dfaH5Po4"
+      },
+      "roles": [],
+      "category": "personal",
+      "featured": false,
+      "anecdote": null
+    }
+  ]
+}

@@ -1,7 +1,258 @@
 ---
-import Base from '../layouts/Base.astro';
-import HouseHero from '../components/HouseHero.astro';
+import Scroll from '../layouts/Scroll.astro';
+import data from '../data/projects.json';
+
+// --- beat 05 selection -------------------------------------------------
+// PLACEHOLDER PICK. Chosen to cover range and to include the two projects
+// JJ has already named as anecdotes (Music is Better, The Districts).
+// Swap these slugs when he confirms the real six.
+const FEATURED = [
+  'charli-xcx-used-to-know-me',
+  'rufus-du-sol-music-is-better',
+  'magdalena-bay-chaeri',
+  'the-districts-outlaw-love',
+  'finneas-cleats',
+  'amiri-pacific-flat',
+];
+
+const bySlug = Object.fromEntries(data.projects.map((p) => [p.slug, p]));
+const featured = FEATURED.map((s) => bySlug[s]).filter(Boolean);
+
+// Little Dot gets its own beat. Figures are JJ's verified numbers.
+const LDS = { channels: '15+', views: '5B+', subs: '5.1M' };
+
+const sizes = ['project--l', 'project--r', 'project--xl', 'project--l', 'project--r', 'project--xl'];
 ---
-<Base bare={true}>
-  <HouseHero />
-</Base>
+
+<Scroll title="JJ House — Creative strategist" desc="JJ House. Creative strategist in Los Angeles.">
+  <!-- ================= 01 ARRIVAL ================= -->
+  <header class="beat arrival">
+    <p class="arrival__deck">
+      I make work for screens, and I&rsquo;m usually in it from the first idea to the last frame.
+    </p>
+
+    <!-- Surface layer. Minimal by design: the flavour lives underneath,
+         revealed by dragging. WebGL erode-and-refill replaces this. -->
+    <p class="wordmark__placeholder">HOUSE</p>
+
+    <div class="arrival__foot">
+      <span class="meta">Creative strategist &middot; Los Angeles</span>
+      <span class="meta">LinkedIn / Instagram / Resume</span>
+    </div>
+  </header>
+
+  <!-- ================= 02 PREMISE ================= -->
+  <section class="beat beat--full">
+    <div class="beat__inner">
+      <h1 class="statement" data-rise>The work you deliver is never the work you pitched.</h1>
+    </div>
+  </section>
+
+  <!-- ================= 03 ASIDE ================= -->
+  <section class="beat">
+    <div class="beat__inner" data-rise>
+      <p class="label">( the premise )</p>
+      <div class="prose">
+        <p>
+          The money goes, the days go, and you make what you can. Sometimes the piece works out what
+          it&rsquo;s actually about, and done well, that&rsquo;s the version everyone later claims to
+          have intended. The rest is just loss, and both can feel the same while you&rsquo;re in it.
+        </p>
+        <p>
+          Produced, cut, done the VFX, run the set, you name it. I learned all of it twice over, once
+          because I wanted to be good and once because running a company meant I couldn&rsquo;t afford
+          not to. What that&rsquo;s good for is telling the two apart while there&rsquo;s still time
+          to act.
+        </p>
+        <p>The work below includes making-of anecdotes. Some fun surprises in there. Enjoy.</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- ================= 04 REEL — the one-way flip ================= -->
+  <section class="reel" id="reel">
+    <div class="reel__sticky">
+      <div class="reel__frame" id="reelFrame">
+        <div class="ph" style="width:min(90%,60rem);aspect-ratio:16/9">
+          REEL
+          <small>full bleed, recedes into a rendered room as you scroll</small>
+          <small>two passes out of Blender: beauty plate plus a separate floor reflection</small>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ================= 05 WORK ================= -->
+  <section class="beat" id="work">
+    <div class="ticker">
+      <span class="ticker__slot" id="tickerSlot">WORKS</span>
+      <span class="ticker__slot" style="text-align:right">MENU ::</span>
+    </div>
+
+    <div class="beat__inner">
+      <div class="projects">
+        {featured.map((p, i) => (
+          <article class={`project ${sizes[i % sizes.length]}`} data-rise data-roles={p.roles.join('|')}>
+            <div class="project__media">
+              <span class="project__ph">{p.video.type} &middot; {p.video.id}</span>
+            </div>
+            <h2 class="project__title">{p.title}</h2>
+            <div class="project__roles">
+              {p.roles.map((r) => <span class="meta">{r}</span>)}
+            </div>
+            <p class="project__note">
+              {p.anecdote ?? 'Making-of anecdote goes here. Forty to sixty words, ending on the call JJ made rather than on the chaos.'}
+            </p>
+          </article>
+        ))}
+      </div>
+
+      <p class="viewall" data-rise><a href="/work">View all &#8627;</a></p>
+    </div>
+  </section>
+
+  <!-- ================= 06 LITTLE DOT ================= -->
+  <section class="beat">
+    <div class="beat__inner" data-rise>
+      <p class="label">( the other half )</p>
+      <h2 class="statement">Not everything I make is a film.</h2>
+      <div class="prose" style="margin-top:2.5rem">
+        <p>
+          {LDS.channels} brand and creator channels. {LDS.views} views and {LDS.subs} subscribers
+          across the tenure. Love Island packaging, Pokemon, originals programmed and written and
+          thumbnailed.
+        </p>
+        <p class="meta" style="display:block;margin-top:1.5rem">
+          FIRST PASS &mdash; needs JJ&rsquo;s framing. The argument to land: this is where the
+          strategy half lives, and it is a different kind of proof than a beautiful film.
+        </p>
+      </div>
+    </div>
+  </section>
+
+  <!-- ================= 07 HOW I WORK ================= -->
+  <section class="beat">
+    <div class="beat__inner" data-rise>
+      <p class="label">( how I work )</p>
+      <div class="principles">
+        <p class="principle">
+          All that range is why I&rsquo;d rather frame the whole project than own one piece of it.
+          That&rsquo;s the job I want, and creative strategist is the closest name for it.
+        </p>
+        <p class="principle">
+          &ldquo;Authentic&rdquo; is a vapid say-nothing word. Just like &ldquo;unique&rdquo;. Blah.
+        </p>
+        <p class="principle">
+          I prefer, &ldquo;How do we position and frame this so it becomes what it&rsquo;s trying to
+          be?&rdquo;
+        </p>
+      </div>
+    </div>
+  </section>
+
+  <!-- ================= 08 NOW ================= -->
+  <section class="beat beat--tight">
+    <div class="beat__inner" data-rise>
+      <p class="label">( now )</p>
+      <div class="ph" style="max-width:40rem;padding:3rem 1.5rem">
+        NOW
+        <small>what JJ is building and learning right now</small>
+        <small>Blender and AI animation pipeline &middot; MELM wrapping &middot; Embody</small>
+      </div>
+    </div>
+  </section>
+
+  <!-- ================= 09 COME IN ================= -->
+  <footer class="beat">
+    <div class="beat__inner" data-rise>
+      <p class="label">( come in )</p>
+      <p class="statement" style="max-width:24ch">Tell me what you can already see.</p>
+      <div class="cta">
+        <a class="btn" href="mailto:jj@jjhouse.me"><span>Email me @</span></a>
+        <a class="btn" href="#"><span>Book a call &rarr;</span></a>
+      </div>
+      <p class="closing-mark">HOUSE</p>
+    </div>
+    <div class="colophon">
+      <span class="meta">&copy; 2026 JJ House &middot; Los Angeles</span>
+      <span class="meta">
+        <a href="https://www.imdb.com/name/nm7420692/" style="color:inherit">IMDb</a> /
+        <a href="https://www.instagram.com/jj.duplex/" style="color:inherit">Instagram</a>
+      </span>
+    </div>
+  </footer>
+
+  <script is:inline>
+    (function () {
+      const reduce = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+      // ---- the one-way flip. Light until the reel, dark forever after. ----
+      const reel = document.getElementById('reel');
+      if (reel) {
+        const io = new IntersectionObserver(
+          (entries) => {
+            entries.forEach((e) => {
+              if (e.isIntersecting) document.body.classList.add('is-dark');
+            });
+          },
+          { rootMargin: '-45% 0px -45% 0px' }
+        );
+        io.observe(reel);
+      }
+
+      // ---- the reel recedes as you scroll through it ----
+      const frame = document.getElementById('reelFrame');
+      if (frame && reel && !reduce) {
+        const onScroll = () => {
+          const r = reel.getBoundingClientRect();
+          const total = r.height - window.innerHeight;
+          if (total <= 0) return;
+          const p = Math.min(1, Math.max(0, -r.top / total));
+          frame.style.setProperty('--recede', String(1 - p * 0.45));
+        };
+        addEventListener('scroll', onScroll, { passive: true });
+        onScroll();
+      }
+
+      // ---- the credit ticker ----
+      // Defaults to WORKS. When a project is in view it cycles that project's
+      // own credits, half a second each, hard cuts like burned-in subtitles.
+      // Rate of change is the information: multi-hat projects flicker,
+      // single-hat projects sit still.
+      const slot = document.getElementById('tickerSlot');
+      const projects = [...document.querySelectorAll('[data-roles]')];
+      if (slot && projects.length) {
+        let active = null;
+        let timer = null;
+        let i = 0;
+
+        const stop = () => { if (timer) { clearInterval(timer); timer = null; } };
+
+        const play = (el) => {
+          stop();
+          if (!el) { slot.textContent = 'WORKS'; return; }
+          const roles = (el.dataset.roles || '').split('|').filter(Boolean);
+          if (!roles.length) { slot.textContent = 'WORKS'; return; }
+          i = 0;
+          slot.textContent = roles[0].toUpperCase();
+          if (roles.length === 1 || reduce) return;   // one hat: sit still
+          timer = setInterval(() => {
+            i = (i + 1) % roles.length;
+            slot.textContent = roles[i].toUpperCase();
+          }, 500);
+        };
+
+        const io = new IntersectionObserver(
+          (entries) => {
+            entries.forEach((e) => {
+              if (e.isIntersecting) { active = e.target; play(active); }
+              else if (e.target === active) { active = null; play(null); }
+            });
+          },
+          { rootMargin: '-35% 0px -35% 0px' }
+        );
+        projects.forEach((p) => io.observe(p));
+      }
+    })();
+  </script>
+</Scroll>
