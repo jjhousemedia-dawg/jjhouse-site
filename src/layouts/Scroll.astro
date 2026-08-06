@@ -214,7 +214,16 @@ const OBJECTS = [
           const j = Math.floor(Math.random() * (i + 1));
           [rest[i], rest[j]] = [rest[j], rest[i]];
         }
-        const order = [objs[0], ...rest.slice(0, 2)];
+        // filter(Boolean) matters: if the object markup is ever absent this
+        // array holds undefined, and the cycle threw on .classList every
+        // frame — which killed the loader script silently.
+        const order = [objs[0], ...rest.slice(0, 2)].filter(Boolean);
+        if (!order.length) {
+          // nothing to cycle. Never leave the curtain up.
+          el.classList.add('done');
+          document.documentElement.removeAttribute('data-loading');
+          return;
+        }
 
         let step = 0;
         let finished = false;

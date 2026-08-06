@@ -379,13 +379,16 @@ html[data-loading] body > *:not(#loader) { visibility: hidden; }
   mask-image: linear-gradient(to bottom, #000 0 68%, rgba(0,0,0,0) 96%);
 }
 /* everything the reader interacts with sits above the ink */
-.arrival__top, .arrival__foot, .surface { position: relative; z-index: 2; }
+/* wordmark (0) < reveal overlay (1) < hero UI (2). The overlay paints the
+   plate over the letters and over later sections, but never over the deck
+   copy, the CTA or the footer line. */
+.arrival__top, .arrival__foot { position: relative; z-index: 2; }
+.surface { position: relative; z-index: 0; }
 
 /* When WebGL takes over, the canvas draws the wordmark. The DOM text
    stays in the document for screen readers and for the fit measurement,
    it is only made invisible — never display:none, which would break
    both. The striped substrate block is the no-WebGL fallback. */
-.surface.is-canvas .wordmark__placeholder { visibility: hidden; }
 .surface.is-canvas .surface__substrate { opacity: 0; }
 .surface .wordmark__placeholder { position: relative; z-index: 2; mix-blend-mode: normal; }
 

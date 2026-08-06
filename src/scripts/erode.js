@@ -1,21 +1,35 @@
 /* ============================================================
-   Wordmark erosion — the "algae on a lake" reveal.
+   Hero mask-reveal — a faithful reimplementation of noth.in's.
 
-   Mechanic, matching what noth.in actually runs (verified: a live
-   WebGL2 canvas.mask-reveal-canvas, no three.js):
+   Read out of their public bundle (nothinv1.netlify.app/main.js) rather
+   than guessed at. Their architecture, in full:
 
-     1. Rasterise the wordmark to a matte texture (white on black).
-     2. Keep a ping-pong trail buffer. Each frame the previous trail is
-        multiplied by a decay constant and the pointer is stamped in,
-        weighted by velocity. The decay IS the foam closing over the
-        lake — it is the single number that owns the feel.
-     3. Add procedural noise to the trail BEFORE thresholding. Without
-        this the erosion edge is a clean circle. With it the edge is
-        cellular and tattered, which is the whole illusion.
-     4. alpha = matte, colour = mix(substrate, ink, 1 - erosion)
+     base   = a flat IMAGE of the hero at rest (paper + black wordmark)
+     reveal = a video
+     dye    = a Navier-Stokes fluid simulation driven by the pointer
+     out    = mix(base, reveal, smoothstep(soft, soft + width, dye * size))
 
-   Substrate is a procedural colour field until JJ's Blender geo-nodes
-   render exists. Pass a video/image URL via data-substrate to swap it.
+   Two things this corrects about the earlier attempt:
+
+   1. There is NO procedural noise anywhere. The organic shapes come from
+      fluid advection, not fbm. Noise is what made the first pass read as
+      smoke rather than liquid.
+   2. There is NO ink/letterform union. The apparent "black ink spreading
+      outside the letters" in the reference is simply their video — which
+      is mostly black — showing through the white background. One
+      crossfade between two pictures.
+
+   Their exact config:
+     simResolution 256 · dyeResolution 512
+     velocityDissipation 0.962 · dyeDissipation 0.988
+     pressureIterations 20 · curlStrength 0
+     splatRadius 6e-5 · splatForce 5900
+     revealSize 3.9 · edgeSoftness 0.5 · edgeWidth 0.01
+
+   curlStrength is 0, so vorticity confinement is a no-op and the curl and
+   vorticity passes are omitted. edgeWidth 0.01 against a 0.5 threshold is
+   a near-binary cut — that is why their boundary is crisp and identical
+   on both sides of the edge.
    ============================================================ */
 
 const VERT = `#version 300 es
@@ -23,158 +37,179 @@ in vec2 aPos;
 out vec2 vUv;
 void main(){ vUv = aPos * 0.5 + 0.5; gl_Position = vec4(aPos, 0.0, 1.0); }`;
 
-/* ---- trail pass: decay everything, stamp the pointer segment ---- */
-const TRAIL = `#version 300 es
+const F_HEAD = `#version 300 es
 precision highp float;
+precision highp sampler2D;
 in vec2 vUv;
-out vec4 frag;
-uniform sampler2D uPrev;
-uniform vec2  uP;        // pointer now, uv
-uniform vec2  uPPrev;    // pointer last frame, uv
-uniform float uDecay;    // the foam constant
+out vec4 fragColor;
+`;
+
+/* ---- splat: exp falloff, added onto the target ---- */
+const F_SPLAT = F_HEAD + `
+uniform sampler2D uTarget;
+uniform float uAspectRatio;
+uniform vec2  uPoint;
+uniform vec3  uColor;
 uniform float uRadius;
-uniform float uStrength;
-uniform float uAspect;
-uniform float uActive;
-uniform float uGravity;
-
-// distance to the segment travelled since last frame, so a fast flick
-// paints a continuous stroke instead of a dotted line
-float segDist(vec2 p, vec2 a, vec2 b){
-  vec2 pa = p - a, ba = b - a;
-  float h = clamp(dot(pa, ba) / max(dot(ba, ba), 1e-6), 0.0, 1.0);
-  return length(pa - ba * h);
-}
-
 void main(){
-  // Sample the previous frame from slightly ABOVE, so the whole field
-  // creeps downward every frame. That plus the slow decay is what makes
-  // torn ink sag and run off the bottom of the hero instead of politely
-  // dissolving in place.
-  vec2 src = vUv + vec2(sin(vUv.y * 21.0) * uGravity * 0.22, uGravity);
-  float prev = texture(uPrev, src).r * uDecay;
-
-  // Space normalised to WIDTH (y divided by aspect), so radius stays a
-  // stable fraction of the viewport no matter how tall the canvas grows.
-  vec2 p  = vec2(vUv.x,     vUv.y     / uAspect);
-  vec2 a  = vec2(uP.x,      uP.y      / uAspect);
-  vec2 b  = vec2(uPPrev.x,  uPPrev.y  / uAspect);
-  float d = segDist(p, a, b);
-  float stamp = smoothstep(uRadius, 0.0, d) * uStrength * uActive;
-  float v = max(prev, stamp);
-  // Gravity pushes the field toward v=0, and CLAMP_TO_EDGE would smear the
-  // bottom row into a hard band. Bleed it off just before it gets there.
-  v *= smoothstep(0.0, 0.035, vUv.y);
-  frag = vec4(v, 0.0, 0.0, 1.0);
+  vec2 p = vUv - uPoint;
+  p.x *= uAspectRatio;
+  vec3 splat = exp(-dot(p, p) / uRadius) * uColor;
+  vec3 base = texture(uTarget, vUv).xyz;
+  fragColor = vec4(base + splat, 1.0);
 }`;
 
-/* ---- display pass ---- */
-const DISP = `#version 300 es
-precision highp float;
-in vec2 vUv;
-out vec4 frag;
-uniform sampler2D uMatte;
-uniform sampler2D uTrail;
+/* ---- advection, with manual bilinear fetch ---- */
+const F_ADVECT = F_HEAD + `
+uniform sampler2D uVelocity;
+uniform sampler2D uSource;
+uniform vec2  uTexelSize;
+uniform float uDt;
+uniform float uDissipation;
+vec4 bilerp(sampler2D sam, vec2 uv, vec2 tsize){
+  vec2 st = uv / tsize - 0.5;
+  vec2 iuv = floor(st);
+  vec2 fuv = fract(st);
+  vec4 a = texture(sam, (iuv + vec2(0.5, 0.5)) * tsize);
+  vec4 b = texture(sam, (iuv + vec2(1.5, 0.5)) * tsize);
+  vec4 c = texture(sam, (iuv + vec2(0.5, 1.5)) * tsize);
+  vec4 d = texture(sam, (iuv + vec2(1.5, 1.5)) * tsize);
+  return mix(mix(a, b, fuv.x), mix(c, d, fuv.x), fuv.y);
+}
+void main(){
+  vec2 coord = vUv - uDt * texture(uVelocity, vUv).xy * uTexelSize;
+  fragColor = uDissipation * bilerp(uSource, coord, uTexelSize);
+}`;
+
+const F_DIVERGENCE = F_HEAD + `
+uniform sampler2D uVelocity;
+uniform vec2 uTexelSize;
+void main(){
+  float L = texture(uVelocity, vUv - vec2(uTexelSize.x, 0.0)).x;
+  float R = texture(uVelocity, vUv + vec2(uTexelSize.x, 0.0)).x;
+  float T = texture(uVelocity, vUv + vec2(0.0, uTexelSize.y)).y;
+  float B = texture(uVelocity, vUv - vec2(0.0, uTexelSize.y)).y;
+  float div = 0.5 * (R - L + T - B);
+  fragColor = vec4(div, 0.0, 0.0, 1.0);
+}`;
+
+const F_PRESSURE = F_HEAD + `
+uniform sampler2D uPressure;
+uniform sampler2D uDivergence;
+uniform vec2 uTexelSize;
+void main(){
+  float L = texture(uPressure, vUv - vec2(uTexelSize.x, 0.0)).x;
+  float R = texture(uPressure, vUv + vec2(uTexelSize.x, 0.0)).x;
+  float T = texture(uPressure, vUv + vec2(0.0, uTexelSize.y)).x;
+  float B = texture(uPressure, vUv - vec2(0.0, uTexelSize.y)).x;
+  float C = texture(uDivergence, vUv).x;
+  float pressure = (L + R + B + T - C) * 0.25;
+  fragColor = vec4(pressure, 0.0, 0.0, 1.0);
+}`;
+
+const F_GRADIENT = F_HEAD + `
+uniform sampler2D uPressure;
+uniform sampler2D uVelocity;
+uniform vec2 uTexelSize;
+void main(){
+  float L = texture(uPressure, vUv - vec2(uTexelSize.x, 0.0)).x;
+  float R = texture(uPressure, vUv + vec2(uTexelSize.x, 0.0)).x;
+  float T = texture(uPressure, vUv + vec2(0.0, uTexelSize.y)).x;
+  float B = texture(uPressure, vUv - vec2(0.0, uTexelSize.y)).x;
+  vec2 velocity = texture(uVelocity, vUv).xy;
+  velocity -= vec2(R - L, T - B) * 0.5;
+  fragColor = vec4(velocity, 0.0, 1.0);
+}`;
+
+/* ---- the water loop that stands in for their video ---- */
+const F_WATER = F_HEAD + `
 uniform float uTime;
-uniform float uNoise;
-uniform float uScale;
-uniform float uBlob;
-uniform vec3  uInk;
 uniform float uAspect;
-
-float hash(vec2 p){ return fract(sin(dot(p, vec2(127.1, 311.7))) * 43758.5453123); }
-float vnoise(vec2 p){
-  vec2 i = floor(p), f = fract(p);
-  vec2 u = f * f * (3.0 - 2.0 * f);
-  return mix(mix(hash(i), hash(i + vec2(1,0)), u.x),
-             mix(hash(i + vec2(0,1)), hash(i + vec2(1,1)), u.x), u.y);
-}
-float fbm(vec2 p){
-  float v = 0.0, a = 0.5;
-  for (int i = 0; i < 5; i++){ v += a * vnoise(p); p *= 2.03; a *= 0.5; }
-  return v;
-}
-
-// --- the thing under the ink: a slow water loop -------------------
-// Classic layered caustic. Cheap, loops forever, and reads instantly as
-// water without needing an asset.
-float caustic(vec2 p, float t){
-  vec2 i = p;
-  float c = 0.0;
-  const float inten = 0.0045;
-  for (int n = 0; n < 5; n++){
-    float ti = t * (1.0 - (3.5 / float(n + 1)));
-    i = p + vec2(cos(ti - i.x) + sin(ti + i.y), sin(ti - i.y) + cos(ti + i.x));
-    c += 1.0 / length(vec2(p.x / (sin(i.x + ti) / inten), p.y / (cos(i.y + ti) / inten)));
-  }
-  c /= 5.0;
-  c = 1.17 - pow(c, 1.4);
-  return clamp(pow(abs(c), 8.0), 0.0, 1.0);
-}
-
-vec3 water(vec2 uv){
-  vec2 p = vec2(uv.x, uv.y / uAspect) * 4.2;
-  float t = uTime * 0.42;
-  float c = caustic(p, t);
-  float swell = fbm(p * 0.5 + vec2(0.0, t * 0.15));
-  // restrained: it sits inside a black wordmark on a paper page, so a
-  // saturated pool reads as a mistake. Deep water, sparse highlights.
-  vec3 deep    = vec3(0.015, 0.055, 0.075);
-  vec3 shallow = vec3(0.04, 0.19, 0.22);
-  vec3 crest   = vec3(0.55, 0.82, 0.88);
-  vec3 col = mix(deep, shallow, smoothstep(0.25, 0.85, swell));
-  col += crest * c * 0.55;
-  return col;
-}
-
+// Predictable layered ripples. The earlier caustic formula saturated to a
+// flat field at this scale, which is why the reveal read as one solid
+// colour: mostly dark water, sparse bright crests, nothing in between.
 void main(){
-  float matte = texture(uMatte, vUv).a;
-  float t     = texture(uTrail, vUv).r;
-
-  vec2 np = vec2(vUv.x, vUv.y / uAspect);
-  // two octaves at different rates: the coarse one shapes the big blobs,
-  // the fine one shreds the edge into islands
-  float n1 = fbm(np * uScale + uTime * 0.035);
-  float n2 = fbm(np * uScale * 2.9 - uTime * 0.055);
-
-  // THE INK LAYER. Not confined to the letterforms: it is the union of the
-  // letters and the ink the cursor has shoved around, so torn ink piles up
-  // well outside the wordmark.
-  float field = max(matte, t * uBlob);
-  float ink   = smoothstep(0.46, 0.55, field + (n1 - 0.5) * uNoise);
-
-  // THE TEAR. A narrow threshold band plus a fine octave is what breaks the
-  // reveal into ragged islands. A wide band just gives a clean capsule with
-  // a soft edge, which reads as a highlighter rather than torn material.
-  float nRev = (n1 * 0.55 + n2 * 0.45) - 0.5;
-  float reveal = smoothstep(0.61, 0.73, t + nRev * uNoise * 1.25);
-
-  // the run has to dissolve out, not hit a straight edge
-  ink *= smoothstep(0.0, 0.07, vUv.y);
-
-  vec3 col = mix(uInk, water(vUv), reveal);
-  frag = vec4(col, ink);
+  vec2 p = vec2(vUv.x * uAspect, vUv.y) * 6.0;
+  float t = uTime * 0.5;
+  float w = 0.0;
+  w += sin(p.x * 1.7 + t * 1.30);
+  w += sin(p.y * 2.1 - t * 1.10);
+  w += sin((p.x + p.y) * 1.3 + t * 0.70);
+  w += sin(length(p - vec2(3.0, 2.0)) * 2.2 - t * 1.70);
+  w *= 0.25;
+  float h = clamp(0.5 + 0.5 * w, 0.0, 1.0);
+  float spec = pow(h, 14.0);
+  vec3 deep = vec3(0.010, 0.026, 0.036);
+  vec3 mid  = vec3(0.030, 0.100, 0.140);
+  vec3 col = mix(deep, mid, h);
+  col += vec3(0.60, 0.86, 0.95) * spec * 0.9;
+  fragColor = vec4(col, 1.0);
 }`;
 
-function compile(gl, type, src){
+/* ---- composite: their shader, unchanged ---- */
+const F_COMPOSITE = F_HEAD + `
+uniform sampler2D uBaseTexture;
+uniform sampler2D uRevealTexture;
+uniform sampler2D uDye;
+uniform float uRevealSize;
+uniform float uEdgeSoftness;
+uniform float uEdgeWidth;
+uniform float uBaseImageAspect;
+uniform float uRevealImageAspect;
+uniform float uPlaneAspect;
+uniform float uDebug;
+vec2 coverUv(vec2 uv, float imageAspect, float planeAspect){
+  vec2 ratio = vec2(
+    min(planeAspect / imageAspect, 1.0),
+    min(imageAspect / planeAspect, 1.0)
+  );
+  return vec2(uv.x * ratio.x + (1.0 - ratio.x) * 0.5,
+              uv.y * ratio.y + (1.0 - ratio.y) * 0.5);
+}
+void main(){
+  float dye = texture(uDye, vUv).r;
+  if (uDebug > 2.5) { fragColor = vec4(texture(uRevealTexture, vUv).rgb, 1.0); return; }
+  if (uDebug > 1.5) { fragColor = vec4(vec3(dye), 1.0); return; }
+  if (uDebug > 0.5) { fragColor = vec4(vec3(dye * 40.0), 1.0); return; }
+  vec2 baseUv = coverUv(vUv, uBaseImageAspect, uPlaneAspect);
+  baseUv = clamp(baseUv, 0.001, 0.999);
+  vec4 baseColor = texture(uBaseTexture, baseUv);
+  vec2 revealUv = coverUv(vUv, uRevealImageAspect, uPlaneAspect);
+  revealUv = clamp(revealUv, 0.001, 0.999);
+  vec4 revealColor = texture(uRevealTexture, revealUv);
+  float raw  = dye * uRevealSize;
+  float mask = smoothstep(uEdgeSoftness, uEdgeSoftness + uEdgeWidth, raw);
+  mask = clamp(mask, 0.0, 1.0);
+  fragColor = mix(baseColor, revealColor, mask);
+}`;
+
+function sh(gl, type, src){
   const s = gl.createShader(type);
   gl.shaderSource(s, src); gl.compileShader(s);
   if (!gl.getShaderParameter(s, gl.COMPILE_STATUS)) {
-    console.error('[erode] shader:', gl.getShaderInfoLog(s));
+    console.error('[erode] shader:', gl.getShaderInfoLog(s), src.slice(0, 200));
     return null;
   }
   return s;
 }
-function program(gl, vs, fs){
-  const v = compile(gl, gl.VERTEX_SHADER, vs), f = compile(gl, gl.FRAGMENT_SHADER, fs);
+function prog(gl, fs){
+  const v = sh(gl, gl.VERTEX_SHADER, VERT), f = sh(gl, gl.FRAGMENT_SHADER, fs);
   if (!v || !f) return null;
   const p = gl.createProgram();
-  gl.attachShader(p, v); gl.attachShader(p, f); gl.linkProgram(p);
+  gl.attachShader(p, v); gl.attachShader(p, f);
+  gl.bindAttribLocation(p, 0, 'aPos');
+  gl.linkProgram(p);
   if (!gl.getProgramParameter(p, gl.LINK_STATUS)) {
     console.error('[erode] link:', gl.getProgramInfoLog(p));
     return null;
   }
-  return p;
+  const u = {};
+  const n = gl.getProgramParameter(p, gl.ACTIVE_UNIFORMS);
+  for (let i = 0; i < n; i++){
+    const info = gl.getActiveUniform(p, i);
+    u[info.name] = gl.getUniformLocation(p, info.name);
+  }
+  return { p, u };
 }
 
 export function initErode(surface){
@@ -184,220 +219,239 @@ export function initErode(surface){
   if (!textEl || !canvas) return false;
   if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) return false;
 
-  const gl = canvas.getContext('webgl2', {
-    alpha: true, premultipliedAlpha: false, antialias: false, depth: false,
-  });
-  if (!gl) return false;   // caller keeps the DOM text visible
+  const gl = canvas.getContext('webgl2', { alpha: true, premultipliedAlpha: false, antialias: false, depth: false, stencil: false });
+  if (!gl) return false;
+  if (!gl.getExtension('EXT_color_buffer_float')) return false;
+  gl.getExtension('OES_texture_float_linear');
 
-  const pTrail = program(gl, VERT, TRAIL);
-  const pDisp  = program(gl, VERT, DISP);
-  if (!pTrail || !pDisp) return false;
+  const P = {
+    splat: prog(gl, F_SPLAT), advect: prog(gl, F_ADVECT), diverge: prog(gl, F_DIVERGENCE),
+    pressure: prog(gl, F_PRESSURE), gradient: prog(gl, F_GRADIENT),
+    water: prog(gl, F_WATER), composite: prog(gl, F_COMPOSITE),
+  };
+  if (Object.values(P).some((x) => !x)) return false;
 
-  // fullscreen triangle pair
   const vao = gl.createVertexArray();
   gl.bindVertexArray(vao);
-  const buf = gl.createBuffer();
-  gl.bindBuffer(gl.ARRAY_BUFFER, buf);
+  const vbo = gl.createBuffer();
+  gl.bindBuffer(gl.ARRAY_BUFFER, vbo);
   gl.bufferData(gl.ARRAY_BUFFER, new Float32Array([-1,-1, 3,-1, -1,3]), gl.STATIC_DRAW);
   gl.enableVertexAttribArray(0);
   gl.vertexAttribPointer(0, 2, gl.FLOAT, false, 0, 0);
 
-  const matteTex = gl.createTexture();
-  const mk = (w, h) => {
+  const q = new URLSearchParams(location.search);
+  const d = surface.dataset;
+  const k = (name, fb) => parseFloat(q.get(name) ?? d[name] ?? fb);
+
+  // their numbers, verbatim
+  const CFG = {
+    simRes:      k('simres', 256),
+    dyeRes:      k('dyeres', 512),
+    velDiss:     k('veldiss', 0.962),
+    dyeDiss:     k('dyediss', 0.988),
+    iterations:  k('iters', 20),
+    splatRadius: k('splatradius', 2.6e-4),
+    splatForce:  k('splatforce', 5900),
+    revealSize:  k('revealsize', 3.9),
+    edgeSoftness:k('edgesoftness', 0.5),
+    edgeWidth:   k('edgewidth', 0.01),
+  };
+
+  const texA = () => {
     const t = gl.createTexture();
     gl.bindTexture(gl.TEXTURE_2D, t);
-    gl.texImage2D(gl.TEXTURE_2D, 0, gl.R16F, w, h, 0, gl.RED, gl.HALF_FLOAT, null);
     gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR);
     gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.LINEAR);
     gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE);
     gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);
-    const fb = gl.createFramebuffer();
-    gl.bindFramebuffer(gl.FRAMEBUFFER, fb);
-    gl.framebufferTexture2D(gl.FRAMEBUFFER, gl.COLOR_ATTACHMENT0, gl.TEXTURE_2D, t, 0);
-    return { t, fb };
+    return t;
   };
-  gl.getExtension('EXT_color_buffer_half_float');
-  gl.getExtension('EXT_float_blend');
+  function fbo(w, h){
+    const t = texA();
+    gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA16F, w, h, 0, gl.RGBA, gl.HALF_FLOAT, null);
+    const f = gl.createFramebuffer();
+    gl.bindFramebuffer(gl.FRAMEBUFFER, f);
+    gl.framebufferTexture2D(gl.FRAMEBUFFER, gl.COLOR_ATTACHMENT0, gl.TEXTURE_2D, t, 0);
+    gl.viewport(0, 0, w, h);
+    gl.clearColor(0, 0, 0, 1); gl.clear(gl.COLOR_BUFFER_BIT);
+    return { t, f, w, h, texel: [1 / w, 1 / h] };
+  }
+  const dbl = (w, h) => {
+    let a = fbo(w, h), b = fbo(w, h);
+    return { get read(){ return a; }, get write(){ return b; }, swap(){ const t = a; a = b; b = t; }, w, h };
+  };
 
-  let A = null, B = null, W = 0, H = 0, TW = 0, TH = 0;
-  const DPR = () => Math.min(window.devicePixelRatio || 1, 2);
+  let velocity, dyeFbo, divergence, pressure, water, baseTex, revealTex;
+  let W = 0, H = 0;
 
-  // --- rasterise the wordmark to a matte -------------------------
-  const off = document.createElement('canvas');
-  const octx = off.getContext('2d');
-
-  function buildMatte(){
-    // canvas bleeds well past the wordmark box (see .surface__erode), so all
-    // geometry here is in CANVAS space, not surface space
+  function build(){
     const r = canvas.getBoundingClientRect();
-    const dpr = DPR();
-    W = Math.max(1, Math.round(r.width));
-    H = Math.max(1, Math.round(r.height));
-    off.width  = Math.round(W * dpr);
-    off.height = Math.round(H * dpr);
+    const dpr = Math.min(window.devicePixelRatio || 1, 2);
+    W = Math.max(2, Math.round(r.width));
+    H = Math.max(2, Math.round(r.height));
+    canvas.width = Math.round(W * dpr);
+    canvas.height = Math.round(H * dpr);
 
-    const cs = getComputedStyle(textEl);
-    octx.setTransform(dpr, 0, 0, dpr, 0, 0);
-    octx.clearRect(0, 0, W, H);
-    // the font shorthand carries weight onto a variable wght axis
-    octx.font = `${cs.fontWeight} ${parseFloat(cs.fontSize)}px ${cs.fontFamily}`;
-    if ('letterSpacing' in octx) octx.letterSpacing = cs.letterSpacing;
-    octx.textAlign = 'left';
-    octx.textBaseline = 'alphabetic';
-    octx.fillStyle = '#fff';
+    // BASE IS TRANSPARENT. This is the part that took reading their DOM to
+    // see: the canvas is a clear overlay, not a picture of the hero. The
+    // wordmark stays an ordinary DOM element underneath and the plate is
+    // painted over it only where the dye has reached. It is why their deck
+    // copy and CTA survive untouched while the letters still get eaten, and
+    // why the reveal can run over the section below.
+    if (!baseTex) {
+      baseTex = texA();
+      gl.bindTexture(gl.TEXTURE_2D, baseTex);
+      gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, 1, 1, 0, gl.RGBA, gl.UNSIGNED_BYTE,
+                    new Uint8Array([0, 0, 0, 0]));
+    }
 
-    // place the glyphs exactly where the DOM text sits
-    const tr = textEl.getBoundingClientRect();
-    const m = octx.measureText(textEl.textContent.trim());
-    const x = tr.left - r.left;
-    const y = (tr.top - r.top) + (tr.height + (m.actualBoundingBoxAscent - m.actualBoundingBoxDescent)) / 2;
-    octx.fillText(textEl.textContent.trim(), x, y);
-
-    gl.bindTexture(gl.TEXTURE_2D, matteTex);
-    gl.pixelStorei(gl.UNPACK_FLIP_Y_WEBGL, true);
-    gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, gl.RGBA, gl.UNSIGNED_BYTE, off);
-    gl.pixelStorei(gl.UNPACK_FLIP_Y_WEBGL, false);
-    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR);
-    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.LINEAR);
-    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE);
-    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);
-
-    // backing store only — CSS owns the layout box
-    canvas.width  = off.width;
-    canvas.height = off.height;
-
-    // trail buffers run at half res: cheaper, and the blur helps the foam
-    // quarter res: cheaper, and the extra blur is what makes the ink read
-    // as one connected sheet rather than a stack of stamps
-    TW = Math.max(2, Math.round(W * 0.3));
-    TH = Math.max(2, Math.round(H * 0.3));
-    A = mk(TW, TH); B = mk(TW, TH);
-    [A, B].forEach((o) => {
-      gl.bindFramebuffer(gl.FRAMEBUFFER, o.fb);
-      gl.clearColor(0, 0, 0, 1); gl.clear(gl.COLOR_BUFFER_BIT);
-    });
+    const s = Math.round(CFG.simRes), dy = Math.round(CFG.dyeRes);
+    const ar = W / H;
+    const sw = ar > 1 ? Math.round(s * ar) : s, shh = ar > 1 ? s : Math.round(s / ar);
+    const dw = ar > 1 ? Math.round(dy * ar) : dy, dh = ar > 1 ? dy : Math.round(dy / ar);
+    velocity   = dbl(sw, shh);
+    pressure   = dbl(sw, shh);
+    divergence = fbo(sw, shh);
+    dyeFbo     = dbl(dw, dh);
+    water      = fbo(dw, dh);
+    revealTex  = water.t;
     gl.bindFramebuffer(gl.FRAMEBUFFER, null);
   }
 
-  // --- pointer ----------------------------------------------------
-  const P = { x: 0.5, y: 0.5 }, PP = { x: 0.5, y: 0.5 };
-  let active = 0, idle = 0, vel = 0;
+  const draw = (target) => {
+    gl.bindFramebuffer(gl.FRAMEBUFFER, target ? target.f : null);
+    gl.viewport(0, 0, target ? target.w : canvas.width, target ? target.h : canvas.height);
+    gl.drawArrays(gl.TRIANGLES, 0, 3);
+  };
+  const bind = (unit, tex, loc) => {
+    gl.activeTexture(gl.TEXTURE0 + unit);
+    gl.bindTexture(gl.TEXTURE_2D, tex);
+    gl.uniform1i(loc, unit);
+  };
 
+  // ---- pointer ----
+  const pointer = { x: 0.5, y: 0.5, dx: 0, dy: 0, moved: false, down: false };
+  let lastX = 0.5, lastY = 0.5, everMoved = false;
   const move = (cx, cy) => {
     const r = canvas.getBoundingClientRect();
-    const nx = (cx - r.left) / r.width;
-    const ny = 1.0 - (cy - r.top) / r.height;
-    vel = Math.min(1, Math.hypot(nx - P.x, ny - P.y) * 14);
-    PP.x = P.x; PP.y = P.y; P.x = nx; P.y = ny;
-    active = 1; idle = 0;
+    const x = (cx - r.left) / r.width;
+    const y = 1.0 - (cy - r.top) / r.height;
+    pointer.dx = (x - lastX) * CFG.splatForce;
+    pointer.dy = (y - lastY) * CFG.splatForce;
+    lastX = x; lastY = y;
+    pointer.x = x; pointer.y = y;
+    pointer.moved = Math.abs(pointer.dx) > 0 || Math.abs(pointer.dy) > 0;
+    everMoved = true;
   };
-  // The ink sheet covers more than the letters, so the whole hero region
-  // has to drive it. Listening on the wordmark box alone means the effect
-  // dies the moment the cursor leaves the letters, which is exactly the
-  // thing that made the first pass feel contained.
   hero.addEventListener('pointermove', (e) => move(e.clientX, e.clientY));
-  hero.addEventListener('pointerdown', (e) => move(e.clientX, e.clientY));
-  hero.addEventListener('pointerleave', () => { active = 0; });
-  hero.addEventListener('touchmove', (e) => {
-    const t = e.touches[0]; if (t) move(t.clientX, t.clientY);
-  }, { passive: true });
+  hero.addEventListener('pointerdown', (e) => { lastX = -1; move(e.clientX, e.clientY); });
+  hero.addEventListener('touchmove', (e) => { const t = e.touches[0]; if (t) move(t.clientX, t.clientY); }, { passive: true });
 
-  // Knobs. Defaults live on the element; a query string overrides them so
-  // the feel can be dialled in the browser without touching code:
-  //   ?decay=0.97&radius=0.32&noise=0.7&scale=14
-  const opts = surface.dataset;
-  const q = new URLSearchParams(location.search);
-  const knob = (name, fallback) => parseFloat(q.get(name) ?? opts[name] ?? fallback);
-  const DECAY  = knob('decay',  '0.988');   // the rejoin. higher = slower close
-  const RADIUS = knob('radius', '0.30');    // fraction of canvas HEIGHT
-  const NOISE  = knob('noise',  '0.78');    // how torn the boundary reads
-  const SCALE  = knob('scale',  '7.5');     // big organic cells, not fine grain
-  const BLOB   = knob('blob',   '1.30');    // how far the cursor paints ink OUTSIDE the letters
-  const GRAV   = knob('grav',   '0.0022');  // how fast torn ink runs downhill
+  function splat(x, y, dx, dy){
+    splats++;
+    gl.useProgram(P.splat.p);
+    bind(0, velocity.read.t, P.splat.u.uTarget);
+    gl.uniform1f(P.splat.u.uAspectRatio, W / H);
+    gl.uniform2f(P.splat.u.uPoint, x, y);
+    gl.uniform3f(P.splat.u.uColor, dx, dy, 0);
+    gl.uniform1f(P.splat.u.uRadius, CFG.splatRadius);
+    draw(velocity.write); velocity.swap();
 
-  const ink = (() => {
-    const c = getComputedStyle(document.body).color.match(/[\d.]+/g) || [11, 11, 11];
-    return [c[0] / 255, c[1] / 255, c[2] / 255];
-  })();
+    bind(0, dyeFbo.read.t, P.splat.u.uTarget);
+    gl.uniform3f(P.splat.u.uColor, 1, 1, 1);
+    draw(dyeFbo.write); dyeFbo.swap();
+  }
 
-  const uT = {
-    prev: gl.getUniformLocation(pTrail, 'uPrev'), p: gl.getUniformLocation(pTrail, 'uP'),
-    pprev: gl.getUniformLocation(pTrail, 'uPPrev'), decay: gl.getUniformLocation(pTrail, 'uDecay'),
-    radius: gl.getUniformLocation(pTrail, 'uRadius'), strength: gl.getUniformLocation(pTrail, 'uStrength'),
-    aspect: gl.getUniformLocation(pTrail, 'uAspect'), active: gl.getUniformLocation(pTrail, 'uActive'),
-    gravity: gl.getUniformLocation(pTrail, 'uGravity'),
-  };
-  const uD = {
-    matte: gl.getUniformLocation(pDisp, 'uMatte'), trail: gl.getUniformLocation(pDisp, 'uTrail'),
-    blob: gl.getUniformLocation(pDisp, 'uBlob'),
-    time: gl.getUniformLocation(pDisp, 'uTime'), noise: gl.getUniformLocation(pDisp, 'uNoise'),
-    scale: gl.getUniformLocation(pDisp, 'uScale'), ink: gl.getUniformLocation(pDisp, 'uInk'),
-    aspect: gl.getUniformLocation(pDisp, 'uAspect'),
-  };
-
-  buildMatte();
-  let t0 = performance.now();
+  build();
+  const DEBUG = true;
+  const DBGMODE = parseFloat(new URLSearchParams(location.search).get('dbg') || '0');
+  let frameNo = 0, splats = 0;
+  let t0 = performance.now(), prevT = t0;
 
   function frame(now){
-    const t = (now - t0) / 1000;
-    const aspect = W / Math.max(1, H);
+    const dt = Math.min((now - prevT) / 1000, 0.016666);
+    prevT = now;
+    const time = (now - t0) / 1000;
 
-    // idle drift so the idea is not invisible on a touch device or to a
-    // visitor who never moves the mouse across the mark
-    idle += 1;
-    if (idle > 90) {
-      const a = t * 0.55;
-      move(
-        canvas.getBoundingClientRect().left + W * (0.5 + Math.sin(a) * 0.34),
-        canvas.getBoundingClientRect().top + H * (0.5 + Math.cos(a * 0.8) * 0.3)
-      );
-      vel = 0.55;
+    if (pointer.moved) { pointer.moved = false; splat(pointer.x, pointer.y, pointer.dx, pointer.dy); }
+    else if (!everMoved) {
+      // Autonomous sweep until the visitor takes over. The reference does
+      // something similar; it also means the mechanic is never invisible to
+      // someone who lands and does not move, or on a touch device.
+      const a = time * 1.15;
+      const x = 0.5 + Math.sin(a) * 0.34;
+      const y = 0.46 + Math.sin(a * 2.1) * 0.16;
+      splat(x, y, (x - lastX) * CFG.splatForce, (y - lastY) * CFG.splatForce);
+      lastX = x; lastY = y;
     }
 
-    // --- trail
-    gl.useProgram(pTrail);
-    gl.bindFramebuffer(gl.FRAMEBUFFER, B.fb);
-    gl.viewport(0, 0, TW, TH);
-    gl.activeTexture(gl.TEXTURE0); gl.bindTexture(gl.TEXTURE_2D, A.t);
-    gl.uniform1i(uT.prev, 0);
-    gl.uniform2f(uT.p, P.x, P.y);
-    gl.uniform2f(uT.pprev, PP.x, PP.y);
-    gl.uniform1f(uT.decay, DECAY);
-    gl.uniform1f(uT.radius, RADIUS);
-    gl.uniform1f(uT.strength, 0.92 + vel * 0.45);
-    gl.uniform1f(uT.aspect, aspect);
-    gl.uniform1f(uT.active, active);
-    gl.uniform1f(uT.gravity, GRAV);
-    gl.drawArrays(gl.TRIANGLES, 0, 3);
-    const tmp = A; A = B; B = tmp;
+    // divergence
+    gl.useProgram(P.diverge.p);
+    gl.uniform2f(P.diverge.u.uTexelSize, velocity.read.texel[0], velocity.read.texel[1]);
+    bind(0, velocity.read.t, P.diverge.u.uVelocity);
+    draw(divergence);
 
-    PP.x = P.x; PP.y = P.y;
-    vel *= 0.90;
+    // pressure jacobi
+    gl.useProgram(P.pressure.p);
+    gl.uniform2f(P.pressure.u.uTexelSize, velocity.read.texel[0], velocity.read.texel[1]);
+    bind(0, divergence.t, P.pressure.u.uDivergence);
+    for (let i = 0; i < CFG.iterations; i++){
+      bind(1, pressure.read.t, P.pressure.u.uPressure);
+      draw(pressure.write); pressure.swap();
+    }
 
-    // --- display
-    gl.useProgram(pDisp);
-    gl.bindFramebuffer(gl.FRAMEBUFFER, null);
-    gl.viewport(0, 0, canvas.width, canvas.height);
-    gl.clearColor(0, 0, 0, 0); gl.clear(gl.COLOR_BUFFER_BIT);
+    // subtract gradient
+    gl.useProgram(P.gradient.p);
+    gl.uniform2f(P.gradient.u.uTexelSize, velocity.read.texel[0], velocity.read.texel[1]);
+    bind(0, pressure.read.t, P.gradient.u.uPressure);
+    bind(1, velocity.read.t, P.gradient.u.uVelocity);
+    draw(velocity.write); velocity.swap();
+
+    // advect velocity, then dye
+    gl.useProgram(P.advect.p);
+    gl.uniform2f(P.advect.u.uTexelSize, velocity.read.texel[0], velocity.read.texel[1]);
+    gl.uniform1f(P.advect.u.uDt, dt);
+    gl.uniform1f(P.advect.u.uDissipation, CFG.velDiss);
+    bind(0, velocity.read.t, P.advect.u.uVelocity);
+    bind(1, velocity.read.t, P.advect.u.uSource);
+    draw(velocity.write); velocity.swap();
+
+    gl.uniform2f(P.advect.u.uTexelSize, dyeFbo.read.texel[0], dyeFbo.read.texel[1]);
+    gl.uniform1f(P.advect.u.uDissipation, CFG.dyeDiss);
+    bind(0, velocity.read.t, P.advect.u.uVelocity);
+    bind(1, dyeFbo.read.t, P.advect.u.uSource);
+    draw(dyeFbo.write); dyeFbo.swap();
+
+    // the stand-in plate
+    gl.useProgram(P.water.p);
+    gl.uniform1f(P.water.u.uTime, time);
+    gl.uniform1f(P.water.u.uAspect, W / H);
+    draw(water);
+
+    // composite — their shader, their constants
     gl.enable(gl.BLEND);
     gl.blendFuncSeparate(gl.SRC_ALPHA, gl.ONE_MINUS_SRC_ALPHA, gl.ONE, gl.ONE_MINUS_SRC_ALPHA);
-    gl.activeTexture(gl.TEXTURE0); gl.bindTexture(gl.TEXTURE_2D, matteTex); gl.uniform1i(uD.matte, 0);
-    gl.activeTexture(gl.TEXTURE1); gl.bindTexture(gl.TEXTURE_2D, A.t);      gl.uniform1i(uD.trail, 1);
-    gl.uniform1f(uD.blob, BLOB);
-    gl.uniform1f(uD.time, t);
-    gl.uniform1f(uD.noise, NOISE);
-    gl.uniform1f(uD.scale, SCALE);
-    gl.uniform3f(uD.ink, ink[0], ink[1], ink[2]);
-    gl.uniform1f(uD.aspect, aspect);
-    gl.drawArrays(gl.TRIANGLES, 0, 3);
+    gl.useProgram(P.composite.p);
+    bind(0, baseTex, P.composite.u.uBaseTexture);
+    bind(1, revealTex, P.composite.u.uRevealTexture);
+    bind(2, dyeFbo.read.t, P.composite.u.uDye);
+    gl.uniform1f(P.composite.u.uRevealSize, CFG.revealSize);
+    gl.uniform1f(P.composite.u.uEdgeSoftness, CFG.edgeSoftness);
+    gl.uniform1f(P.composite.u.uEdgeWidth, CFG.edgeWidth);
+    gl.uniform1f(P.composite.u.uBaseImageAspect, W / H);
+    gl.uniform1f(P.composite.u.uRevealImageAspect, W / H);
+    gl.uniform1f(P.composite.u.uPlaneAspect, W / H);
+    gl.uniform1f(P.composite.u.uDebug, DBGMODE);
+    draw(null);
+
+    frameNo++;
 
     requestAnimationFrame(frame);
   }
   requestAnimationFrame(frame);
 
   let rt;
-  addEventListener('resize', () => { clearTimeout(rt); rt = setTimeout(buildMatte, 160); });
-  if (document.fonts && document.fonts.ready) document.fonts.ready.then(() => setTimeout(buildMatte, 60));
-
+  addEventListener('resize', () => { clearTimeout(rt); rt = setTimeout(build, 160); });
+  if (document.fonts && document.fonts.ready) document.fonts.ready.then(() => setTimeout(build, 60));
   return true;
 }
