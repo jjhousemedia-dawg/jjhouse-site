@@ -11,3 +11,4 @@ npm-debug.log*
 .astro/
 
 preview-out.log
+dev-out.log

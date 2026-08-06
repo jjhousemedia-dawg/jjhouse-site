@@ -38,7 +38,7 @@ const OBJECTS = [
   </head>
   <body class:list={['scroll', dark && 'is-dark']}>
     {loader && (
-      <div id="loader" aria-hidden="true">
+      <div id="loader" role="presentation">
         <div class="loader__stage">
           <div class="loader__objects">
             {OBJECTS.map((o, i) => (
@@ -79,6 +79,23 @@ const OBJECTS = [
         window.__lenis = lenis;
         const raf = (time) => { lenis.raf(time); requestAnimationFrame(raf); };
         requestAnimationFrame(raf);
+
+        // Lenis intercepts the wheel but not anchor clicks. Since we had to
+        // drop scroll-behavior:smooth for it, every in-page link would jump
+        // instantly and leave Lenis's internal position desynced from the
+        // real one, which breaks every scrubbed mechanic until the next wheel
+        // event. Route anchors through Lenis instead.
+        document.addEventListener('click', (e) => {
+          const a = e.target.closest('a[href^="#"]');
+          if (!a) return;
+          const id = a.getAttribute('href');
+          if (!id || id === '#') return;
+          const target = document.querySelector(id);
+          if (!target) return;
+          e.preventDefault();
+          lenis.scrollTo(target, { offset: 0, duration: 1.2 });
+          history.replaceState(null, '', id);
+        });
       }
     </script>
 
@@ -109,6 +126,49 @@ const OBJECTS = [
     </script>
 
     <script is:inline>
+      // ---- the wordmark fills the measure, whatever face is loaded ----
+      // noth.in solves this by shipping the wordmark as SVG outlines at
+      // width:100%, which is exact at every viewport with no font metrics
+      // involved. Until we outline ours, measure the actual advance width
+      // of the word at a known size and scale to fit. Font-agnostic, so
+      // swapping --font-wordmark needs no other change.
+      (function () {
+        const el = document.querySelector('.wordmark__placeholder');
+        if (!el) return;
+        const parent = el.parentElement;
+
+        const fit = () => {
+          const measure = parent.getBoundingClientRect().width;
+          if (!measure) return;
+          const prev = el.style.fontSize;
+          el.style.fontSize = '100px';
+          const em = el.getBoundingClientRect().width / 100;
+          el.style.fontSize = prev;
+          // the measured advance already includes letter-spacing, so no
+          // separate tracking term is needed here
+          if (!em || !isFinite(em) || em < 0.5) return;
+
+          // Width is only half the constraint. Filling the measure can make
+          // the word taller than the row it lives in, which pushes it into
+          // the footer. Cap by the available height too and take the smaller.
+          const byWidth = measure / em;
+          const avail = parent.getBoundingClientRect().height;
+          const prevH = el.style.fontSize;
+          el.style.fontSize = '100px';
+          const hEm = el.getBoundingClientRect().height / 100;
+          el.style.fontSize = prevH;
+          const byHeight = hEm > 0 ? (avail * 0.92) / hEm : byWidth;
+
+          el.style.fontSize = Math.min(byWidth, byHeight) + 'px';
+        };
+
+        if (document.fonts && document.fonts.ready) document.fonts.ready.then(fit);
+        addEventListener('resize', fit);
+        fit();
+      })();
+    </script>
+
+    <script is:inline>
       // ---- 00 loader, board 1 ----------------------------------------
       // Rapid cycle with a shudder between objects, then resolve.
       (function () {
@@ -117,6 +177,8 @@ const OBJECTS = [
         const reduce = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
         if (reduce) { el.classList.add('done'); return; }
 
+        document.documentElement.setAttribute('data-loading', '');
+        if (window.__lenis) window.__lenis.stop();
         const objs = [...el.querySelectorAll('.loader__obj')];
         const pct = document.getElementById('loaderPct');
         // egg always first, remainder shuffled — the order is free because
@@ -139,6 +201,8 @@ const OBJECTS = [
           objs.forEach((o) => o.classList.remove('on'));
           if (pct) pct.textContent = '100';
           el.classList.add('done');
+          document.documentElement.removeAttribute('data-loading');
+          if (window.__lenis) window.__lenis.start();
         };
 
         // Backstop. requestAnimationFrame does not fire while the tab is

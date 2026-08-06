@@ -15,6 +15,13 @@
   --gutter: clamp(1.25rem, 4vw, 4rem);
 
   --font-display: 'Fraunces', Georgia, serif;
+
+  /* The wordmark face. Swap this one line to try a candidate from
+     /type-test — nothing else needs to change. Fraunces is variable, so
+     it also needs the wght + opsz below. */
+  --font-wordmark: 'Fraunces', Georgia, serif;
+  --wordmark-weight: 300;
+  --wordmark-variation: 'opsz' 144, 'SOFT' 0, 'WONK' 0;
   --font-body: 'Inter', system-ui, sans-serif;
   --font-mono: 'IBM Plex Mono', ui-monospace, monospace;
 
@@ -125,14 +132,24 @@ body.scroll { transition: background-color 900ms var(--ease), color 900ms var(--
   -webkit-mask-position: center; mask-position: center;
 }
 .wordmark__placeholder {
-  font-family: var(--font-display);
-  font-weight: 300;
+  font-family: var(--font-wordmark);
+  font-weight: var(--wordmark-weight);
+  font-variation-settings: var(--wordmark-variation);
+  /* Sized by JS to fill the measure exactly at any viewport. The clamp is
+     only the pre-JS fallback — it was previously capped at 22rem, which is
+     ~5rem short of what Fraunces needs to reach the margins, so the
+     wordmark never actually touched the edges. */
   font-size: clamp(4rem, 26vw, 22rem);
-  line-height: 0.8;
+  line-height: 0.78;
   letter-spacing: -0.03em;
-  text-align: center;
+  text-align: left;
   margin: 0;
   align-self: center;
+  white-space: nowrap;
+  /* inline-block, not block: a block element reports the CONTAINER width,
+     which makes any measure-and-fit maths silently return the same number
+     for every typeface. */
+  display: inline-block;
   user-select: none;
 }
 
@@ -257,7 +274,7 @@ body.scroll { transition: background-color 900ms var(--ease), color 900ms var(--
    ============================================================ */
 
 .wire-tag {
-  position: absolute; top: 0.5rem; left: 0.5rem; z-index: 3;
+  position: absolute; top: -1.6rem; left: 0; z-index: 3;
   font-family: var(--font-mono); font-size: 0.5625rem; letter-spacing: 0.16em;
   text-transform: uppercase; opacity: 0.55; pointer-events: none;
   border: 1px solid currentColor; padding: 0.2rem 0.45rem; border-radius: 2px;
@@ -269,7 +286,11 @@ body.scroll { transition: background-color 900ms var(--ease), color 900ms var(--
   display: grid; place-items: center;
   transition: opacity 700ms var(--ease), visibility 700ms;
 }
-#loader.done { opacity: 0; visibility: hidden; }
+#loader.done { opacity: 0; visibility: hidden; pointer-events: none; }
+/* while the curtain is up nothing behind it is reachable by keyboard,
+   and the page cannot be scrolled out from under it */
+html[data-loading] body { overflow: hidden; }
+html[data-loading] body > *:not(#loader) { visibility: hidden; }
 .loader__stage { display: grid; place-items: center; gap: 1.75rem; }
 .loader__objects { position: relative; width: clamp(7rem, 14vw, 11rem); aspect-ratio: 1; }
 .loader__obj {
@@ -303,7 +324,7 @@ body.scroll { transition: background-color 900ms var(--ease), color 900ms var(--
 /* the erodible surface. Drag reveals the substrate underneath. */
 .surface {
   position: relative; width: 100%; cursor: grab; touch-action: pan-y;
-  isolation: isolate;
+  isolation: isolate; margin-top: 2.25rem;
 }
 .surface:active { cursor: grabbing; }
 .surface__substrate {

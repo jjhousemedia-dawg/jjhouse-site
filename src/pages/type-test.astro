@@ -1,0 +1,141 @@
+---
+// /type-test — wordmark comparison bench. Not part of the site.
+// Every candidate rendered at real display size on the real word.
+const SPECIMENS = [
+  { id:'fr-now',  name:'Fraunces 300',                 note:'CURRENT. Light serif, opsz auto.',
+    css:"'Fraunces', serif", fv:"'opsz' 144, 'SOFT' 0, 'WONK' 0", w:300, variable:true },
+  { id:'fr-right',name:'Fraunces 900 · opsz 144 · WONK 1', note:'Same family, display drawing. Test this before buying anything.',
+    css:"'Fraunces', serif", fv:"'opsz' 144, 'SOFT' 0, 'WONK' 1", w:900, variable:true },
+  { id:'zal',     name:'Zalando Sans Expanded 900',     note:'Expanded. HOUSE = 4.50em, fills 1440 at 20rem with no tracking hacks. OFL.',
+    css:"'Zalando Sans Expanded', sans-serif", fv:'normal', w:900, variable:true },
+  { id:'sge',     name:'Special Gothic Expanded One',   note:'4.23em. Diagonal S terminals, wood-type inflection. Single weight. OFL.',
+    css:"'Special Gothic Expanded One', sans-serif", fv:'normal', w:400, variable:false },
+  { id:'akt',     name:'Akt 900',                       note:'Free Helvetica-Black analogue. Could replace Inter too. Trending fast.',
+    css:"'Akt', sans-serif", fv:'normal', w:900, variable:true },
+  { id:'arc',     name:'Archivo 900 · wdth 118',        note:'Width axis lets you dial to the viewport. Avoid static Archivo Black.',
+    css:"'Archivo', sans-serif", fv:"'wdth' 118", w:900, variable:true },
+  { id:'bri',     name:'Bricolage Grotesque 800 · opsz 96', note:'True display optical size. Overexposed — top 10 on Google Fonts.',
+    css:"'Bricolage Grotesque', sans-serif", fv:"'opsz' 96, 'wdth' 100", w:800, variable:true },
+];
+---
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>HOUSE — wordmark bench</title>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght,SOFT,WONK@9..144,100..900,0..100,0..1&family=Zalando+Sans+Expanded:wght@400;900&family=Special+Gothic+Expanded+One&family=Akt:wght@400;900&family=Archivo:wdth,wght@62..125,100..900&family=Bricolage+Grotesque:opsz,wght@12..96,200..800&family=IBM+Plex+Mono:wght@400&display=swap" />
+<style>
+  :root { --paper:#f2f1ee; --ink:#0b0b0b; }
+  * { box-sizing:border-box; }
+  body { margin:0; background:var(--paper); color:var(--ink); font-family:'IBM Plex Mono',monospace; }
+  body.inv { --paper:#0b0b0b; --ink:#f2f1ee; }
+  .bar {
+    position:sticky; top:0; z-index:10; display:flex; gap:1.5rem; align-items:center; flex-wrap:wrap;
+    padding:.8rem 1.5rem; background:var(--paper); border-bottom:1px solid var(--ink);
+    font-size:.6875rem; letter-spacing:.1em; text-transform:uppercase;
+  }
+  .bar label { display:flex; gap:.5rem; align-items:center; }
+  .bar input[type=range] { width:9rem; accent-color:var(--ink); }
+  button { font:inherit; text-transform:uppercase; letter-spacing:.1em; background:none; color:inherit;
+           border:1px solid currentColor; border-radius:999px; padding:.35rem .9rem; cursor:pointer; }
+  button:hover { background:var(--ink); color:var(--paper); }
+  .spec { padding:2.5rem 1.5rem 3.5rem; border-bottom:1px solid color-mix(in srgb, var(--ink) 22%, transparent); }
+  .spec__meta { display:flex; justify-content:space-between; gap:1rem; flex-wrap:wrap;
+                font-size:.625rem; letter-spacing:.12em; text-transform:uppercase; opacity:.6; margin-bottom:.35rem; }
+  .spec__note { font-size:.6875rem; opacity:.45; margin:0 0 1.2rem; text-transform:none; letter-spacing:.02em; }
+  .word { margin:0; line-height:.78; white-space:nowrap; display:inline-block; }
+  .spec { overflow:hidden; }
+  .row-small { display:flex; align-items:baseline; gap:2.5rem; margin-top:1.4rem; opacity:.8; flex-wrap:wrap; }
+  .row-small span { line-height:1; }
+  .s48 { font-size:48px } .s24 { font-size:24px } .s16 { font-size:16px }
+  .fit { font-size:.5625rem; opacity:.5; letter-spacing:.1em; }
+</style>
+</head>
+<body>
+  <div class="bar">
+    <strong>HOUSE / wordmark bench</strong>
+    <label>Tracking <input id="tr" type="range" min="-8" max="2" step="0.25" value="-3" /><span id="trv">-0.03em</span></label>
+    <label>Size <input id="sz" type="range" min="8" max="30" step="0.5" value="20" /><span id="szv">20rem</span></label>
+    <button id="fit">Fit: on</button>
+    <button id="inv">Invert</button>
+    <span class="fit" id="vw"></span>
+  </div>
+
+  {SPECIMENS.map((s) => (
+    <section class="spec">
+      <div class="spec__meta">
+        <span>{s.name}</span>
+        <span>{s.variable ? 'variable' : 'static'} &middot; <span class="w" data-for={s.id}></span></span>
+      </div>
+      <p class="spec__note">{s.note}</p>
+      <p class="word" data-word id={s.id}
+         style={`font-family:${s.css}; font-weight:${s.w}; font-variation-settings:${s.fv};`}>HOUSE</p>
+      <div class="row-small" style={`font-family:${s.css}; font-weight:${s.w}; font-variation-settings:${s.fv};`}>
+        <span class="s48">HOUSE</span><span class="s24">HOUSE</span><span class="s16">HOUSE</span><span class="s16">H</span>
+      </div>
+    </section>
+  ))}
+
+<script is:inline>
+  const tr = document.getElementById('tr'), sz = document.getElementById('sz');
+  const trv = document.getElementById('trv'), szv = document.getElementById('szv');
+  const fitBtn = document.getElementById('fit');
+  const words = [...document.querySelectorAll('[data-word]')];
+  let fitMode = true;
+
+  // Measure the natural advance width of HOUSE per face, normalised to a
+  // 100px font-size. This is the number that actually decides whether a
+  // face can fill a viewport, and it is the thing you cannot eyeball.
+  const emWidth = (el) => {
+    const prevSize = el.style.fontSize, prevTrack = el.style.letterSpacing;
+    el.style.fontSize = '100px';
+    el.style.letterSpacing = '0em';
+    const w = el.getBoundingClientRect().width / 100;
+    el.style.fontSize = prevSize;
+    el.style.letterSpacing = prevTrack;
+    return w;
+  };
+
+  const apply = () => {
+    const t = tr.value / 100;
+    const measure = window.innerWidth - 48;
+    trv.textContent = t.toFixed(3) + 'em';
+    szv.textContent = fitMode ? 'fit' : sz.value + 'rem';
+    sz.disabled = fitMode;
+
+    words.forEach((w) => {
+      const em = emWidth(w);
+      // tracking adds t em per character; HOUSE is 5 glyphs
+      const effective = em + t * 5;
+      const fitPx = measure / effective;
+      w.style.letterSpacing = t + 'em';
+      w.style.fontSize = fitMode ? fitPx + 'px' : sz.value + 'rem';
+
+      const tag = document.querySelector('.w[data-for="' + w.id + '"]');
+      if (tag) {
+        const rendered = Math.round(w.getBoundingClientRect().width);
+        tag.textContent =
+          em.toFixed(2) + 'em wide · needs ' + (fitPx / 16).toFixed(1) + 'rem to fill · ' +
+          rendered + 'px';
+      }
+    });
+    document.getElementById('vw').textContent = 'measure ' + measure + 'px';
+  };
+
+  tr.addEventListener('input', apply);
+  sz.addEventListener('input', apply);
+  addEventListener('resize', apply);
+  fitBtn.addEventListener('click', () => {
+    fitMode = !fitMode;
+    fitBtn.textContent = fitMode ? 'Fit: on' : 'Fit: off';
+    apply();
+  });
+  document.getElementById('inv').addEventListener('click', () => document.body.classList.toggle('inv'));
+  document.fonts.ready.then(apply);
+  apply();
+</script>
+</body>
+</html>
