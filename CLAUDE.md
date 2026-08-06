@@ -41,15 +41,15 @@ The direction is called **BECOMING**. Reference site for mechanics only, never f
 
 ## Where the truth lives
 
-**`JJ.house SITE SPEC.md`** in `02 Areas/Career/JJ.house Website/` on JJ's MacBook is canonical.
-Beats, copy with lock status, mechanic specs, open questions. **Read it before writing anything.**
+**`docs/SITE-SPEC.md`, in this repo.** Canonical. Beats, copy with lock status, mechanic specs,
+data notes, open questions. **Read it before writing anything.** It lives here rather than on JJ's
+Mac precisely so that a session working in the code cannot miss it.
 
-In the same folder, `Strategy v1/v2/v3` and the addendum are the reasoning record. They are
-**superseded and partly wrong** — v1 and v2 each contain a fabrication JJ caught. Read them for
-history, never for instructions.
+`02 Areas/Career/JJ.house Website/` on JJ's MacBook holds the strategy history — Strategy v1, v2,
+v3 and an addendum. Those are the **reasoning record only**. They are superseded, and v1 and v2 each
+contain a fabrication JJ caught. Read them for history, never for instructions.
 
-If you cannot reach that folder, the current state is in project memory under `jjhouse-website`
-and `jjhouse-infrastructure`.
+Project memory carries the same state under `jjhouse-website` and `jjhouse-infrastructure`.
 
 ---
 
