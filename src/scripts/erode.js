@@ -36,6 +36,7 @@ uniform float uRadius;
 uniform float uStrength;
 uniform float uAspect;
 uniform float uActive;
+uniform float uGravity;
 
 // distance to the segment travelled since last frame, so a fast flick
 // paints a continuous stroke instead of a dotted line
@@ -46,13 +47,25 @@ float segDist(vec2 p, vec2 a, vec2 b){
 }
 
 void main(){
-  float prev = texture(uPrev, vUv).r * uDecay;
-  vec2 p  = vec2(vUv.x * uAspect, vUv.y);
-  vec2 a  = vec2(uP.x * uAspect, uP.y);
-  vec2 b  = vec2(uPPrev.x * uAspect, uPPrev.y);
+  // Sample the previous frame from slightly ABOVE, so the whole field
+  // creeps downward every frame. That plus the slow decay is what makes
+  // torn ink sag and run off the bottom of the hero instead of politely
+  // dissolving in place.
+  vec2 src = vUv + vec2(sin(vUv.y * 21.0) * uGravity * 0.22, uGravity);
+  float prev = texture(uPrev, src).r * uDecay;
+
+  // Space normalised to WIDTH (y divided by aspect), so radius stays a
+  // stable fraction of the viewport no matter how tall the canvas grows.
+  vec2 p  = vec2(vUv.x,     vUv.y     / uAspect);
+  vec2 a  = vec2(uP.x,      uP.y      / uAspect);
+  vec2 b  = vec2(uPPrev.x,  uPPrev.y  / uAspect);
   float d = segDist(p, a, b);
   float stamp = smoothstep(uRadius, 0.0, d) * uStrength * uActive;
-  frag = vec4(max(prev, stamp), 0.0, 0.0, 1.0);
+  float v = max(prev, stamp);
+  // Gravity pushes the field toward v=0, and CLAMP_TO_EDGE would smear the
+  // bottom row into a hard band. Bleed it off just before it gets there.
+  v *= smoothstep(0.0, 0.035, vUv.y);
+  frag = vec4(v, 0.0, 0.0, 1.0);
 }`;
 
 /* ---- display pass ---- */
@@ -100,7 +113,7 @@ float caustic(vec2 p, float t){
 }
 
 vec3 water(vec2 uv){
-  vec2 p = vec2(uv.x * uAspect, uv.y) * 4.2;
+  vec2 p = vec2(uv.x, uv.y / uAspect) * 4.2;
   float t = uTime * 0.42;
   float c = caustic(p, t);
   float swell = fbm(p * 0.5 + vec2(0.0, t * 0.15));
@@ -118,7 +131,7 @@ void main(){
   float matte = texture(uMatte, vUv).a;
   float t     = texture(uTrail, vUv).r;
 
-  vec2 np = vec2(vUv.x * uAspect, vUv.y);
+  vec2 np = vec2(vUv.x, vUv.y / uAspect);
   // two octaves at different rates: the coarse one shapes the big blobs,
   // the fine one shreds the edge into islands
   float n1 = fbm(np * uScale + uTime * 0.035);
@@ -135,6 +148,9 @@ void main(){
   // a soft edge, which reads as a highlighter rather than torn material.
   float nRev = (n1 * 0.55 + n2 * 0.45) - 0.5;
   float reveal = smoothstep(0.61, 0.73, t + nRev * uNoise * 1.25);
+
+  // the run has to dissolve out, not hit a straight edge
+  ink *= smoothstep(0.0, 0.07, vUv.y);
 
   vec3 col = mix(uInk, water(vUv), reveal);
   frag = vec4(col, ink);
@@ -297,6 +313,7 @@ export function initErode(surface){
   const NOISE  = knob('noise',  '0.78');    // how torn the boundary reads
   const SCALE  = knob('scale',  '7.5');     // big organic cells, not fine grain
   const BLOB   = knob('blob',   '1.30');    // how far the cursor paints ink OUTSIDE the letters
+  const GRAV   = knob('grav',   '0.0022');  // how fast torn ink runs downhill
 
   const ink = (() => {
     const c = getComputedStyle(document.body).color.match(/[\d.]+/g) || [11, 11, 11];
@@ -308,6 +325,7 @@ export function initErode(surface){
     pprev: gl.getUniformLocation(pTrail, 'uPPrev'), decay: gl.getUniformLocation(pTrail, 'uDecay'),
     radius: gl.getUniformLocation(pTrail, 'uRadius'), strength: gl.getUniformLocation(pTrail, 'uStrength'),
     aspect: gl.getUniformLocation(pTrail, 'uAspect'), active: gl.getUniformLocation(pTrail, 'uActive'),
+    gravity: gl.getUniformLocation(pTrail, 'uGravity'),
   };
   const uD = {
     matte: gl.getUniformLocation(pDisp, 'uMatte'), trail: gl.getUniformLocation(pDisp, 'uTrail'),
@@ -349,6 +367,7 @@ export function initErode(surface){
     gl.uniform1f(uT.strength, 0.92 + vel * 0.45);
     gl.uniform1f(uT.aspect, aspect);
     gl.uniform1f(uT.active, active);
+    gl.uniform1f(uT.gravity, GRAV);
     gl.drawArrays(gl.TRIANGLES, 0, 3);
     const tmp = A; A = B; B = tmp;
 

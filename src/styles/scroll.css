@@ -119,7 +119,7 @@ body.scroll { transition: background-color 900ms var(--ease), color 900ms var(--
 .arrival {
   min-height: 100svh; display: grid;
   grid-template-rows: auto 1fr auto; grid-template-columns: minmax(0, 1fr);
-  padding: var(--gutter); position: relative; overflow: hidden;
+  padding: var(--gutter); position: relative;
 }
 .arrival__deck { max-width: 30ch; font-size: clamp(1rem, 1.6vw, 1.25rem); line-height: 1.45; margin: 0; }
 
@@ -353,17 +353,30 @@ html[data-loading] body > *:not(#loader) { visibility: hidden; }
   text-transform: uppercase; opacity: 0.9; text-align: center; padding: 0 1rem;
 }
 .surface__erode {
-  /* Two traps here, both hit on the way in:
-     1. canvas is a REPLACED element, so width:auto ignores left/right insets
-        and falls back to the intrinsic attribute size. Dimensions must be
-        explicit.
+  /* Reaches well past the hero on purpose. Torn ink runs downhill and has
+     to be able to cross the fold and lie over the section below, which is
+     what the reference does.
+
+     Traps, both hit on the way in:
+     1. canvas is a REPLACED element, so width:auto ignores left/right
+        insets and falls back to the intrinsic attribute size. Dimensions
+        must be explicit.
      2. an absolutely positioned child of a GRID container resolves inset:0
-        against its auto-placed grid area, not the container's padding box —
-        so it silently shrank to the height of row 1. Spanning every track
-        makes the containing block the whole grid. */
+        against its auto-placed grid area, not the container's padding box.
+        Spanning every track fixes the containing block. */
   grid-area: 1 / 1 / -1 / -1;
-  position: absolute; inset: 0; width: 100%; height: 100%;
-  z-index: 0; display: block; pointer-events: none;
+  position: absolute;
+  top: 0; left: 0;
+  width: 100%; height: 190svh;
+  /* z-index 1 is exact: a positioned element paints above LATER static
+     siblings (the sections it drips onto) while still sitting below the
+     hero's own UI at z-index 2. */
+  z-index: 1; display: block; pointer-events: none;
+  /* Guaranteed dissolve at the tail of the run, independent of the shader.
+     Gravity pushes the trail toward the bottom row and CLAMP_TO_EDGE will
+     smear whatever lands there into a hard band across the page. */
+  -webkit-mask-image: linear-gradient(to bottom, #000 0 68%, rgba(0,0,0,0) 96%);
+  mask-image: linear-gradient(to bottom, #000 0 68%, rgba(0,0,0,0) 96%);
 }
 /* everything the reader interacts with sits above the ink */
 .arrival__top, .arrival__foot, .surface { position: relative; z-index: 2; }
