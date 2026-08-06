@@ -46,8 +46,8 @@ const sizes = ['project--l', 'project--r', 'project--xl', 'project--l', 'project
          stand-in for the WebGL2 mask-reveal (decay ~0.94, stamp ~8vw,
          noise matched to hair scale). Substrate becomes Blender geo-nodes
          work, in colour, per spec §5. -->
-    <div class="surface" id="surface">
-      <span class="wire-tag">Wire / board 02 &mdash; drag me</span>
+    <div class="surface" id="surface" data-decay="0.955" data-radius="0.26" data-noise="0.62" data-scale="18">
+      <span class="wire-tag">Wire / board 02 &mdash; move across the mark</span>
       <div class="surface__substrate"><span>[ substrate: Blender geo-nodes, converted-font geometry + hair, in colour ]</span></div>
       <canvas class="surface__erode" id="erode"></canvas>
       <p class="wordmark__placeholder">HOUSE</p>
@@ -265,6 +265,19 @@ const sizes = ['project--l', 'project--r', 'project--xl', 'project--l', 'project
     </div>
   </footer>
 
+  <script>
+    // WebGL2 wordmark erosion. If it cannot start (no WebGL2, reduced
+    // motion, shader failure) the DOM text simply stays visible and
+    // nothing else on the page changes.
+    import { initErode } from '../scripts/erode.js';
+    const surface = document.getElementById('surface');
+    if (surface) {
+      let ok = false;
+      try { ok = initErode(surface); } catch (err) { console.error('[erode]', err); }
+      if (ok) surface.classList.add('is-canvas');
+    }
+  </script>
+
   <script is:inline>
     (function () {
       const reduce = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
@@ -335,72 +348,6 @@ const sizes = ['project--l', 'project--r', 'project--xl', 'project--l', 'project
           { rootMargin: '-35% 0px -35% 0px' }
         );
         projects.forEach((p) => io.observe(p));
-      }
-
-      // ---- board 2: erode and refill -------------------------------
-      // 2D stand-in for the WebGL2 mask-reveal. Pointer erases the
-      // surface; every frame a thin veil of surface is painted back, so
-      // the hole closes like foam over water. One constant is the feel.
-      const cv = document.getElementById('erode');
-      const surf = document.getElementById('surface');
-      if (cv && surf && !reduce) {
-        const ctx = cv.getContext('2d');
-        const REFILL = 0.055;          // the foam constant
-        let w = 0, h = 0, down = false;
-
-        const paper = () =>
-          getComputedStyle(document.body).getPropertyValue('background-color') || '#f2f1ee';
-
-        const size = () => {
-          const r = surf.getBoundingClientRect();
-          w = cv.width = Math.max(1, Math.round(r.width));
-          h = cv.height = Math.max(1, Math.round(r.height));
-          ctx.fillStyle = paper();
-          ctx.globalCompositeOperation = 'source-over';
-          ctx.fillRect(0, 0, w, h);
-        };
-
-        const stamp = (x, y) => {
-          const rad = Math.max(28, w * 0.08);   // ~8% viewport width
-          const g = ctx.createRadialGradient(x, y, 0, x, y, rad);
-          g.addColorStop(0, 'rgba(0,0,0,1)');
-          g.addColorStop(0.65, 'rgba(0,0,0,0.55)');
-          g.addColorStop(1, 'rgba(0,0,0,0)');
-          ctx.globalCompositeOperation = 'destination-out';
-          ctx.fillStyle = g;
-          ctx.beginPath();
-          ctx.arc(x, y, rad, 0, Math.PI * 2);
-          ctx.fill();
-        };
-
-        const at = (e) => {
-          const r = cv.getBoundingClientRect();
-          const t = e.touches ? e.touches[0] : e;
-          return [t.clientX - r.left, t.clientY - r.top];
-        };
-
-        surf.addEventListener('pointerdown', (e) => { down = true; stamp(...at(e)); });
-        addEventListener('pointerup', () => { down = false; });
-        surf.addEventListener('pointermove', (e) => { if (down) stamp(...at(e)); });
-        surf.addEventListener('touchmove', (e) => { stamp(...at(e)); }, { passive: true });
-
-        // slow autonomous drift so the idea is not invisible on phones
-        let t = 0;
-        const loop = () => {
-          ctx.globalCompositeOperation = 'source-over';
-          ctx.fillStyle = paper();
-          ctx.globalAlpha = REFILL;
-          ctx.fillRect(0, 0, w, h);
-          ctx.globalAlpha = 1;
-          if (!down && matchMedia('(hover: none)').matches) {
-            t += 0.012;
-            stamp(w * (0.5 + Math.sin(t) * 0.3), h * (0.5 + Math.cos(t * 0.7) * 0.25));
-          }
-          requestAnimationFrame(loop);
-        };
-        size();
-        addEventListener('resize', size);
-        requestAnimationFrame(loop);
       }
 
       // ---- board 5: the WORKS letters migrate ----------------------
