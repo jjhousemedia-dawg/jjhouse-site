@@ -48,13 +48,26 @@ out vec4 fragColor;
 const F_SPLAT = F_HEAD + `
 uniform sampler2D uTarget;
 uniform float uAspectRatio;
-uniform vec2  uPoint;
+uniform vec2  uPoint;      // segment end   (where the pointer is now)
+uniform vec2  uPoint0;     // segment start (where it was last sample)
 uniform vec3  uColor;
 uniform float uRadius;
 void main(){
-  vec2 p = vUv - uPoint;
-  p.x *= uAspectRatio;
-  vec3 splat = exp(-dot(p, p) / uRadius) * uColor;
+  // Their splat is a POINT: exp(-dot(p,p)/r) around a single position, one
+  // per frame. At speed the pointer travels further between frames than the
+  // splat is wide, so the stroke lands as separate dots.
+  //
+  // This is the same falloff measured to the SEGMENT the pointer travelled,
+  // so the stroke is continuous at any speed. When the two ends coincide —
+  // slow movement — dot(ba,ba) goes to zero, h clamps to 0 and this reduces
+  // exactly to their point splat.
+  vec2 pa = vUv - uPoint0;
+  vec2 ba = uPoint - uPoint0;
+  pa.x *= uAspectRatio;
+  ba.x *= uAspectRatio;
+  float h = clamp(dot(pa, ba) / max(dot(ba, ba), 1e-7), 0.0, 1.0);
+  vec2 d = pa - ba * h;
+  vec3 splat = exp(-dot(d, d) / uRadius) * uColor;
   vec3 base = texture(uTarget, vUv).xyz;
   fragColor = vec4(base + splat, 1.0);
 }`;
@@ -330,29 +343,45 @@ export function initErode(surface){
   };
 
   // ---- pointer ----
-  const pointer = { x: 0.5, y: 0.5, dx: 0, dy: 0, moved: false, down: false };
-  let lastX = 0.5, lastY = 0.5, everMoved = false;
-  const move = (cx, cy) => {
+  // Every sample is kept, not just the last one per frame. Browsers coalesce
+  // pointermove and only deliver one per rAF by default; getCoalescedEvents
+  // hands back the full high-frequency path the OS actually reported, which
+  // is the difference between a smooth stroke and a dotted one on a flick.
+  const queue = [];
+  let lastPt = null, everMoved = false;
+
+  const toUv = (cx, cy) => {
     const r = canvas.getBoundingClientRect();
-    const x = (cx - r.left) / r.width;
-    const y = 1.0 - (cy - r.top) / r.height;
-    pointer.dx = (x - lastX) * CFG.splatForce;
-    pointer.dy = (y - lastY) * CFG.splatForce;
-    lastX = x; lastY = y;
-    pointer.x = x; pointer.y = y;
-    pointer.moved = Math.abs(pointer.dx) > 0 || Math.abs(pointer.dy) > 0;
+    return { x: (cx - r.left) / r.width, y: 1.0 - (cy - r.top) / r.height };
+  };
+  const onMove = (e) => {
+    let evs = [e];
+    if (typeof e.getCoalescedEvents === 'function') {
+      const c = e.getCoalescedEvents();
+      if (c && c.length) evs = c;
+    }
+    for (const ev of evs) queue.push(toUv(ev.clientX, ev.clientY));
     everMoved = true;
   };
-  hero.addEventListener('pointermove', (e) => move(e.clientX, e.clientY));
-  hero.addEventListener('pointerdown', (e) => { lastX = -1; move(e.clientX, e.clientY); });
-  hero.addEventListener('touchmove', (e) => { const t = e.touches[0]; if (t) move(t.clientX, t.clientY); }, { passive: true });
+  // Listen on the window, not the hero. The sheet now reaches well past the
+  // fold, so the cursor has to keep driving it while it is over the section
+  // below. Points outside the canvas map to uv outside 0..1 and simply splat
+  // off-surface, which is harmless and keeps strokes continuous as the
+  // pointer crosses the boundary.
+  addEventListener('pointermove', onMove, { passive: true });
+  addEventListener('pointerdown', (e) => { lastPt = null; onMove(e); }, { passive: true });
+  addEventListener('touchmove', (e) => {
+    for (const t of e.touches) queue.push(toUv(t.clientX, t.clientY));
+    everMoved = true;
+  }, { passive: true });
 
-  function splat(x, y, dx, dy){
+  function splat(x0, y0, x1, y1, dx, dy){
     splats++;
     gl.useProgram(P.splat.p);
     bind(0, velocity.read.t, P.splat.u.uTarget);
     gl.uniform1f(P.splat.u.uAspectRatio, W / H);
-    gl.uniform2f(P.splat.u.uPoint, x, y);
+    gl.uniform2f(P.splat.u.uPoint0, x0, y0);
+    gl.uniform2f(P.splat.u.uPoint, x1, y1);
     gl.uniform3f(P.splat.u.uColor, dx, dy, 0);
     gl.uniform1f(P.splat.u.uRadius, CFG.splatRadius);
     draw(velocity.write); velocity.swap();
@@ -373,7 +402,21 @@ export function initErode(surface){
     prevT = now;
     const time = (now - t0) / 1000;
 
-    if (pointer.moved) { pointer.moved = false; splat(pointer.x, pointer.y, pointer.dx, pointer.dy); }
+    if (queue.length) {
+      // cap the work per frame, but by SUBSAMPLING the path rather than
+      // dropping its tail — the stroke must still reach where the cursor is
+      const MAXSEG = 24;
+      const stride = Math.max(1, Math.ceil(queue.length / MAXSEG));
+      let prev = lastPt || queue[0];
+      for (let i = 0; i < queue.length; i += stride) {
+        const cur = queue[Math.min(i + stride - 1, queue.length - 1)];
+        splat(prev.x, prev.y, cur.x, cur.y,
+              (cur.x - prev.x) * CFG.splatForce, (cur.y - prev.y) * CFG.splatForce);
+        prev = cur;
+      }
+      lastPt = prev;
+      queue.length = 0;
+    }
     else if (!everMoved) {
       // Autonomous sweep until the visitor takes over. The reference does
       // something similar; it also means the mechanic is never invisible to
@@ -381,8 +424,10 @@ export function initErode(surface){
       const a = time * 1.15;
       const x = 0.5 + Math.sin(a) * 0.34;
       const y = 0.46 + Math.sin(a * 2.1) * 0.16;
-      splat(x, y, (x - lastX) * CFG.splatForce, (y - lastY) * CFG.splatForce);
-      lastX = x; lastY = y;
+      const prev = lastPt || { x, y };
+      splat(prev.x, prev.y, x, y,
+            (x - prev.x) * CFG.splatForce, (y - prev.y) * CFG.splatForce);
+      lastPt = { x, y };
     }
 
     // divergence

@@ -367,7 +367,10 @@ html[data-loading] body > *:not(#loader) { visibility: hidden; }
   grid-area: 1 / 1 / -1 / -1;
   position: absolute;
   top: 0; left: 0;
-  width: 100%; height: 190svh;
+  /* Reaches past the statement beat. The hero is 100svh and the statement
+     block is roughly another 90svh, so 240svh clears the bottom of "The work
+     you deliver is never the work you pitched." with room to run out. */
+  width: 100%; height: 240svh;
   /* z-index 1 is exact: a positioned element paints above LATER static
      siblings (the sections it drips onto) while still sitting below the
      hero's own UI at z-index 2. */
@@ -375,8 +378,8 @@ html[data-loading] body > *:not(#loader) { visibility: hidden; }
   /* Guaranteed dissolve at the tail of the run, independent of the shader.
      Gravity pushes the trail toward the bottom row and CLAMP_TO_EDGE will
      smear whatever lands there into a hard band across the page. */
-  -webkit-mask-image: linear-gradient(to bottom, #000 0 68%, rgba(0,0,0,0) 96%);
-  mask-image: linear-gradient(to bottom, #000 0 68%, rgba(0,0,0,0) 96%);
+  -webkit-mask-image: linear-gradient(to bottom, #000 0 80%, rgba(0,0,0,0) 99%);
+  mask-image: linear-gradient(to bottom, #000 0 80%, rgba(0,0,0,0) 99%);
 }
 /* everything the reader interacts with sits above the ink */
 /* wordmark (0) < reveal overlay (1) < hero UI (2). The overlay paints the
