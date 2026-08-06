@@ -287,35 +287,56 @@ body.scroll { transition: background-color 900ms var(--ease), color 900ms var(--
   border: 1px solid currentColor; padding: 0.2rem 0.45rem; border-radius: 2px;
 }
 
-/* ---- 00 LOADER — board 1 ----------------------------------- */
+/* ---- 00 LOADER — board 1 + spec §5 --------------------------
+   Structure matches the reference: fixed, full-bleed, black, above
+   everything, a rapid cycle of unexplained objects, a counter, then it
+   resolves to the mark and lifts. Theirs runs twelve object stills
+   (heart, crumpled paper, star, smiley, candy, gum, plastic bag, dog,
+   piñata, balloon, cube, rubber ring). Ours runs the spec's five.
+   Never captioned, never explained. */
 #loader {
-  position: fixed; inset: 0; z-index: 200; background: var(--paper); color: var(--ink);
+  position: fixed; inset: 0; z-index: 1001;
+  background: var(--ink); color: var(--paper);
   display: grid; place-items: center;
-  transition: opacity 700ms var(--ease), visibility 700ms;
+  transition: opacity 620ms var(--ease), visibility 620ms;
 }
 #loader.done { opacity: 0; visibility: hidden; pointer-events: none; }
-/* while the curtain is up nothing behind it is reachable by keyboard,
-   and the page cannot be scrolled out from under it */
 html[data-loading] body { overflow: hidden; }
 html[data-loading] body > *:not(#loader) { visibility: hidden; }
-.loader__stage { display: grid; place-items: center; gap: 1.75rem; }
-.loader__objects { position: relative; width: clamp(7rem, 14vw, 11rem); aspect-ratio: 1; }
+
+.loader__stage { position: relative; display: grid; place-items: center; }
+.loader__objects { position: relative; width: clamp(8rem, 17vw, 15rem); aspect-ratio: 1; }
 .loader__obj {
   position: absolute; inset: 0; display: grid; place-items: center;
-  opacity: 0; transform: scale(0.82);
-  transition: opacity 90ms linear, transform 200ms var(--ease);
+  opacity: 0; will-change: opacity, transform;
 }
-.loader__obj.on { opacity: 1; transform: scale(1); }
-.loader__obj svg { width: 100%; height: 100%; fill: currentColor; }
+.loader__obj.on { opacity: 1; }
+.loader__obj svg { width: 100%; height: 100%; fill: var(--paper); }
+
+/* the shudder: one anticipation beat before the swap, which is what makes
+   the object look like it decided rather than simply cut */
+.loader__objects.shudder { animation: shudder 90ms steps(2) 1; }
+@keyframes shudder {
+  0%   { transform: translate3d(0,0,0) scale(1); }
+  50%  { transform: translate3d(-0.7%, 0.9%, 0) scale(0.985); }
+  100% { transform: translate3d(0,0,0) scale(1); }
+}
+
+/* the mark, which the cycle resolves into */
 .loader__mark {
-  font-family: var(--font-display); font-weight: 300;
-  font-size: clamp(2rem, 5vw, 3.25rem); letter-spacing: -0.02em; line-height: 1;
+  position: absolute; inset: 0; display: grid; place-items: center;
+  font-family: var(--font-wordmark); font-weight: var(--wordmark-weight);
+  font-size: clamp(2rem, 5.5vw, 4rem); letter-spacing: -0.02em; line-height: 1;
+  opacity: 0; transform: scale(0.94);
+  transition: opacity 420ms var(--ease), transform 620ms var(--ease);
 }
-.loader__pct { font-family: var(--font-mono); font-size: 0.6875rem; letter-spacing: 0.18em; opacity: 0.5; }
-.loader__note {
-  position: fixed; bottom: var(--gutter); left: var(--gutter); right: var(--gutter);
-  font-family: var(--font-mono); font-size: 0.625rem; letter-spacing: 0.08em;
-  opacity: 0.4; max-width: 46rem; text-transform: none;
+.loader__mark.on { opacity: 1; transform: none; }
+
+.loader__pct {
+  position: fixed; left: 50%; bottom: clamp(1.5rem, 5vh, 3rem);
+  transform: translateX(-50%);
+  font-family: var(--font-mono); font-size: 0.6875rem; letter-spacing: 0.22em;
+  opacity: 0.55; font-variant-numeric: tabular-nums;
 }
 
 /* ---- 01 ARRIVAL additions — board 2 ------------------------ */
@@ -367,10 +388,12 @@ html[data-loading] body > *:not(#loader) { visibility: hidden; }
   grid-area: 1 / 1 / -1 / -1;
   position: absolute;
   top: 0; left: 0;
-  /* Reaches past the statement beat. The hero is 100svh and the statement
-     block is roughly another 90svh, so 240svh clears the bottom of "The work
-     you deliver is never the work you pitched." with room to run out. */
-  width: 100%; height: 240svh;
+  /* 300svh — measured off the reference, whose .section-w is exactly 3x
+     the viewport with the canvas absolutely positioned inset:0 inside it.
+     Not a fixed viewport layer: a tall absolute one, sized in viewport
+     multiples, clipped by its container. This also clears the bottom of
+     "The work you deliver is never the work you pitched." */
+  width: 100%; height: 300svh;
   /* z-index 1 is exact: a positioned element paints above LATER static
      siblings (the sections it drips onto) while still sitting below the
      hero's own UI at z-index 2. */

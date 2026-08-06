@@ -318,10 +318,22 @@ export function initErode(surface){
                     new Uint8Array([0, 0, 0, 0]));
     }
 
-    const s = Math.round(CFG.simRes), dy = Math.round(CFG.dyeRes);
-    const ar = W / H;
-    const sw = ar > 1 ? Math.round(s * ar) : s, shh = ar > 1 ? s : Math.round(s / ar);
-    const dw = ar > 1 ? Math.round(dy * ar) : dy, dh = ar > 1 ? dy : Math.round(dy / ar);
+    // Resolution is set on the SHORT edge and scaled by aspect — but this
+    // canvas is 3x the viewport, so an unclamped long edge lands at 512x1536
+    // for dye and 256x768 for the sim, and 20 pressure iterations per frame
+    // at that size starves requestAnimationFrame outright. Clamp the long
+    // edge; the fluid does not read any finer at this scale anyway.
+    const CAP_SIM = 512, CAP_DYE = 1024;
+    const fit = (res, cap) => {
+      const ar = W / H;
+      let w = ar > 1 ? Math.round(res * ar) : res;
+      let h = ar > 1 ? res : Math.round(res / ar);
+      const long = Math.max(w, h);
+      if (long > cap) { const k = cap / long; w = Math.round(w * k); h = Math.round(h * k); }
+      return [Math.max(2, w), Math.max(2, h)];
+    };
+    const [sw, shh] = fit(Math.round(CFG.simRes), CAP_SIM);
+    const [dw, dh]  = fit(Math.round(CFG.dyeRes), CAP_DYE);
     velocity   = dbl(sw, shh);
     pressure   = dbl(sw, shh);
     divergence = fbo(sw, shh);
@@ -392,12 +404,27 @@ export function initErode(surface){
   }
 
   build();
+
+  // Nothing to see behind the loader, and the sim is the most expensive
+  // thing on the page — running it under the curtain starves the loader's
+  // own animation frames.
+  let curtain = document.documentElement.hasAttribute('data-loading');
+  if (curtain) {
+    const mo = new MutationObserver(() => {
+      if (!document.documentElement.hasAttribute('data-loading')) {
+        curtain = false; mo.disconnect(); t0 = prevT = performance.now();
+      }
+    });
+    mo.observe(document.documentElement, { attributes: true, attributeFilter: ['data-loading'] });
+  }
+
   const DEBUG = true;
   const DBGMODE = parseFloat(new URLSearchParams(location.search).get('dbg') || '0');
   let frameNo = 0, splats = 0;
   let t0 = performance.now(), prevT = t0;
 
   function frame(now){
+    if (curtain) { prevT = now; requestAnimationFrame(frame); return; }
     const dt = Math.min((now - prevT) / 1000, 0.016666);
     prevT = now;
     const time = (now - t0) / 1000;
