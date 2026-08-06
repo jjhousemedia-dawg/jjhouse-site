@@ -23,7 +23,12 @@
 
 * { box-sizing: border-box; }
 
-html { scroll-behavior: smooth; }
+/* Lenis drives the scroll now. Native smooth scrolling fights it and
+   gives no per-frame position to scrub mechanics against. */
+html { scroll-behavior: auto; }
+html.lenis, html.lenis body { height: auto; }
+.lenis.lenis-smooth { scroll-behavior: auto !important; }
+.lenis.lenis-stopped { overflow: hidden; }
 
 body.scroll {
   margin: 0;
@@ -241,4 +246,175 @@ body.scroll { transition: background-color 900ms var(--ease), color 900ms var(--
   .rise { opacity: 1; transform: none; transition: none; }
   body.scroll { transition: none; }
   .reel__frame { transform: none !important; }
+}
+
+/* ============================================================
+   BLOCK-OUT WIRE
+   Placeholders traced from JJ's 14 hand-drawn boards.
+   Position, shape and interaction are REAL and reviewable.
+   Content, copy and rendered assets are NOT — every one of
+   these is labelled and deliberately unfinished.
+   ============================================================ */
+
+.wire-tag {
+  position: absolute; top: 0.5rem; left: 0.5rem; z-index: 3;
+  font-family: var(--font-mono); font-size: 0.5625rem; letter-spacing: 0.16em;
+  text-transform: uppercase; opacity: 0.55; pointer-events: none;
+  border: 1px solid currentColor; padding: 0.2rem 0.45rem; border-radius: 2px;
+}
+
+/* ---- 00 LOADER — board 1 ----------------------------------- */
+#loader {
+  position: fixed; inset: 0; z-index: 200; background: var(--paper); color: var(--ink);
+  display: grid; place-items: center;
+  transition: opacity 700ms var(--ease), visibility 700ms;
+}
+#loader.done { opacity: 0; visibility: hidden; }
+.loader__stage { display: grid; place-items: center; gap: 1.75rem; }
+.loader__objects { position: relative; width: clamp(7rem, 14vw, 11rem); aspect-ratio: 1; }
+.loader__obj {
+  position: absolute; inset: 0; display: grid; place-items: center;
+  opacity: 0; transform: scale(0.82);
+  transition: opacity 90ms linear, transform 200ms var(--ease);
+}
+.loader__obj.on { opacity: 1; transform: scale(1); }
+.loader__obj svg { width: 100%; height: 100%; fill: currentColor; }
+.loader__mark {
+  font-family: var(--font-display); font-weight: 300;
+  font-size: clamp(2rem, 5vw, 3.25rem); letter-spacing: -0.02em; line-height: 1;
+}
+.loader__pct { font-family: var(--font-mono); font-size: 0.6875rem; letter-spacing: 0.18em; opacity: 0.5; }
+.loader__note {
+  position: fixed; bottom: var(--gutter); left: var(--gutter); right: var(--gutter);
+  font-family: var(--font-mono); font-size: 0.625rem; letter-spacing: 0.08em;
+  opacity: 0.4; max-width: 46rem; text-transform: none;
+}
+
+/* ---- 01 ARRIVAL additions — board 2 ------------------------ */
+.arrival__top { display: flex; justify-content: space-between; align-items: flex-start; gap: 2rem; }
+.arrival__menu {
+  font-family: var(--font-mono); font-size: 0.6875rem; letter-spacing: 0.16em;
+  text-transform: uppercase; background: none; border: 0; color: inherit;
+  cursor: pointer; padding: 0.25rem 0; opacity: 0.75;
+}
+.arrival__menu:hover { opacity: 1; }
+.arrival__cta { margin-top: 1.5rem; }
+
+/* the erodible surface. Drag reveals the substrate underneath. */
+.surface {
+  position: relative; width: 100%; cursor: grab; touch-action: pan-y;
+  isolation: isolate;
+}
+.surface:active { cursor: grabbing; }
+.surface__substrate {
+  position: absolute; inset: 0; z-index: 0;
+  background:
+    repeating-linear-gradient(115deg, var(--ink-lift) 0 2px, transparent 2px 7px),
+    repeating-linear-gradient(65deg, var(--ink-lift) 0 1px, transparent 1px 5px);
+  opacity: 0.85;
+  display: grid; place-items: center;
+}
+.surface__substrate span {
+  font-family: var(--font-mono); font-size: 0.625rem; letter-spacing: 0.12em;
+  text-transform: uppercase; opacity: 0.9; text-align: center; padding: 0 1rem;
+}
+.surface__erode { position: absolute; inset: 0; z-index: 1; width: 100%; height: 100%; display: block; }
+.surface .wordmark__placeholder { position: relative; z-index: 2; mix-blend-mode: normal; }
+
+/* ---- 05 WORKS letter migration — board 5 ------------------- */
+.ticker { position: relative; }
+.worksmark {
+  position: sticky; top: 0; z-index: 4; height: 0; pointer-events: none;
+}
+.worksmark__row {
+  position: relative; height: 3.25rem; display: block;
+}
+.worksmark__l {
+  position: absolute; top: 0;
+  font-family: var(--font-body); font-weight: 500;
+  letter-spacing: 0.02em; line-height: 1;
+  will-change: transform, font-size;
+}
+
+/* ---- 04 REEL — boards 3, 4, 9 ------------------------------ */
+.reel__room { position: absolute; inset: 0; z-index: 0; overflow: hidden; pointer-events: none; }
+.reel__room::before,
+.reel__room::after {
+  content: ''; position: absolute; inset: 0;
+  background:
+    linear-gradient(to right, currentColor 0 1px, transparent 1px),
+    linear-gradient(to bottom, currentColor 0 1px, transparent 1px);
+  opacity: 0.07;
+  background-size: 7vw 7vw;
+  transform: perspective(60vh) rotateX(62deg);
+  transform-origin: bottom center;
+  top: auto; height: 46%; bottom: 0;
+}
+.reel__room::after { transform: perspective(60vh) rotateX(-62deg); transform-origin: top center; top: 0; bottom: auto; }
+.reel__reflect {
+  margin-top: 0.5rem; opacity: 0.16;
+  transform: scaleY(-1);
+  -webkit-mask-image: linear-gradient(to bottom, rgba(0,0,0,0.9), transparent 72%);
+  mask-image: linear-gradient(to bottom, rgba(0,0,0,0.9), transparent 72%);
+  pointer-events: none;
+}
+.reel__sound {
+  position: absolute; top: 1.25rem; left: 50%; transform: translateX(-50%); z-index: 5;
+  font-family: var(--font-mono); font-size: 0.625rem; letter-spacing: 0.16em; text-transform: uppercase;
+  border: 1px solid currentColor; border-radius: 999px; padding: 0.4rem 0.9rem;
+  background: none; color: inherit; cursor: pointer; opacity: 0.7;
+}
+.reel__sound:hover { opacity: 1; }
+.reel__sound[aria-pressed='true'] { background: currentColor; }
+.reel__sound[aria-pressed='true'] span { mix-blend-mode: difference; }
+
+/* ---- 11 SKILLS — board 11 ---------------------------------- */
+.skills { margin-top: 3.5rem; display: grid; gap: 0; max-width: 46rem; border-top: 1px solid currentColor; }
+.skills__row {
+  display: grid; grid-template-columns: 2.5rem 1fr; gap: 1rem; align-items: baseline;
+  padding: 0.9rem 0; border-bottom: 1px solid currentColor; opacity: 0.55;
+}
+.skills__n { font-family: var(--font-mono); font-size: 0.625rem; opacity: 0.6; }
+.skills__t { font-family: var(--font-mono); font-size: 0.75rem; letter-spacing: 0.08em; }
+
+/* ---- 12 scroll-transforming elements — board 12 ------------ */
+.morph { position: relative; min-height: 52vh; display: grid; place-items: center; }
+.morph__shape { width: min(60%, 28rem); aspect-ratio: 16/10; opacity: 0.5; }
+.morph__shape svg { width: 100%; height: 100%; fill: none; stroke: currentColor; stroke-width: 1.1; }
+.morph__cols {
+  display: grid; grid-template-columns: repeat(3, 1fr); gap: var(--gutter);
+  margin-top: 3rem; width: 100%;
+}
+.morph__col { font-family: var(--font-mono); font-size: 0.6875rem; letter-spacing: 0.06em; opacity: 0.5; min-height: 4.5rem; }
+
+/* ---- project rows become links — boards 5, 6, 7 ------------ */
+.project__link { color: inherit; text-decoration: none; display: block; }
+.project__go {
+  font-family: var(--font-mono); font-size: 0.625rem; letter-spacing: 0.14em;
+  text-transform: uppercase; opacity: 0; transform: translateX(-0.4rem);
+  transition: opacity 220ms var(--ease), transform 220ms var(--ease);
+  margin-top: 0.6rem; display: inline-block;
+}
+.project__link:hover .project__go,
+.project__link:focus-visible .project__go { opacity: 0.75; transform: none; }
+
+/* ---- per-project page -------------------------------------- */
+.pp { padding: var(--gutter); max-width: 72rem; margin-inline: auto; }
+.pp__back { font-family: var(--font-mono); font-size: 0.6875rem; letter-spacing: 0.14em; text-transform: uppercase; color: inherit; text-decoration: none; opacity: 0.6; }
+.pp__title { font-family: var(--font-display); font-weight: 300; font-size: clamp(2rem, 6vw, 4.5rem); line-height: 1.02; letter-spacing: -0.025em; margin: 2.5rem 0 1rem; }
+.pp__roles { display: flex; flex-wrap: wrap; gap: 0.5rem 1rem; margin-bottom: 2.5rem; }
+.pp__anecdote { display: grid; gap: 0; max-width: 48rem; margin-top: 3rem; border-top: 1px solid currentColor; }
+.pp__beat { display: grid; grid-template-columns: 10rem 1fr; gap: 1.5rem; padding: 1.1rem 0; border-bottom: 1px solid currentColor; }
+.pp__beat dt { font-family: var(--font-mono); font-size: 0.625rem; letter-spacing: 0.12em; text-transform: uppercase; opacity: 0.5; }
+.pp__beat dd { margin: 0; opacity: 0.55; font-size: 0.9375rem; }
+.pp__next { margin-top: 4rem; display: flex; justify-content: space-between; gap: 1rem; flex-wrap: wrap; }
+
+@media (max-width: 46rem) {
+  .morph__cols { grid-template-columns: 1fr; }
+  .pp__beat { grid-template-columns: 1fr; gap: 0.35rem; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  #loader { display: none; }
+  .worksmark__l { transition: none; }
 }

@@ -9,3 +9,5 @@ npm-debug.log*
 .vercel/
 .env.*
 .astro/
+
+preview-out.log

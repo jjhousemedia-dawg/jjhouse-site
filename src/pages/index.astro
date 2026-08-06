@@ -24,16 +24,34 @@ const LDS = { channels: '15+', views: '5B+', subs: '5.1M' };
 const sizes = ['project--l', 'project--r', 'project--xl', 'project--l', 'project--r', 'project--xl'];
 ---
 
-<Scroll title="JJ House — Creative strategist" desc="JJ House. Creative strategist in Los Angeles.">
+<Scroll loader={true} title="JJ House — Creative strategist" desc="JJ House. Creative strategist in Los Angeles.">
   <!-- ================= 01 ARRIVAL ================= -->
   <header class="beat arrival">
-    <p class="arrival__deck">
-      I make work for screens, and I&rsquo;m usually in it from the first idea to the last frame.
-    </p>
+    <div class="arrival__top">
+      <div>
+        <p class="arrival__deck">
+          I make work for screens, and I&rsquo;m usually in it from the first idea to the last frame.
+        </p>
+        <!-- Board 2 + noth.in both carry a CTA in the hero. The only CTA on the
+             page was 9,700px down, for a hiring-manager audience. -->
+        <p class="arrival__cta">
+          <a class="btn" href="#comein"><span>Book a call &rarr;</span></a>
+        </p>
+      </div>
+      <button class="arrival__menu" id="menuBtn" aria-expanded="false">Menu ::</button>
+    </div>
 
-    <!-- Surface layer. Minimal by design: the flavour lives underneath,
-         revealed by dragging. WebGL erode-and-refill replaces this. -->
-    <p class="wordmark__placeholder">HOUSE</p>
+    <!-- Board 2. Surface minimal, substrate maximal. Drag to erode; it
+         refills like foam closing over water. The canvas here is a 2D
+         stand-in for the WebGL2 mask-reveal (decay ~0.94, stamp ~8vw,
+         noise matched to hair scale). Substrate becomes Blender geo-nodes
+         work, in colour, per spec §5. -->
+    <div class="surface" id="surface">
+      <span class="wire-tag">Wire / board 02 &mdash; drag me</span>
+      <div class="surface__substrate"><span>[ substrate: Blender geo-nodes, converted-font geometry + hair, in colour ]</span></div>
+      <canvas class="surface__erode" id="erode"></canvas>
+      <p class="wordmark__placeholder">HOUSE</p>
+    </div>
 
     <div class="arrival__foot">
       <span class="meta">Creative strategist &middot; Los Angeles</span>
@@ -72,18 +90,49 @@ const sizes = ['project--l', 'project--r', 'project--xl', 'project--l', 'project
   <!-- ================= 04 REEL — the one-way flip ================= -->
   <section class="reel" id="reel">
     <div class="reel__sticky">
+      <!-- Board 9. The pink drawing on JJ's board is the environment the
+           video sits inside. Grid below stands in for that room until the
+           Blender plate exists. Spec §9: biggest single asset, still TBD. -->
+      <div class="reel__room" aria-hidden="true"></div>
+
+      <button class="reel__sound" id="soundBtn" aria-pressed="false"><span>Sound</span></button>
+
       <div class="reel__frame" id="reelFrame">
         <div class="ph" style="width:min(90%,60rem);aspect-ratio:16/9">
-          REEL
-          <small>full bleed, recedes into a rendered room as you scroll</small>
-          <small>two passes out of Blender: beauty plate plus a separate floor reflection</small>
+          REEL &mdash; beauty plate
+          <small>enters full bleed, recedes with perspective as you scroll</small>
+          <small>board 4: returns to full size on scroll up</small>
+        </div>
+        <!-- Board 9 + verified on noth.in: CLEAN.mp4 stacked directly above
+             REFLECT.mp4, exactly one video height apart. Separate pass, not
+             a CSS trick, once the Blender render exists. -->
+        <div class="ph reel__reflect" style="width:min(90%,60rem);aspect-ratio:16/5" aria-hidden="true">
+          reflection pass
         </div>
       </div>
+
+      <p class="meta" style="position:absolute;bottom:1.25rem;left:50%;transform:translateX(-50%);opacity:.4;text-align:center;max-width:44rem;padding:0 1rem">
+        [ board 4 &mdash; the analogy JJ drew here is his own and is not written yet:
+        a dream house is always a dream, and he brings clarity to dreams by knowing
+        the medium deeply. Needs his words, and a ruling on the &ldquo;never write
+        about houses&rdquo; rule. ]
+      </p>
     </div>
   </section>
 
   <!-- ================= 05 WORK ================= -->
   <section class="beat" id="work">
+    <!-- Board 5, verified live on noth.in: the word is whole and large at
+         entry, its letters scatter across the header mid-section, then it
+         splits W | ORKS and reassembles small. Scroll-driven, not timed. -->
+    <div class="worksmark" aria-hidden="true">
+      <div class="worksmark__row" id="worksRow">
+        <span class="worksmark__l">W</span><span class="worksmark__l">O</span><span
+          class="worksmark__l">R</span><span class="worksmark__l">K</span><span
+          class="worksmark__l">S</span>
+      </div>
+    </div>
+
     <div class="ticker">
       <span class="ticker__slot" id="tickerSlot">WORKS</span>
       <span class="ticker__slot" style="text-align:right">MENU ::</span>
@@ -93,10 +142,13 @@ const sizes = ['project--l', 'project--r', 'project--xl', 'project--l', 'project
       <div class="projects">
         {featured.map((p, i) => (
           <article class={`project ${sizes[i % sizes.length]}`} data-rise data-roles={p.roles.join('|')}>
-            <div class="project__media">
-              <span class="project__ph">{p.video.type} &middot; {p.video.id}</span>
-            </div>
-            <h2 class="project__title">{p.title}</h2>
+            <a class="project__link" href={`/work/${p.slug}`}>
+              <div class="project__media">
+                <span class="project__ph">{p.video.type} &middot; {p.video.id}</span>
+              </div>
+              <h2 class="project__title">{p.title}</h2>
+              <span class="project__go">Open project &#8627;</span>
+            </a>
             <div class="project__roles">
               {p.roles.map((r) => <span class="meta">{r}</span>)}
             </div>
@@ -147,6 +199,37 @@ const sizes = ['project--l', 'project--r', 'project--xl', 'project--l', 'project
           be?&rdquo;
         </p>
       </div>
+
+      <!-- Board 11: "What I do. Skills:". Not in the spec, and a bare list
+           may fight the voice rules. Wired so JJ can see it and rule on it. -->
+      <div class="skills">
+        <div class="skills__row"><span class="skills__n">01</span><span class="skills__t">[ skill &mdash; JJ to write ]</span></div>
+        <div class="skills__row"><span class="skills__n">02</span><span class="skills__t">[ skill ]</span></div>
+        <div class="skills__row"><span class="skills__n">03</span><span class="skills__t">[ skill ]</span></div>
+        <div class="skills__row"><span class="skills__n">04</span><span class="skills__t">[ skill ]</span></div>
+        <div class="skills__row"><span class="skills__n">05</span><span class="skills__t">[ skill ]</span></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============ 07b SCROLL-TRANSFORMING ELEMENTS — board 12 ============ -->
+  <section class="beat">
+    <div class="beat__inner">
+      <div class="morph" id="morph">
+        <span class="wire-tag">Wire / board 12</span>
+        <div class="morph__shape" id="morphShape">
+          <svg viewBox="0 0 400 250" aria-hidden="true">
+            <ellipse cx="200" cy="125" rx="150" ry="78" />
+            <ellipse cx="230" cy="118" rx="96" ry="52" />
+            <ellipse cx="185" cy="132" rx="118" ry="64" />
+          </svg>
+        </div>
+        <div class="morph__cols">
+          <div class="morph__col" data-morphcol>[ scribble text about me ]</div>
+          <div class="morph__col" data-morphcol>[ scribble text about what I&rsquo;m capable of ]</div>
+          <div class="morph__col" data-morphcol>[ other scribble text ]</div>
+        </div>
+      </div>
     </div>
   </section>
 
@@ -163,7 +246,7 @@ const sizes = ['project--l', 'project--r', 'project--xl', 'project--l', 'project
   </section>
 
   <!-- ================= 09 COME IN ================= -->
-  <footer class="beat">
+  <footer class="beat" id="comein">
     <div class="beat__inner" data-rise>
       <p class="label">( come in )</p>
       <p class="statement" style="max-width:24ch">Tell me what you can already see.</p>
@@ -252,6 +335,147 @@ const sizes = ['project--l', 'project--r', 'project--xl', 'project--l', 'project
           { rootMargin: '-35% 0px -35% 0px' }
         );
         projects.forEach((p) => io.observe(p));
+      }
+
+      // ---- board 2: erode and refill -------------------------------
+      // 2D stand-in for the WebGL2 mask-reveal. Pointer erases the
+      // surface; every frame a thin veil of surface is painted back, so
+      // the hole closes like foam over water. One constant is the feel.
+      const cv = document.getElementById('erode');
+      const surf = document.getElementById('surface');
+      if (cv && surf && !reduce) {
+        const ctx = cv.getContext('2d');
+        const REFILL = 0.055;          // the foam constant
+        let w = 0, h = 0, down = false;
+
+        const paper = () =>
+          getComputedStyle(document.body).getPropertyValue('background-color') || '#f2f1ee';
+
+        const size = () => {
+          const r = surf.getBoundingClientRect();
+          w = cv.width = Math.max(1, Math.round(r.width));
+          h = cv.height = Math.max(1, Math.round(r.height));
+          ctx.fillStyle = paper();
+          ctx.globalCompositeOperation = 'source-over';
+          ctx.fillRect(0, 0, w, h);
+        };
+
+        const stamp = (x, y) => {
+          const rad = Math.max(28, w * 0.08);   // ~8% viewport width
+          const g = ctx.createRadialGradient(x, y, 0, x, y, rad);
+          g.addColorStop(0, 'rgba(0,0,0,1)');
+          g.addColorStop(0.65, 'rgba(0,0,0,0.55)');
+          g.addColorStop(1, 'rgba(0,0,0,0)');
+          ctx.globalCompositeOperation = 'destination-out';
+          ctx.fillStyle = g;
+          ctx.beginPath();
+          ctx.arc(x, y, rad, 0, Math.PI * 2);
+          ctx.fill();
+        };
+
+        const at = (e) => {
+          const r = cv.getBoundingClientRect();
+          const t = e.touches ? e.touches[0] : e;
+          return [t.clientX - r.left, t.clientY - r.top];
+        };
+
+        surf.addEventListener('pointerdown', (e) => { down = true; stamp(...at(e)); });
+        addEventListener('pointerup', () => { down = false; });
+        surf.addEventListener('pointermove', (e) => { if (down) stamp(...at(e)); });
+        surf.addEventListener('touchmove', (e) => { stamp(...at(e)); }, { passive: true });
+
+        // slow autonomous drift so the idea is not invisible on phones
+        let t = 0;
+        const loop = () => {
+          ctx.globalCompositeOperation = 'source-over';
+          ctx.fillStyle = paper();
+          ctx.globalAlpha = REFILL;
+          ctx.fillRect(0, 0, w, h);
+          ctx.globalAlpha = 1;
+          if (!down && matchMedia('(hover: none)').matches) {
+            t += 0.012;
+            stamp(w * (0.5 + Math.sin(t) * 0.3), h * (0.5 + Math.cos(t * 0.7) * 0.25));
+          }
+          requestAnimationFrame(loop);
+        };
+        size();
+        addEventListener('resize', size);
+        requestAnimationFrame(loop);
+      }
+
+      // ---- board 5: the WORKS letters migrate ----------------------
+      // Whole and large on entry, scattered across the header at the
+      // midpoint, split W | ORKS and small on exit. Driven by scroll
+      // position through the work section, so it reverses on scroll up.
+      const row = document.getElementById('worksRow');
+      const workSec = document.getElementById('work');
+      if (row && workSec && !reduce) {
+        const letters = [...row.querySelectorAll('.worksmark__l')];
+        const n = letters.length;
+        const lerp = (a, b, f) => a + (b - a) * f;
+        const ease = (x) => (x < 0.5 ? 2 * x * x : 1 - Math.pow(-2 * x + 2, 2) / 2);
+
+        const place = () => {
+          const r = workSec.getBoundingClientRect();
+          const span = r.height - window.innerHeight;
+          if (span <= 0) return;
+          const p = Math.min(1, Math.max(0, -r.top / span));
+          const W = row.clientWidth || 1;
+
+          letters.forEach((el, i) => {
+            const bigPx = 34, smallPx = 15;
+            // three keyframes: clustered left, scattered, split
+            const startX = i * bigPx * 0.78;
+            const midX = (i / (n - 1)) * (W - smallPx * 2);
+            const endX = i === 0 ? 0 : W - (n - i) * smallPx * 0.95 - 4;
+
+            let x, fs;
+            if (p < 0.5) {
+              const f = ease(p / 0.5);
+              x = lerp(startX, midX, f);
+              fs = lerp(bigPx, smallPx + 4, f);
+            } else {
+              const f = ease((p - 0.5) / 0.5);
+              x = lerp(midX, endX, f);
+              fs = lerp(smallPx + 4, smallPx, f);
+            }
+            el.style.transform = `translateX(${x}px)`;
+            el.style.fontSize = fs + 'px';
+            el.style.opacity = String(0.25 + 0.55 * (1 - Math.abs(0.5 - p) * 2) + 0.2);
+          });
+        };
+        addEventListener('scroll', place, { passive: true });
+        addEventListener('resize', place);
+        place();
+      }
+
+      // ---- board 9: sound toggle, off by default -------------------
+      const sound = document.getElementById('soundBtn');
+      if (sound) {
+        sound.addEventListener('click', () => {
+          const on = sound.getAttribute('aria-pressed') === 'true';
+          sound.setAttribute('aria-pressed', String(!on));
+        });
+      }
+
+      // ---- board 12: text changes then disappears -------------------
+      const cols = [...document.querySelectorAll('[data-morphcol]')];
+      const morph = document.getElementById('morph');
+      const shape = document.getElementById('morphShape');
+      if (cols.length && morph && !reduce) {
+        const onScroll = () => {
+          const r = morph.getBoundingClientRect();
+          const p = 1 - Math.min(1, Math.max(0, (r.top + r.height * 0.5) / window.innerHeight));
+          if (shape) shape.style.transform =
+            `rotate(${(p - 0.5) * 26}deg) scale(${0.85 + p * 0.3})`;
+          cols.forEach((c, i) => {
+            const local = Math.min(1, Math.max(0, (p - i * 0.14) * 2.4));
+            c.style.opacity = String(local < 0.6 ? local / 0.6 : 1 - (local - 0.6) / 0.4);
+            c.style.transform = `translateY(${(1 - local) * 22}px)`;
+          });
+        };
+        addEventListener('scroll', onScroll, { passive: true });
+        onScroll();
       }
     })();
   </script>

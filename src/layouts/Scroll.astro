@@ -5,7 +5,18 @@ const {
   title = 'JJ House',
   desc = 'JJ House. Creative strategist in Los Angeles.',
   dark = false,
+  loader = false,
 } = Astro.props;
+
+// Board 1. The spec's object set, as flat matte silhouettes.
+// Egg is always first; the rest are shuffled at runtime.
+const OBJECTS = [
+  { k: 'egg',    d: 'M50 8c14 0 24 20 24 38 0 20-11 32-24 32S26 66 26 46C26 28 36 8 50 8z' },
+  { k: 'decoy',  d: 'M63 22c6 0 10 4 10 9 0 4-2 6-5 7l-2 6c14 3 22 11 22 20 0 12-16 21-38 21-16 0-27-6-27-14 0-3 1-5 3-7-5-2-8-6-8-10 0-8 12-14 30-14h6l3-9c-3-1-5-4-5-7 0-5 5-9 11-9z' },
+  { k: 'keystone', d: 'M30 26h40l12 48H18z' },
+  { k: 'fork',   d: 'M38 12h9v40h6V12h9v42c0 7-4 12-9 13v25h-6V67c-5-1-9-6-9-13z' },
+  { k: 'iron',   d: 'M54 8h7l-9 58h20c4 0 7 3 7 7v13c0 4-3 7-7 7H41c-6 0-10-5-9-11z' },
+];
 ---
 <!doctype html>
 <html lang="en">
@@ -26,7 +37,50 @@ const {
     />
   </head>
   <body class:list={['scroll', dark && 'is-dark']}>
+    {loader && (
+      <div id="loader" aria-hidden="true">
+        <div class="loader__stage">
+          <div class="loader__objects">
+            {OBJECTS.map((o, i) => (
+              <div class={`loader__obj${i === 0 ? ' on' : ''}`} data-obj={o.k}>
+                <svg viewBox="0 0 100 100" aria-hidden="true"><path d={o.d} /></svg>
+              </div>
+            ))}
+          </div>
+          <p class="loader__mark">HOUSE</p>
+          <p class="loader__pct" id="loaderPct">0</p>
+        </div>
+        <p class="loader__note">
+          WIRE / BOARD 01 &mdash; placeholder loader. Final is a reverse-played fracture sim per spec
+          &sect;5: material always arrives from offscreen and converges inward, egg always first, each
+          object absorbing the one before it, resolving to the mark. Outgoing material must be finer
+          than incoming. These flat silhouettes stand in for that.
+        </p>
+      </div>
+    )}
+
     <slot />
+
+    <script>
+      // ---- Lenis. Verified running on noth.in; every scroll-scrubbed
+      // mechanic in the spec needs a per-frame virtual scroll position,
+      // which native CSS smooth scrolling does not provide. ----
+      import Lenis from 'lenis';
+
+      const reduce = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+      if (!reduce) {
+        const lenis = new Lenis({
+          duration: 1.05,
+          easing: (t) => Math.min(1, 1.001 - Math.pow(2, -10 * t)),
+          smoothWheel: true,
+          touchMultiplier: 1.6,
+        });
+        window.__lenis = lenis;
+        const raf = (time) => { lenis.raf(time); requestAnimationFrame(raf); };
+        requestAnimationFrame(raf);
+      }
+    </script>
 
     <script is:inline>
       // Reveal on scroll. Everything starts hidden only if JS is running,
@@ -51,6 +105,66 @@ const {
           { rootMargin: '0px 0px -12% 0px', threshold: 0.1 }
         );
         items.forEach((el) => io.observe(el));
+      })();
+    </script>
+
+    <script is:inline>
+      // ---- 00 loader, board 1 ----------------------------------------
+      // Rapid cycle with a shudder between objects, then resolve.
+      (function () {
+        const el = document.getElementById('loader');
+        if (!el) return;
+        const reduce = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+        if (reduce) { el.classList.add('done'); return; }
+
+        const objs = [...el.querySelectorAll('.loader__obj')];
+        const pct = document.getElementById('loaderPct');
+        // egg always first, remainder shuffled — the order is free because
+        // absorption is felt rather than literal.
+        const rest = objs.slice(1);
+        for (let i = rest.length - 1; i > 0; i--) {
+          const j = Math.floor(Math.random() * (i + 1));
+          [rest[i], rest[j]] = [rest[j], rest[i]];
+        }
+        const order = [objs[0], ...rest.slice(0, 2)];
+
+        let step = 0;
+        let finished = false;
+        const total = 2000;
+        const t0 = performance.now();
+
+        const finish = () => {
+          if (finished) return;
+          finished = true;
+          objs.forEach((o) => o.classList.remove('on'));
+          if (pct) pct.textContent = '100';
+          el.classList.add('done');
+        };
+
+        // Backstop. requestAnimationFrame does not fire while the tab is
+        // hidden, so a loader driven only by rAF stays up forever if the
+        // site is opened in a background tab. setTimeout keeps running,
+        // and visibilitychange catches the case where the reader comes
+        // back early. Never let the curtain outlive the load.
+        const hardStop = setTimeout(finish, total + 900);
+        document.addEventListener('visibilitychange', () => {
+          if (document.visibilityState === 'visible' && performance.now() - t0 >= total) finish();
+        });
+
+        const tick = (now) => {
+          if (finished) return;
+          const p = Math.min(1, (now - t0) / total);
+          if (pct) pct.textContent = String(Math.round(p * 100));
+          const want = Math.min(order.length - 1, Math.floor(p * order.length));
+          if (want !== step) {
+            objs.forEach((o) => o.classList.remove('on'));
+            order[want].classList.add('on');
+            step = want;
+          }
+          if (p < 1) requestAnimationFrame(tick);
+          else { clearTimeout(hardStop); setTimeout(finish, 260); }
+        };
+        requestAnimationFrame(tick);
       })();
     </script>
   </body>

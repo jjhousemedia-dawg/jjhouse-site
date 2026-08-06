@@ -1,0 +1,68 @@
+---
+// Boards 5, 6 and 7 all say the same thing three times over:
+// "Clickable Thumbnail. Takes user to new Page dedicated to this project."
+// The spec has no per-project route. This is that route, wired as a
+// labelled shell. Spec §7 commits to an anecdote per project in the beat
+// 03 copy, and this page is where that promise gets kept.
+import Scroll from '../../layouts/Scroll.astro';
+import data from '../../data/projects.json';
+
+export function getStaticPaths() {
+  return data.projects.map((p) => ({ params: { slug: p.slug }, props: { p } }));
+}
+
+const { p } = Astro.props;
+const idx = data.projects.findIndex((x) => x.slug === p.slug);
+const next = data.projects[(idx + 1) % data.projects.length];
+---
+
+<Scroll dark={true} title={`${p.title} — JJ House`} desc={`${p.title}. ${p.roles.join(', ')}.`}>
+  <div class="pp">
+    <a class="pp__back" href="/#work">&#8624; Back</a>
+
+    <h1 class="pp__title">{p.title}</h1>
+
+    <div class="pp__roles">
+      {p.roles.map((r) => <span class="meta">{r}</span>)}
+    </div>
+
+    <div class="ph" style="width:100%;aspect-ratio:16/9;position:relative">
+      <span class="wire-tag">Wire / boards 05&ndash;07</span>
+      PROJECT MEDIA
+      <small>{p.video.type} &middot; {p.video.id}</small>
+      <small>moves to self-hosted Mux Basic per spec &sect;1</small>
+    </div>
+
+    <!-- Spec §7 fixes the anecdote shape. Four lines, 40 to 60 words,
+         ending on a call JJ made rather than on the chaos. Conditions
+         named as causes, never people. -->
+    <dl class="pp__anecdote">
+      <div class="pp__beat">
+        <dt>what it was trying to be</dt>
+        <dd>[ one line &mdash; JJ ]</dd>
+      </div>
+      <div class="pp__beat">
+        <dt>what went wrong</dt>
+        <dd>[ one line, dry, no self-pity ]</dd>
+      </div>
+      <div class="pp__beat">
+        <dt>the call</dt>
+        <dd>[ one line &mdash; load-bearing. The anecdote ends here, not on the chaos. ]</dd>
+      </div>
+      <div class="pp__beat">
+        <dt>what it bought</dt>
+        <dd>[ one line, result in it ]</dd>
+      </div>
+    </dl>
+
+    <p class="meta" style="display:block;margin-top:2rem;opacity:.45;max-width:44rem">
+      Open per spec &sect;9: whether these pages ship at all, or whether the anecdote
+      stays inline on the homepage. Drawn on boards 05&ndash;07, absent from the spec.
+    </p>
+
+    <div class="pp__next">
+      <a class="pp__back" href="/work">All work &#8627;</a>
+      <a class="pp__back" href={`/work/${next.slug}`}>Next &mdash; {next.title} &rarr;</a>
+    </div>
+  </div>
+</Scroll>
