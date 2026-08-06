@@ -46,10 +46,16 @@ const sizes = ['project--l', 'project--r', 'project--xl', 'project--l', 'project
          stand-in for the WebGL2 mask-reveal (decay ~0.94, stamp ~8vw,
          noise matched to hair scale). Substrate becomes Blender geo-nodes
          work, in colour, per spec §5. -->
-    <div class="surface" id="surface" data-decay="0.955" data-radius="0.26" data-noise="0.62" data-scale="18">
+    <!-- The ink layer spans the whole hero, NOT the wordmark box. That is the
+         point of the reference: the letterforms are part of one sheet lying
+         over the water, and the cursor shoves that sheet around, so torn ink
+         has to be able to pile up well outside the letters. -->
+    <canvas class="surface__erode" id="erode"></canvas>
+
+    <div class="surface" id="surface"
+         data-decay="0.988" data-radius="0.16" data-noise="0.78" data-scale="7.5" data-blob="1.30">
       <span class="wire-tag">Wire / board 02 &mdash; move across the mark</span>
-      <div class="surface__substrate"><span>[ substrate: Blender geo-nodes, converted-font geometry + hair, in colour ]</span></div>
-      <canvas class="surface__erode" id="erode"></canvas>
+      <div class="surface__substrate"><span>[ substrate: swap the water loop for the Blender render ]</span></div>
       <p class="wordmark__placeholder">HOUSE</p>
     </div>
 

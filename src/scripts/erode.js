@@ -62,11 +62,10 @@ in vec2 vUv;
 out vec4 frag;
 uniform sampler2D uMatte;
 uniform sampler2D uTrail;
-uniform sampler2D uSub;
-uniform float uHasSub;
 uniform float uTime;
-uniform float uNoise;     // amplitude
-uniform float uScale;     // cells across the wordmark
+uniform float uNoise;
+uniform float uScale;
+uniform float uBlob;
 uniform vec3  uInk;
 uniform float uAspect;
 
@@ -79,41 +78,66 @@ float vnoise(vec2 p){
 }
 float fbm(vec2 p){
   float v = 0.0, a = 0.5;
-  for (int i = 0; i < 5; i++){ v += a * vnoise(p); p *= 2.02; a *= 0.5; }
+  for (int i = 0; i < 5; i++){ v += a * vnoise(p); p *= 2.03; a *= 0.5; }
   return v;
 }
 
-// hair-system stand-in: domain-warped striations, in colour, per spec §5
-vec3 substrate(vec2 uv){
-  vec2 q = vec2(uv.x * uAspect, uv.y);
-  float w = fbm(q * 3.0 + vec2(uTime * 0.03, 0.0));
-  float strand = fbm(q * vec2(38.0, 9.0) + vec2(w * 2.2, uTime * 0.05));
-  float band = fbm(q * 1.6 - vec2(0.0, uTime * 0.02));
-  vec3 warm = vec3(1.00, 0.46, 0.12);
-  vec3 deep = vec3(0.30, 0.16, 0.72);
-  vec3 gold = vec3(1.00, 0.86, 0.36);
-  vec3 teal = vec3(0.10, 0.72, 0.70);
-  vec3 c = mix(deep, warm, smoothstep(0.28, 0.70, band));
-  c = mix(c, teal, smoothstep(0.62, 0.98, w) * 0.45);
-  c = mix(c, gold, smoothstep(0.52, 0.92, strand) * 0.85);
-  return c * (0.95 + 0.55 * strand);
+// --- the thing under the ink: a slow water loop -------------------
+// Classic layered caustic. Cheap, loops forever, and reads instantly as
+// water without needing an asset.
+float caustic(vec2 p, float t){
+  vec2 i = p;
+  float c = 0.0;
+  const float inten = 0.0045;
+  for (int n = 0; n < 5; n++){
+    float ti = t * (1.0 - (3.5 / float(n + 1)));
+    i = p + vec2(cos(ti - i.x) + sin(ti + i.y), sin(ti - i.y) + cos(ti + i.x));
+    c += 1.0 / length(vec2(p.x / (sin(i.x + ti) / inten), p.y / (cos(i.y + ti) / inten)));
+  }
+  c /= 5.0;
+  c = 1.17 - pow(c, 1.4);
+  return clamp(pow(abs(c), 8.0), 0.0, 1.0);
+}
+
+vec3 water(vec2 uv){
+  vec2 p = vec2(uv.x * uAspect, uv.y) * 4.2;
+  float t = uTime * 0.42;
+  float c = caustic(p, t);
+  float swell = fbm(p * 0.5 + vec2(0.0, t * 0.15));
+  // restrained: it sits inside a black wordmark on a paper page, so a
+  // saturated pool reads as a mistake. Deep water, sparse highlights.
+  vec3 deep    = vec3(0.015, 0.055, 0.075);
+  vec3 shallow = vec3(0.04, 0.19, 0.22);
+  vec3 crest   = vec3(0.55, 0.82, 0.88);
+  vec3 col = mix(deep, shallow, smoothstep(0.25, 0.85, swell));
+  col += crest * c * 0.55;
+  return col;
 }
 
 void main(){
   float matte = texture(uMatte, vUv).a;
-  if (matte < 0.003) { frag = vec4(0.0); return; }
+  float t     = texture(uTrail, vUv).r;
 
-  float trail = texture(uTrail, vUv).r;
+  vec2 np = vec2(vUv.x * uAspect, vUv.y);
+  // two octaves at different rates: the coarse one shapes the big blobs,
+  // the fine one shreds the edge into islands
+  float n1 = fbm(np * uScale + uTime * 0.035);
+  float n2 = fbm(np * uScale * 2.9 - uTime * 0.055);
 
-  // noise added BEFORE the threshold — this is what makes the edge
-  // tattered rather than a clean circle
-  float n = fbm(vec2(vUv.x * uAspect, vUv.y) * uScale + uTime * 0.06);
-  float e = smoothstep(0.30, 0.66, trail + (n - 0.5) * uNoise);
+  // THE INK LAYER. Not confined to the letterforms: it is the union of the
+  // letters and the ink the cursor has shoved around, so torn ink piles up
+  // well outside the wordmark.
+  float field = max(matte, t * uBlob);
+  float ink   = smoothstep(0.46, 0.55, field + (n1 - 0.5) * uNoise);
 
-  vec3 sub = uHasSub > 0.5 ? texture(uSub, vUv).rgb : substrate(vUv);
-  vec3 col = mix(uInk, sub, e);
+  // THE TEAR. A narrow threshold band plus a fine octave is what breaks the
+  // reveal into ragged islands. A wide band just gives a clean capsule with
+  // a soft edge, which reads as a highlighter rather than torn material.
+  float nRev = (n1 * 0.55 + n2 * 0.45) - 0.5;
+  float reveal = smoothstep(0.61, 0.73, t + nRev * uNoise * 1.25);
 
-  frag = vec4(col, matte);
+  vec3 col = mix(uInk, water(vUv), reveal);
+  frag = vec4(col, ink);
 }`;
 
 function compile(gl, type, src){
@@ -138,8 +162,9 @@ function program(gl, vs, fs){
 }
 
 export function initErode(surface){
+  const hero   = surface.closest('.arrival') || surface;
   const textEl = surface.querySelector('.wordmark__placeholder');
-  const canvas = surface.querySelector('canvas.surface__erode');
+  const canvas = hero.querySelector('canvas.surface__erode');
   if (!textEl || !canvas) return false;
   if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) return false;
 
@@ -186,7 +211,9 @@ export function initErode(surface){
   const octx = off.getContext('2d');
 
   function buildMatte(){
-    const r = surface.getBoundingClientRect();
+    // canvas bleeds well past the wordmark box (see .surface__erode), so all
+    // geometry here is in CANVAS space, not surface space
+    const r = canvas.getBoundingClientRect();
     const dpr = DPR();
     W = Math.max(1, Math.round(r.width));
     H = Math.max(1, Math.round(r.height));
@@ -219,14 +246,15 @@ export function initErode(surface){
     gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE);
     gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);
 
+    // backing store only — CSS owns the layout box
     canvas.width  = off.width;
     canvas.height = off.height;
-    canvas.style.width = W + 'px';
-    canvas.style.height = H + 'px';
 
     // trail buffers run at half res: cheaper, and the blur helps the foam
-    TW = Math.max(2, Math.round(W * 0.5));
-    TH = Math.max(2, Math.round(H * 0.5));
+    // quarter res: cheaper, and the extra blur is what makes the ink read
+    // as one connected sheet rather than a stack of stamps
+    TW = Math.max(2, Math.round(W * 0.3));
+    TH = Math.max(2, Math.round(H * 0.3));
     A = mk(TW, TH); B = mk(TW, TH);
     [A, B].forEach((o) => {
       gl.bindFramebuffer(gl.FRAMEBUFFER, o.fb);
@@ -247,10 +275,14 @@ export function initErode(surface){
     PP.x = P.x; PP.y = P.y; P.x = nx; P.y = ny;
     active = 1; idle = 0;
   };
-  surface.addEventListener('pointermove', (e) => move(e.clientX, e.clientY));
-  surface.addEventListener('pointerdown', (e) => move(e.clientX, e.clientY));
-  surface.addEventListener('pointerleave', () => { active = 0; });
-  surface.addEventListener('touchmove', (e) => {
+  // The ink sheet covers more than the letters, so the whole hero region
+  // has to drive it. Listening on the wordmark box alone means the effect
+  // dies the moment the cursor leaves the letters, which is exactly the
+  // thing that made the first pass feel contained.
+  hero.addEventListener('pointermove', (e) => move(e.clientX, e.clientY));
+  hero.addEventListener('pointerdown', (e) => move(e.clientX, e.clientY));
+  hero.addEventListener('pointerleave', () => { active = 0; });
+  hero.addEventListener('touchmove', (e) => {
     const t = e.touches[0]; if (t) move(t.clientX, t.clientY);
   }, { passive: true });
 
@@ -260,10 +292,11 @@ export function initErode(surface){
   const opts = surface.dataset;
   const q = new URLSearchParams(location.search);
   const knob = (name, fallback) => parseFloat(q.get(name) ?? opts[name] ?? fallback);
-  const DECAY  = knob('decay',  '0.955');   // the foam. higher = slower close
-  const RADIUS = knob('radius', '0.26');    // fraction of wordmark HEIGHT
-  const NOISE  = knob('noise',  '0.62');    // how tattered the edge reads
-  const SCALE  = knob('scale',  '18');      // cells across the mark
+  const DECAY  = knob('decay',  '0.988');   // the rejoin. higher = slower close
+  const RADIUS = knob('radius', '0.30');    // fraction of canvas HEIGHT
+  const NOISE  = knob('noise',  '0.78');    // how torn the boundary reads
+  const SCALE  = knob('scale',  '7.5');     // big organic cells, not fine grain
+  const BLOB   = knob('blob',   '1.30');    // how far the cursor paints ink OUTSIDE the letters
 
   const ink = (() => {
     const c = getComputedStyle(document.body).color.match(/[\d.]+/g) || [11, 11, 11];
@@ -278,7 +311,7 @@ export function initErode(surface){
   };
   const uD = {
     matte: gl.getUniformLocation(pDisp, 'uMatte'), trail: gl.getUniformLocation(pDisp, 'uTrail'),
-    sub: gl.getUniformLocation(pDisp, 'uSub'), hasSub: gl.getUniformLocation(pDisp, 'uHasSub'),
+    blob: gl.getUniformLocation(pDisp, 'uBlob'),
     time: gl.getUniformLocation(pDisp, 'uTime'), noise: gl.getUniformLocation(pDisp, 'uNoise'),
     scale: gl.getUniformLocation(pDisp, 'uScale'), ink: gl.getUniformLocation(pDisp, 'uInk'),
     aspect: gl.getUniformLocation(pDisp, 'uAspect'),
@@ -313,14 +346,14 @@ export function initErode(surface){
     gl.uniform2f(uT.pprev, PP.x, PP.y);
     gl.uniform1f(uT.decay, DECAY);
     gl.uniform1f(uT.radius, RADIUS);
-    gl.uniform1f(uT.strength, 0.78 + vel * 0.55);
+    gl.uniform1f(uT.strength, 0.92 + vel * 0.45);
     gl.uniform1f(uT.aspect, aspect);
     gl.uniform1f(uT.active, active);
     gl.drawArrays(gl.TRIANGLES, 0, 3);
     const tmp = A; A = B; B = tmp;
 
     PP.x = P.x; PP.y = P.y;
-    vel *= 0.86;
+    vel *= 0.90;
 
     // --- display
     gl.useProgram(pDisp);
@@ -331,7 +364,7 @@ export function initErode(surface){
     gl.blendFuncSeparate(gl.SRC_ALPHA, gl.ONE_MINUS_SRC_ALPHA, gl.ONE, gl.ONE_MINUS_SRC_ALPHA);
     gl.activeTexture(gl.TEXTURE0); gl.bindTexture(gl.TEXTURE_2D, matteTex); gl.uniform1i(uD.matte, 0);
     gl.activeTexture(gl.TEXTURE1); gl.bindTexture(gl.TEXTURE_2D, A.t);      gl.uniform1i(uD.trail, 1);
-    gl.uniform1f(uD.hasSub, 0.0);
+    gl.uniform1f(uD.blob, BLOB);
     gl.uniform1f(uD.time, t);
     gl.uniform1f(uD.noise, NOISE);
     gl.uniform1f(uD.scale, SCALE);

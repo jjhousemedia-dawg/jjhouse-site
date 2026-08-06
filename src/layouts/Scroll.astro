@@ -32,7 +32,7 @@ const OBJECTS = [
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link
-      href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,300;0,9..144,400;1,9..144,300&family=Inter:wght@400;500&family=IBM+Plex+Mono:wght@400;500&display=swap"
+      href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,300;0,9..144,400;1,9..144,300&family=Zalando+Sans+Expanded:wght@400;700;900&family=Inter:wght@400;500&family=IBM+Plex+Mono:wght@400;500&display=swap"
       rel="stylesheet"
     />
   </head>
@@ -136,10 +136,21 @@ const OBJECTS = [
         const el = document.querySelector('.wordmark__placeholder');
         if (!el) return;
         const parent = el.parentElement;
+        const hero = el.closest('.arrival');
 
         const fit = () => {
-          const measure = parent.getBoundingClientRect().width;
-          if (!measure) return;
+          // Measure the hero's content box, never a child. A child's width
+          // can be inflated by the very nowrap text being sized, which
+          // reads as "it fits" while the mark overflows the viewport.
+          let measure;
+          if (hero) {
+            const hs = getComputedStyle(hero);
+            measure = hero.clientWidth -
+              (parseFloat(hs.paddingLeft) || 0) - (parseFloat(hs.paddingRight) || 0);
+          } else {
+            measure = parent.getBoundingClientRect().width;
+          }
+          if (!measure || measure < 40) return;
           const prev = el.style.fontSize;
           el.style.fontSize = '100px';
           const em = el.getBoundingClientRect().width / 100;
@@ -152,7 +163,22 @@ const OBJECTS = [
           // the word taller than the row it lives in, which pushes it into
           // the footer. Cap by the available height too and take the smaller.
           const byWidth = measure / em;
-          const avail = parent.getBoundingClientRect().height;
+
+          // The height budget must NOT be read from an ancestor whose height
+          // is itself defined by this text — that is a feedback loop which
+          // shrinks the type a few percent on every pass. Derive it from the
+          // hero minus the fixed blocks above and below instead.
+          let avail;
+          if (hero) {
+            const top  = hero.querySelector('.arrival__top');
+            const foot = hero.querySelector('.arrival__foot');
+            const pad  = parseFloat(getComputedStyle(hero).paddingTop) || 0;
+            avail = hero.clientHeight - (top ? top.offsetHeight : 0) -
+                    (foot ? foot.offsetHeight : 0) - pad * 2 - 36;
+          } else {
+            avail = parent.getBoundingClientRect().height;
+          }
+          if (!(avail > 40)) avail = window.innerHeight * 0.45;
           const prevH = el.style.fontSize;
           el.style.fontSize = '100px';
           const hEm = el.getBoundingClientRect().height / 100;

@@ -19,9 +19,9 @@
   /* The wordmark face. Swap this one line to try a candidate from
      /type-test — nothing else needs to change. Fraunces is variable, so
      it also needs the wght + opsz below. */
-  --font-wordmark: 'Fraunces', Georgia, serif;
-  --wordmark-weight: 300;
-  --wordmark-variation: 'opsz' 144, 'SOFT' 0, 'WONK' 0;
+  --font-wordmark: 'Zalando Sans Expanded', 'Inter', sans-serif;
+  --wordmark-weight: 900;
+  --wordmark-variation: normal;
   --font-body: 'Inter', system-ui, sans-serif;
   --font-mono: 'IBM Plex Mono', ui-monospace, monospace;
 
@@ -113,7 +113,14 @@ body.scroll { transition: background-color 900ms var(--ease), color 900ms var(--
 .rise.in { opacity: 1; transform: none; }
 
 /* ---- 01 arrival --------------------------------------------- */
-.arrival { min-height: 100svh; display: grid; grid-template-rows: auto 1fr auto; padding: var(--gutter); }
+/* minmax(0,1fr) is load-bearing: without it the nowrap wordmark's
+   min-content width blows the grid track wider than the hero, and any
+   width measured off a child is then larger than the viewport. */
+.arrival {
+  min-height: 100svh; display: grid;
+  grid-template-rows: auto 1fr auto; grid-template-columns: minmax(0, 1fr);
+  padding: var(--gutter); position: relative; overflow: hidden;
+}
 .arrival__deck { max-width: 30ch; font-size: clamp(1rem, 1.6vw, 1.25rem); line-height: 1.45; margin: 0; }
 
 /* the wordmark. surface is minimal and near-dead by design;
@@ -141,7 +148,7 @@ body.scroll { transition: background-color 900ms var(--ease), color 900ms var(--
      wordmark never actually touched the edges. */
   font-size: clamp(4rem, 26vw, 22rem);
   line-height: 0.78;
-  letter-spacing: -0.03em;
+  letter-spacing: -0.018em;
   text-align: left;
   margin: 0;
   align-self: center;
@@ -323,10 +330,16 @@ html[data-loading] body > *:not(#loader) { visibility: hidden; }
 
 /* the erodible surface. Drag reveals the substrate underneath. */
 .surface {
-  position: relative; width: 100%; cursor: grab; touch-action: pan-y;
+  position: relative; width: 100%; cursor: crosshair; touch-action: pan-y;
   isolation: isolate; margin-top: 2.25rem;
+  /* Stretches to fill the hero's free row and centres the mark inside it.
+     This matters beyond layout: it makes .surface's height INDEPENDENT of
+     the wordmark's font size. Sizing the wordmark against a parent whose
+     height is defined by that same wordmark is a feedback loop that
+     shrinks the type ~8% on every measurement pass. */
+  align-self: center; min-width: 0;
 }
-.surface:active { cursor: grabbing; }
+.surface:active { cursor: crosshair; }
 .surface__substrate {
   position: absolute; inset: 0; z-index: 0;
   background:
@@ -339,7 +352,21 @@ html[data-loading] body > *:not(#loader) { visibility: hidden; }
   font-family: var(--font-mono); font-size: 0.625rem; letter-spacing: 0.12em;
   text-transform: uppercase; opacity: 0.9; text-align: center; padding: 0 1rem;
 }
-.surface__erode { position: absolute; inset: 0; z-index: 1; width: 100%; height: 100%; display: block; }
+.surface__erode {
+  /* Two traps here, both hit on the way in:
+     1. canvas is a REPLACED element, so width:auto ignores left/right insets
+        and falls back to the intrinsic attribute size. Dimensions must be
+        explicit.
+     2. an absolutely positioned child of a GRID container resolves inset:0
+        against its auto-placed grid area, not the container's padding box —
+        so it silently shrank to the height of row 1. Spanning every track
+        makes the containing block the whole grid. */
+  grid-area: 1 / 1 / -1 / -1;
+  position: absolute; inset: 0; width: 100%; height: 100%;
+  z-index: 0; display: block; pointer-events: none;
+}
+/* everything the reader interacts with sits above the ink */
+.arrival__top, .arrival__foot, .surface { position: relative; z-index: 2; }
 
 /* When WebGL takes over, the canvas draws the wordmark. The DOM text
    stays in the document for screen readers and for the fit measurement,
