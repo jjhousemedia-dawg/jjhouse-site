@@ -16,3 +16,14 @@ which hat JJ wore is the exact problem the rebuild exists to solve.
 which is project-first. Never read `reels.json`.
 
 See `CLAUDE.md` at the repo root.
+
+## Assets
+
+`public/` in here holds the dead concept's assets: `house.glb`, `house_anchored.glb`, `rig.glb`,
+`rig_raw.glb`, `neon.glb`, `ticker.glb`, the `postit/` shot-list art, the `planet/` textures and
+the `clouds/` plates.
+
+`_backups/` is JJ's hand-versioned copies from before the repo had git. Git does that job now.
+
+Deliberately **kept** in the live `public/`: `favicon.svg`, `thumbs/` (real project stills) and
+`clips/` (real footage) — those may still be useful to the rebuild.
