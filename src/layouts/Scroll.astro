@@ -35,8 +35,14 @@ const OBJECTS = [
     svg: `<path d="M24 22h52l-9 56H33z"/>`,
   },
   {
-    k: 'fork',
-    svg: `<path d="M35 10h7v40h7V10h7v40h7v6c0 7-4 12-10 14v22h-8V70c-6-2-10-7-10-14z"/>`,
+    // JJ cut the tuning fork (2026-08-11) and floated a UFO — which fits the
+    // set's own logic better than the fork did: the loader is literally a
+    // cycle of unexplained objects, and this is the canonical one. Drawn as
+    // a placeholder silhouette; swap the paths if he finds the better symbol.
+    k: 'ufo',
+    svg: `<path d="M50 26c11 0 20 8 21 17H29c1-9 10-17 21-17z"/>
+          <ellipse cx="50" cy="51" rx="34" ry="11"/>
+          <path d="M43 66h14l10 24H33z"/>`,
   },
   {
     k: 'iron',

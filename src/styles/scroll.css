@@ -441,15 +441,6 @@ html[data-loading] body > *:not(#loader) { visibility: hidden; }
 .reel__sound[aria-pressed='true'] { background: currentColor; }
 .reel__sound[aria-pressed='true'] span { mix-blend-mode: difference; }
 
-/* ---- 11 SKILLS — board 11 ---------------------------------- */
-.skills { margin-top: 3.5rem; display: grid; gap: 0; max-width: 46rem; border-top: 1px solid currentColor; }
-.skills__row {
-  display: grid; grid-template-columns: 2.5rem 1fr; gap: 1rem; align-items: baseline;
-  padding: 0.9rem 0; border-bottom: 1px solid currentColor; opacity: 0.55;
-}
-.skills__n { font-family: var(--font-mono); font-size: 0.625rem; opacity: 0.6; }
-.skills__t { font-family: var(--font-mono); font-size: 0.75rem; letter-spacing: 0.08em; }
-
 /* ---- 12 scroll-transforming elements — board 12 ------------ */
 .morph { position: relative; min-height: 52vh; display: grid; place-items: center; }
 .morph__shape { width: min(60%, 28rem); aspect-ratio: 16/10; opacity: 0.5; }
