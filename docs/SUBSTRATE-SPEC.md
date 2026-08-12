@@ -33,7 +33,7 @@ SemiExpanded.
 | Resolution | **3840 × 2160** (UHD 16:9) |
 | Camera | **Orthographic**, mark dead centre |
 | Frame rate | 24 or 30 fps, whichever the sim likes |
-| Length | 8–12 s, **seamless loop** |
+| Length | **~35 s, seamless loop** (frames 1–840 at 24 fps; JJ's call 2026-08-11) |
 | View transform | Standard (or grade to taste) — export **sRGB**, colours ship as rendered |
 
 ## Framing the mark
