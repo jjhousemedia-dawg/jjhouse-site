@@ -377,7 +377,7 @@ const sizes = ['project--l', 'project--r', 'project--xl', 'project--l', 'project
           const W = row.clientWidth || 1;
 
           letters.forEach((el, i) => {
-            const bigPx = 34, smallPx = 15;
+            const bigPx = 104, smallPx = 26;   // watermark scale, behind content
             // three keyframes: clustered left, scattered, split
             const startX = i * bigPx * 0.78;
             const midX = (i / (n - 1)) * (W - smallPx * 2);
@@ -395,7 +395,8 @@ const sizes = ['project--l', 'project--r', 'project--xl', 'project--l', 'project
             }
             el.style.transform = `translateX(${x}px)`;
             el.style.fontSize = fs + 'px';
-            el.style.opacity = String(0.25 + 0.55 * (1 - Math.abs(0.5 - p) * 2) + 0.2);
+            // ghost register: present, never competing with the words on top
+            el.style.opacity = String(0.10 + 0.10 * (1 - Math.abs(0.5 - p) * 2));
           });
         };
         addEventListener('scroll', place, { passive: true });

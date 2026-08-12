@@ -11,10 +11,10 @@
    ============================================================ */
 
 :root {
-  --paper: #f7f2e5;
-  --ink: #0e0d0b;
+  --paper: #fbf7ec;
+  --ink: #0a0908;
 
-  --paper-dim: #ddd6c3;
+  --paper-dim: #e0dac7;
   --ink-lift: #8b867a;
 
   --measure: 34rem;
@@ -411,10 +411,17 @@ html[data-loading] body > *:not(#loader) { visibility: hidden; }
 /* ---- 05 WORKS letter migration — board 5 ------------------- */
 .ticker { position: relative; }
 .worksmark {
-  position: sticky; top: 0; z-index: 4; height: 0; pointer-events: none;
+  /* A GHOST LAYER, not a foreground one (JJ, 2026-08-12). The letters are
+     sticky while the content scrolls, so any foreground lane eventually
+     runs them through roles, anecdotes or the ticker; text over text is
+     mush. Behind the content at watermark opacity, the same migration
+     reads as depth instead. */
+  position: sticky; top: 3.2rem; z-index: 0; height: 0; pointer-events: none;
 }
+/* the content plane rides above the ghost letters */
+#work .beat__inner { position: relative; z-index: 2; }
 .worksmark__row {
-  position: relative; height: 3.25rem; display: block;
+  position: relative; height: 9rem; display: block;
 }
 .worksmark__l {
   position: absolute; top: 0;
