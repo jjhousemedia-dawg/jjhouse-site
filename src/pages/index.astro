@@ -39,7 +39,7 @@ const sizes = ['project--l', 'project--r', 'project--xl', 'project--l', 'project
           <a class="btn" href="#comein"><span>Book a call &rarr;</span></a>
         </p>
       </div>
-      <button class="arrival__menu" id="menuBtn" aria-expanded="false">Menu ::</button>
+      <button class="arrival__menu" id="menuBtn" data-menu-open aria-expanded="false">Menu ::</button>
     </div>
 
     <!-- Board 2. Surface minimal, substrate maximal. Drag to erode; it
@@ -103,7 +103,9 @@ const sizes = ['project--l', 'project--r', 'project--xl', 'project--l', 'project
 
       <button class="reel__sound" id="soundBtn" aria-pressed="false"><span>Sound</span></button>
 
-      <div class="reel__frame" id="reelFrame">
+      <!-- data-beauty / data-reflect: set these to the water-room plate URLs
+           when they exist and the scrub rig below takes over automatically. -->
+      <div class="reel__frame" id="reelFrame" data-beauty="" data-reflect="">
         <div class="ph" style="width:min(90%,60rem);aspect-ratio:16/9">
           REEL &mdash; beauty plate
           <small>enters full bleed, recedes with perspective as you scroll</small>
@@ -139,7 +141,7 @@ const sizes = ['project--l', 'project--r', 'project--xl', 'project--l', 'project
 
     <div class="ticker">
       <span class="ticker__slot" id="tickerSlot">WORKS</span>
-      <span class="ticker__slot" style="text-align:right">MENU ::</span>
+      <button class="ticker__slot ticker__menu" data-menu-open aria-expanded="false">MENU ::</button>
     </div>
 
     <div class="beat__inner">
@@ -148,7 +150,13 @@ const sizes = ['project--l', 'project--r', 'project--xl', 'project--l', 'project
           <article class={`project ${sizes[i % sizes.length]}`} data-rise data-roles={p.roles.join('|')}>
             <a class="project__link" href={`/work/${p.slug}`}>
               <div class="project__media">
-                <span class="project__ph">{p.video.type} &middot; {p.video.id}</span>
+                <img
+                  src={`/thumbs/${p.slug}.webp`}
+                  alt={`${p.title} — still`}
+                  width="1280" height="720"
+                  loading={i < 2 ? 'eager' : 'lazy'}
+                  decoding="async"
+                />
               </div>
               <h2 class="project__title">{p.title}</h2>
               <span class="project__go">Open project &#8627;</span>
@@ -187,7 +195,7 @@ const sizes = ['project--l', 'project--r', 'project--xl', 'project--l', 'project
   </section>
 
   <!-- ================= 07 HOW I WORK ================= -->
-  <section class="beat">
+  <section class="beat" id="how">
     <div class="beat__inner" data-rise>
       <p class="label">( how I work )</p>
       <div class="principles">
@@ -402,6 +410,36 @@ const sizes = ['project--l', 'project--r', 'project--xl', 'project--l', 'project
           const on = sound.getAttribute('aria-pressed') === 'true';
           sound.setAttribute('aria-pressed', String(!on));
         });
+      }
+
+      // ---- reel scrub rig — noth.in's actual gallery mechanic --------
+      // Two pre-rendered plates, scroll-scrubbed. Inert until data-beauty
+      // is set (the water-room renders). fastSeek where available.
+      const rig = document.getElementById('reelFrame');
+      const srcB = rig && rig.dataset.beauty;
+      if (rig && srcB && reel && !reduce) {
+        const mk = (src, cls) => {
+          const v = document.createElement('video');
+          v.src = src; v.muted = true; v.playsInline = true;
+          v.preload = 'auto'; v.className = cls;
+          return v;
+        };
+        const vb = mk(srcB, 'reel__video');
+        const vr = rig.dataset.reflect ? mk(rig.dataset.reflect, 'reel__video reel__video--reflect') : null;
+        rig.innerHTML = '';
+        rig.appendChild(vb);
+        if (vr) rig.appendChild(vr);
+        const scrub = () => {
+          const r = reel.getBoundingClientRect();
+          const total = r.height - window.innerHeight;
+          if (total <= 0 || !vb.duration) return;
+          const p = Math.min(1, Math.max(0, -r.top / total));
+          const t = p * vb.duration * 0.999;
+          if (vb.fastSeek) vb.fastSeek(t); else vb.currentTime = t;
+          if (vr && vr.duration) vr.currentTime = Math.min(t, vr.duration * 0.999);
+        };
+        addEventListener('scroll', scrub, { passive: true });
+        vb.addEventListener('loadedmetadata', scrub);
       }
 
       // ---- board 12: text changes then disappears -------------------

@@ -98,6 +98,24 @@ const OBJECTS = [
 
     <slot />
 
+    <!-- ---- the menu. One overlay for every page; opened by any
+         [data-menu-open] trigger (hero button, works ticker). Always ink
+         on paper-text regardless of the flip. ---- -->
+    <div id="menu" class="menu" hidden>
+      <button class="menu__close" id="menuClose" aria-label="Close menu">Close ::</button>
+      <nav class="menu__nav" aria-label="Site">
+        <a class="menu__link" href="/#work">Work</a>
+        <a class="menu__link" href="/work">Everything &#8627;</a>
+        <a class="menu__link" href="/#how">How I work</a>
+        <a class="menu__link" href="/#comein">Come in</a>
+      </nav>
+      <div class="menu__meta">
+        <a href="mailto:jj@jjhouse.me">jj@jjhouse.me</a>
+        <a href="https://www.imdb.com/name/nm7420692/" target="_blank" rel="noopener">IMDb</a>
+        <a href="https://www.instagram.com/jj.duplex/" target="_blank" rel="noopener">Instagram</a>
+      </div>
+    </div>
+
     <script>
       // ---- Lenis. Verified running on noth.in; every scroll-scrubbed
       // mechanic in the spec needs a per-frame virtual scroll position,
@@ -167,6 +185,65 @@ const OBJECTS = [
          width:100%, which is exact at every viewport with no measurement,
          the same way noth.in does it. /type-test keeps the live-text bench
          for any future face ruling. -->
+
+    <script is:inline>
+      // ---- the menu -------------------------------------------------
+      (function () {
+        const menu = document.getElementById('menu');
+        if (!menu) return;
+        const triggers = [...document.querySelectorAll('[data-menu-open]')];
+        const closeBtn = document.getElementById('menuClose');
+        let lastFocus = null;
+
+        const open = () => {
+          lastFocus = document.activeElement;
+          menu.hidden = false;
+          requestAnimationFrame(() => menu.classList.add('on'));
+          triggers.forEach((t) => t.setAttribute('aria-expanded', 'true'));
+          document.documentElement.classList.add('menu-open');
+          if (window.__lenis) window.__lenis.stop();
+          const first = menu.querySelector('a');
+          if (first) first.focus();
+        };
+        const close = () => {
+          menu.classList.remove('on');
+          triggers.forEach((t) => t.setAttribute('aria-expanded', 'false'));
+          document.documentElement.classList.remove('menu-open');
+          if (window.__lenis) window.__lenis.start();
+          setTimeout(() => { menu.hidden = true; }, 380);
+          if (lastFocus && lastFocus.focus) lastFocus.focus();
+        };
+
+        triggers.forEach((t) => {
+          t.setAttribute('aria-haspopup', 'true');
+          t.setAttribute('aria-controls', 'menu');
+          t.addEventListener('click', open);
+        });
+        closeBtn.addEventListener('click', close);
+        addEventListener('keydown', (e) => {
+          if (e.key === 'Escape' && !menu.hidden) close();
+        });
+        // in-page links: close, then let Lenis carry the scroll on the
+        // homepage; on other pages they are ordinary navigations
+        menu.addEventListener('click', (e) => {
+          const a = e.target.closest('a');
+          if (!a) return;
+          const href = a.getAttribute('href') || '';
+          if (href.startsWith('/#') && location.pathname === '/') {
+            e.preventDefault();
+            close();
+            const target = document.querySelector(href.slice(1));
+            if (target) {
+              if (window.__lenis) window.__lenis.scrollTo(target, { duration: 1.2 });
+              else target.scrollIntoView();
+              history.replaceState(null, '', href.slice(1));
+            }
+          } else {
+            close();
+          }
+        });
+      })();
+    </script>
 
     <script is:inline>
       // ---- 00 loader — board 1 + spec §5 ------------------------------

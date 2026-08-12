@@ -28,6 +28,8 @@
 
 * { box-sizing: border-box; }
 
+a:focus-visible, button:focus-visible { outline: 1px solid currentColor; outline-offset: 4px; }
+
 /* Lenis drives the scroll now. Native smooth scrolling fights it and
    gives no per-frame position to scrub mechanics against. */
 html { scroll-behavior: auto; }
@@ -174,6 +176,9 @@ body.scroll { transition: background-color 900ms var(--ease), color 900ms var(--
   overflow: hidden;
 }
 .project__media img, .project__media video { width: 100%; height: 100%; object-fit: cover; }
+.project__media img { transition: transform 700ms var(--ease); will-change: transform; }
+.project__link:hover .project__media img,
+.project__link:focus-visible .project__media img { transform: scale(1.035); }
 .project__ph { font-family: var(--font-mono); font-size: 0.6875rem; letter-spacing: 0.12em; text-transform: uppercase; color: #5a5a5a; }
 
 .project__title { font-family: var(--font-display); font-weight: 300; font-size: clamp(1.35rem, 2.6vw, 2rem); line-height: 1.15; margin: 0; letter-spacing: -0.01em; }
@@ -481,4 +486,87 @@ html[data-loading] body > *:not(#loader) { visibility: hidden; }
 @media (prefers-reduced-motion: reduce) {
   #loader { display: none; }
   .worksmark__l { transition: none; }
+}
+
+/* ---- the menu ------------------------------------------------ */
+.menu {
+  position: fixed; inset: 0; z-index: 1000;
+  background: var(--ink); color: var(--paper);
+  display: grid; align-content: center; padding: var(--gutter);
+  opacity: 0; transition: opacity 360ms var(--ease);
+}
+.menu.on { opacity: 1; }
+/* author display:grid beats the UA [hidden] rule, so say it explicitly —
+   without this the invisible overlay eats every click on the page */
+.menu[hidden] { display: none; }
+html.menu-open body { overflow: hidden; }
+.menu__close {
+  position: absolute; top: var(--gutter); right: var(--gutter);
+  font-family: var(--font-mono); font-size: 0.6875rem; letter-spacing: 0.16em;
+  text-transform: uppercase; background: none; border: 0; color: inherit;
+  cursor: pointer; padding: 0.25rem 0; opacity: 0.75;
+}
+.menu__close:hover { opacity: 1; }
+.menu__nav { display: grid; gap: 0.35rem; max-width: 78rem; margin-inline: auto; width: 100%; }
+.menu__link {
+  font-family: var(--font-display); font-weight: 300;
+  font-size: clamp(2.25rem, 7vw, 4.5rem); line-height: 1.12;
+  letter-spacing: -0.02em; color: inherit; text-decoration: none;
+  width: fit-content;
+}
+.menu__link:hover { text-decoration: underline; text-underline-offset: 0.12em; text-decoration-thickness: 1px; }
+.menu__meta {
+  display: flex; gap: 1.75rem; flex-wrap: wrap;
+  max-width: 78rem; margin: 3.5rem auto 0; width: 100%;
+  font-family: var(--font-mono); font-size: 0.6875rem; letter-spacing: 0.14em; text-transform: uppercase;
+}
+.menu__meta a { color: inherit; text-decoration: none; opacity: 0.6; }
+.menu__meta a:hover { opacity: 1; }
+.ticker__menu { pointer-events: auto; background: none; border: 0; color: inherit; cursor: pointer; text-align: right; padding: 0; }
+
+/* ---- archive hover peek -------------------------------------- */
+.archive__peek {
+  position: fixed; top: 0; left: 0; z-index: 60;
+  width: min(24rem, 32vw); height: auto; aspect-ratio: 16 / 9; object-fit: cover;
+  pointer-events: none; opacity: 0; transition: opacity 220ms var(--ease);
+}
+.archive__peek.on { opacity: 1; }
+
+/* ---- per-project media --------------------------------------- */
+.pp__media { position: relative; width: 100%; aspect-ratio: 16 / 9; background: #101010; overflow: hidden; }
+.pp__media img, .pp__media iframe { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; border: 0; }
+.pp__play {
+  position: absolute; left: 50%; top: 50%; transform: translate(-50%, -50%);
+  font-family: var(--font-mono); font-size: 0.75rem; letter-spacing: 0.16em; text-transform: uppercase;
+  padding: 0.9rem 1.5rem; border: 1px solid #f2f1ee; border-radius: 999px;
+  background: rgba(11, 11, 11, 0.55); color: #f2f1ee; cursor: pointer;
+  backdrop-filter: blur(4px);
+  transition: background-color 200ms var(--ease);
+}
+.pp__play:hover { background: rgba(11, 11, 11, 0.85); }
+
+/* ---- reel scrub plates (inert until the water room lands) ---- */
+.reel__video { width: min(90%, 60rem); aspect-ratio: 16 / 9; object-fit: cover; display: block; }
+.reel__video--reflect {
+  margin-top: 0.5rem; opacity: 0.5;
+  -webkit-mask-image: linear-gradient(to bottom, rgba(0,0,0,0.9), transparent 72%);
+  mask-image: linear-gradient(to bottom, rgba(0,0,0,0.9), transparent 72%);
+}
+
+/* ---- 404 ----------------------------------------------------- */
+.notfound { min-height: 100svh; display: grid; align-content: center; padding: var(--gutter); max-width: 78rem; margin-inline: auto; width: 100%; }
+.notfound__obj { width: clamp(6rem, 12vw, 9rem); margin-bottom: 2rem; }
+.notfound__obj svg { width: 100%; height: auto; fill: currentColor; }
+@media (prefers-reduced-motion: no-preference) {
+  .notfound__obj { animation: hover-drift 5.5s ease-in-out infinite; }
+  @keyframes hover-drift {
+    0%, 100% { transform: translateY(0); }
+    50% { transform: translateY(-0.6rem); }
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .menu { transition: none; }
+  .project__media img { transition: none; }
+  .archive__peek { transition: none; }
 }

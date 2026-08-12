@@ -28,11 +28,12 @@ const next = data.projects[(idx + 1) % data.projects.length];
       {p.roles.map((r) => <span class="meta">{r}</span>)}
     </div>
 
-    <div class="ph" style="width:100%;aspect-ratio:16/9;position:relative">
-      <span class="wire-tag">Wire / boards 05&ndash;07</span>
-      PROJECT MEDIA
-      <small>{p.video.type} &middot; {p.video.id}</small>
-      <small>moves to self-hosted Mux Basic per spec &sect;1</small>
+    <!-- Facade embed: the still loads, the player only on request. Moves
+         to self-hosted Mux per spec §1; until then youtube-nocookie /
+         player.vimeo keep third-party weight off the first paint. -->
+    <div class="pp__media" id="ppMedia" data-type={p.video.type} data-vid={p.video.id} data-title={p.title}>
+      <img src={`/thumbs/${p.slug}.webp`} alt={`${p.title} — still`} width="1280" height="720" decoding="async" />
+      <button class="pp__play" id="ppPlay">Play &#9654;</button>
     </div>
 
     <!-- Spec §7 fixes the anecdote shape. Four lines, 40 to 60 words,
@@ -56,6 +57,27 @@ const next = data.projects[(idx + 1) % data.projects.length];
         <dd>[ one line, result in it ]</dd>
       </div>
     </dl>
+
+    <script is:inline>
+      (function () {
+        const m = document.getElementById('ppMedia');
+        const btn = document.getElementById('ppPlay');
+        if (!m || !btn) return;
+        btn.addEventListener('click', () => {
+          const id = m.dataset.vid;
+          const src = m.dataset.type === 'youtube'
+            ? `https://www.youtube-nocookie.com/embed/${id}?autoplay=1&rel=0`
+            : `https://player.vimeo.com/video/${id}?autoplay=1`;
+          const f = document.createElement('iframe');
+          f.src = src;
+          f.title = m.dataset.title || 'Video';
+          f.allow = 'autoplay; fullscreen; picture-in-picture; encrypted-media';
+          f.allowFullscreen = true;
+          m.innerHTML = '';
+          m.appendChild(f);
+        });
+      })();
+    </script>
 
     <div class="pp__next">
       <a class="pp__back" href="/work">All work &#8627;</a>

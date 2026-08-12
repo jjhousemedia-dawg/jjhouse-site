@@ -30,7 +30,7 @@ const groups = [
         <p class="label">{g.label}</p>
         <div class="archive__list">
           {g.items.map((p, i) => (
-            <a class="archive__row" href={url(p.video)} target="_blank" rel="noopener">
+            <a class="archive__row" href={url(p.video)} target="_blank" rel="noopener" data-thumb={`/thumbs/${p.slug}.webp`}>
               <span class="archive__n">{String(i + 1).padStart(2, '0')}</span>
               <span class="archive__t">{p.title}</span>
               <span class="archive__r">{p.roles.length ? p.roles.join(' · ') : p.video.type}</span>
@@ -44,5 +44,42 @@ const groups = [
       Older gallery, kept as-is:
       <a href="https://www.jjhouse.me" style="color:inherit" target="_blank" rel="noopener">jjhouse.me</a>
     </p>
+    <img class="archive__peek" id="peek" alt="" width="1280" height="720" hidden />
   </main>
+
+  <script is:inline>
+    // Hover peek: the row under the cursor shows its still, trailing the
+    // pointer with a little inertia. Colour is allowed — it is the work.
+    (function () {
+      const peek = document.getElementById('peek');
+      if (!peek) return;
+      if (matchMedia('(hover: none)').matches ||
+          matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+      let x = 0, y = 0, tx = 0, ty = 0, on = false, raf = null;
+      const place = (e) => {
+        const w = peek.offsetWidth || 320, h = peek.offsetHeight || 180;
+        tx = Math.min(e.clientX + 28, innerWidth - w - 16);
+        ty = Math.min(Math.max(e.clientY - h / 2, 12), innerHeight - h - 12);
+      };
+      const loop = () => {
+        x += (tx - x) * 0.16; y += (ty - y) * 0.16;
+        peek.style.transform = `translate(${x}px, ${y}px)`;
+        if (on) raf = requestAnimationFrame(loop);
+      };
+      document.querySelectorAll('.archive__row[data-thumb]').forEach((row) => {
+        row.addEventListener('pointerenter', (e) => {
+          peek.src = row.dataset.thumb;
+          peek.hidden = false; on = true;
+          place(e); x = tx; y = ty;
+          peek.classList.add('on');
+          cancelAnimationFrame(raf); raf = requestAnimationFrame(loop);
+        });
+        row.addEventListener('pointermove', place);
+        row.addEventListener('pointerleave', () => {
+          peek.classList.remove('on'); on = false;
+          setTimeout(() => { if (!on) peek.hidden = true; }, 220);
+        });
+      });
+    })();
+  </script>
 </Scroll>
