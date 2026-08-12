@@ -227,7 +227,7 @@ function prog(gl, fs){
 
 export function initErode(surface){
   const hero   = surface.closest('.arrival') || surface;
-  const textEl = surface.querySelector('.wordmark__placeholder');
+  const textEl = surface.querySelector('.wordmark__svg, .wordmark__placeholder');
   const canvas = hero.querySelector('canvas.surface__erode');
   if (!textEl || !canvas) return false;
   if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) return false;
@@ -300,8 +300,15 @@ export function initErode(surface){
   function build(){
     const r = canvas.getBoundingClientRect();
     const dpr = Math.min(window.devicePixelRatio || 1, 2);
-    W = Math.max(2, Math.round(r.width));
-    H = Math.max(2, Math.round(r.height));
+    const nW = Math.max(2, Math.round(r.width));
+    const nH = Math.max(2, Math.round(r.height));
+    // Mobile fires resize when the URL bar shows or hides, but the canvas
+    // is sized in svh so its rect does not actually change. Rebuilding the
+    // FBOs anyway wipes the dye field mid-scroll. Only rebuild on a real
+    // size change.
+    if (velocity && nW === W && nH === H && canvas.width === Math.round(nW * dpr)) return;
+    W = nW;
+    H = nH;
     canvas.width = Math.round(W * dpr);
     canvas.height = Math.round(H * dpr);
 
@@ -361,6 +368,12 @@ export function initErode(surface){
   // is the difference between a smooth stroke and a dotted one on a flick.
   const queue = [];
   let lastPt = null, everMoved = false;
+  // On touch, "the visitor took over" cannot mean everMoved=true forever:
+  // scrolling fires touchmove, so the first scroll would permanently kill
+  // the autonomous drift and the mechanic goes invisible on phones (spec
+  // §5 wants the drift there for exactly that reason). Touch pauses the
+  // drift; a mouse or pen retires it.
+  let lastTouchT = -1e9;
 
   const toUv = (cx, cy) => {
     const r = canvas.getBoundingClientRect();
@@ -373,7 +386,8 @@ export function initErode(surface){
       if (c && c.length) evs = c;
     }
     for (const ev of evs) queue.push(toUv(ev.clientX, ev.clientY));
-    everMoved = true;
+    if (e.pointerType === 'touch') lastTouchT = performance.now();
+    else everMoved = true;
   };
   // Listen on the window, not the hero. The sheet now reaches well past the
   // fold, so the cursor has to keep driving it while it is over the section
@@ -384,7 +398,7 @@ export function initErode(surface){
   addEventListener('pointerdown', (e) => { lastPt = null; onMove(e); }, { passive: true });
   addEventListener('touchmove', (e) => {
     for (const t of e.touches) queue.push(toUv(t.clientX, t.clientY));
-    everMoved = true;
+    lastTouchT = performance.now();
   }, { passive: true });
 
   function splat(x0, y0, x1, y1, dx, dy){
@@ -418,9 +432,8 @@ export function initErode(surface){
     mo.observe(document.documentElement, { attributes: true, attributeFilter: ['data-loading'] });
   }
 
-  const DEBUG = true;
   const DBGMODE = parseFloat(new URLSearchParams(location.search).get('dbg') || '0');
-  let frameNo = 0, splats = 0;
+  let frameNo = 0, splats = 0, lastDriftT = 0;
   let t0 = performance.now(), prevT = t0;
 
   function frame(now){
@@ -444,13 +457,18 @@ export function initErode(surface){
       lastPt = prev;
       queue.length = 0;
     }
-    else if (!everMoved) {
+    else if (!everMoved && now - lastTouchT > 2400) {
       // Autonomous sweep until the visitor takes over. The reference does
       // something similar; it also means the mechanic is never invisible to
-      // someone who lands and does not move, or on a touch device.
+      // someone who lands and does not move, or on a touch device. After a
+      // touch it waits ~2.4s, then resumes.
       const a = time * 1.15;
       const x = 0.5 + Math.sin(a) * 0.34;
       const y = 0.46 + Math.sin(a * 2.1) * 0.16;
+      // If the drift was interrupted (by a touch), do not draw one long
+      // streak from the last finger position to the sweep — restart clean.
+      if (now - lastDriftT > 400) lastPt = null;
+      lastDriftT = now;
       const prev = lastPt || { x, y };
       splat(prev.x, prev.y, x, y,
             (x - prev.x) * CFG.splatForce, (y - prev.y) * CFG.splatForce);

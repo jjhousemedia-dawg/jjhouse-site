@@ -1,11 +1,13 @@
 ---
 import '../styles/scroll.css';
+import Wordmark from '../components/Wordmark.astro';
 
 const {
   title = 'JJ House',
   desc = 'JJ House. Creative strategist in Los Angeles.',
   dark = false,
   loader = false,
+  noindex = false,
 } = Astro.props;
 
 // Board 1 + spec §5. Flat matte silhouettes, dead centre, never captioned
@@ -50,14 +52,24 @@ const OBJECTS = [
     <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
     <title>{title}</title>
     <meta name="description" content={desc} />
+    <link rel="canonical" href={new URL(Astro.url.pathname, Astro.site)} />
+    {noindex && <meta name="robots" content="noindex" />}
     <meta property="og:title" content={title} />
     <meta property="og:description" content={desc} />
+    <meta property="og:type" content="website" />
+    <meta property="og:url" content={new URL(Astro.url.pathname, Astro.site)} />
+    <meta property="og:site_name" content="JJ House" />
+    <meta property="og:image" content={new URL('/og.png', Astro.site)} />
+    <meta property="og:image:width" content="1200" />
+    <meta property="og:image:height" content="630" />
+    <meta name="twitter:card" content="summary_large_image" />
+    <meta name="twitter:image" content={new URL('/og.png', Astro.site)} />
     <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
     <meta name="theme-color" content="#0b0b0b" />
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link
-      href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,300;0,9..144,400;1,9..144,300&family=Zalando+Sans+Expanded:wght@400;700;900&family=Inter:wght@400;500&family=IBM+Plex+Mono:wght@400;500&display=swap"
+      href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,300&family=Inter:wght@400;500&family=IBM+Plex+Mono&display=swap"
       rel="stylesheet"
     />
   </head>
@@ -72,7 +84,7 @@ const OBJECTS = [
               </div>
             ))}
           </div>
-          <p class="loader__mark" id="loaderMark">HOUSE</p>
+          <div class="loader__mark" id="loaderMark"><Wordmark hidden={true} /></div>
         </div>
         <p class="loader__pct" id="loaderPct">000</p>
       </div>
@@ -144,74 +156,11 @@ const OBJECTS = [
       })();
     </script>
 
-    <script is:inline>
-      // ---- the wordmark fills the measure, whatever face is loaded ----
-      // noth.in solves this by shipping the wordmark as SVG outlines at
-      // width:100%, which is exact at every viewport with no font metrics
-      // involved. Until we outline ours, measure the actual advance width
-      // of the word at a known size and scale to fit. Font-agnostic, so
-      // swapping --font-wordmark needs no other change.
-      (function () {
-        const el = document.querySelector('.wordmark__placeholder');
-        if (!el) return;
-        const parent = el.parentElement;
-        const hero = el.closest('.arrival');
-
-        const fit = () => {
-          // Measure the hero's content box, never a child. A child's width
-          // can be inflated by the very nowrap text being sized, which
-          // reads as "it fits" while the mark overflows the viewport.
-          let measure;
-          if (hero) {
-            const hs = getComputedStyle(hero);
-            measure = hero.clientWidth -
-              (parseFloat(hs.paddingLeft) || 0) - (parseFloat(hs.paddingRight) || 0);
-          } else {
-            measure = parent.getBoundingClientRect().width;
-          }
-          if (!measure || measure < 40) return;
-          const prev = el.style.fontSize;
-          el.style.fontSize = '100px';
-          const em = el.getBoundingClientRect().width / 100;
-          el.style.fontSize = prev;
-          // the measured advance already includes letter-spacing, so no
-          // separate tracking term is needed here
-          if (!em || !isFinite(em) || em < 0.5) return;
-
-          // Width is only half the constraint. Filling the measure can make
-          // the word taller than the row it lives in, which pushes it into
-          // the footer. Cap by the available height too and take the smaller.
-          const byWidth = measure / em;
-
-          // The height budget must NOT be read from an ancestor whose height
-          // is itself defined by this text — that is a feedback loop which
-          // shrinks the type a few percent on every pass. Derive it from the
-          // hero minus the fixed blocks above and below instead.
-          let avail;
-          if (hero) {
-            const top  = hero.querySelector('.arrival__top');
-            const foot = hero.querySelector('.arrival__foot');
-            const pad  = parseFloat(getComputedStyle(hero).paddingTop) || 0;
-            avail = hero.clientHeight - (top ? top.offsetHeight : 0) -
-                    (foot ? foot.offsetHeight : 0) - pad * 2 - 36;
-          } else {
-            avail = parent.getBoundingClientRect().height;
-          }
-          if (!(avail > 40)) avail = window.innerHeight * 0.45;
-          const prevH = el.style.fontSize;
-          el.style.fontSize = '100px';
-          const hEm = el.getBoundingClientRect().height / 100;
-          el.style.fontSize = prevH;
-          const byHeight = hEm > 0 ? (avail * 0.92) / hEm : byWidth;
-
-          el.style.fontSize = Math.min(byWidth, byHeight) + 'px';
-        };
-
-        if (document.fonts && document.fonts.ready) document.fonts.ready.then(fit);
-        addEventListener('resize', fit);
-        fit();
-      })();
-    </script>
+    <!-- The wordmark fit-to-measure script lived here. Gone on purpose:
+         the mark ships as SVG outlines (src/components/Wordmark.astro) at
+         width:100%, which is exact at every viewport with no measurement,
+         the same way noth.in does it. /type-test keeps the live-text bench
+         for any future face ruling. -->
 
     <script is:inline>
       // ---- 00 loader — board 1 + spec §5 ------------------------------

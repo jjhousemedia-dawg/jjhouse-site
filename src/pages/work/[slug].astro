@@ -16,7 +16,9 @@ const idx = data.projects.findIndex((x) => x.slug === p.slug);
 const next = data.projects[(idx + 1) % data.projects.length];
 ---
 
-<Scroll dark={true} title={`${p.title} — JJ House`} desc={`${p.title}. ${p.roles.join(', ')}.`}>
+{/* noindex until the anecdotes exist — real URLs to share, but Google
+    should never index a page of empty brackets. Ruled in (JJ, 2026-08-11). */}
+<Scroll dark={true} noindex={true} title={`${p.title} — JJ House`} desc={`${p.title}. ${p.roles.join(', ')}.`}>
   <div class="pp">
     <a class="pp__back" href="/#work">&#8624; Back</a>
 
@@ -54,11 +56,6 @@ const next = data.projects[(idx + 1) % data.projects.length];
         <dd>[ one line, result in it ]</dd>
       </div>
     </dl>
-
-    <p class="meta" style="display:block;margin-top:2rem;opacity:.45;max-width:44rem">
-      Open per spec &sect;9: whether these pages ship at all, or whether the anecdote
-      stays inline on the homepage. Drawn on boards 05&ndash;07, absent from the spec.
-    </p>
 
     <div class="pp__next">
       <a class="pp__back" href="/work">All work &#8627;</a>

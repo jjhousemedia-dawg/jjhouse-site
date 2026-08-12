@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- Hand-kept. Only the two public pages; /work/[slug] pages are noindex
+     until their anecdotes exist, and /type-test is a bench. -->
+<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
+  <url><loc>https://jj.house/</loc></url>
+  <url><loc>https://jj.house/work/</loc></url>
+</urlset>

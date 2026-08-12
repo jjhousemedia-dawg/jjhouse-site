@@ -1,6 +1,7 @@
 ---
 import Scroll from '../layouts/Scroll.astro';
 import data from '../data/projects.json';
+import Wordmark from '../components/Wordmark.astro';
 
 // --- beat 05 selection -------------------------------------------------
 // PLACEHOLDER PICK. Chosen to cover range and to include the two projects
@@ -52,16 +53,15 @@ const sizes = ['project--l', 'project--r', 'project--xl', 'project--l', 'project
          has to be able to pile up well outside the letters. -->
     <canvas class="surface__erode" id="erode"></canvas>
 
-    <div class="surface" id="surface"
-         data-decay="0.988" data-radius="0.16" data-noise="0.78" data-scale="7.5" data-blob="1.30">
+    <div class="surface" id="surface">
       <span class="wire-tag">Wire / board 02 &mdash; move across the mark</span>
       <div class="surface__substrate"><span>[ substrate: swap the water loop for the Blender render ]</span></div>
-      <p class="wordmark__placeholder">HOUSE</p>
+      <div class="wordmark__svg"><Wordmark /></div>
     </div>
 
     <div class="arrival__foot">
       <span class="meta">Creative strategist &middot; Los Angeles</span>
-      <span class="meta">LinkedIn / Instagram / Resume</span>
+      <span class="meta">LinkedIn / <a href="https://www.instagram.com/jj.duplex/" style="color:inherit">Instagram</a> / Resume</span>
     </div>
   </header>
 
@@ -258,9 +258,11 @@ const sizes = ['project--l', 'project--r', 'project--xl', 'project--l', 'project
       <p class="statement" style="max-width:24ch">Tell me what you can already see.</p>
       <div class="cta">
         <a class="btn" href="mailto:jj@jjhouse.me"><span>Email me @</span></a>
-        <a class="btn" href="#"><span>Book a call &rarr;</span></a>
+        <!-- interim destination — JJ is picking a booking tool (likely a Google
+             Workspace appointment schedule). Swap this href when he does. -->
+        <a class="btn" href="mailto:jj@jjhouse.me?subject=Call"><span>Book a call &rarr;</span></a>
       </div>
-      <p class="closing-mark">HOUSE</p>
+      <div class="closing-mark"><Wordmark /></div>
     </div>
     <div class="colophon">
       <span class="meta">&copy; 2026 JJ House &middot; Los Angeles</span>

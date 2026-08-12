@@ -16,12 +16,10 @@
 
   --font-display: 'Fraunces', Georgia, serif;
 
-  /* The wordmark face. Swap this one line to try a candidate from
-     /type-test — nothing else needs to change. Fraunces is variable, so
-     it also needs the wght + opsz below. */
-  --font-wordmark: 'Zalando Sans Expanded', 'Inter', sans-serif;
-  --wordmark-weight: 900;
-  --wordmark-variation: normal;
+  /* The wordmark no longer loads a webfont. It ships as SVG outlines
+     (src/components/Wordmark.astro) — Zalando Sans Expanded 900, ruled by
+     JJ 2026-08-11. /type-test remains the bench if the face is ever
+     revisited. */
   --font-body: 'Inter', system-ui, sans-serif;
   --font-mono: 'IBM Plex Mono', ui-monospace, monospace;
 
@@ -124,41 +122,10 @@ body.scroll { transition: background-color 900ms var(--ease), color 900ms var(--
 .arrival__deck { max-width: 30ch; font-size: clamp(1rem, 1.6vw, 1.25rem); line-height: 1.45; margin: 0; }
 
 /* the wordmark. surface is minimal and near-dead by design;
-   all the flavour lives in the layer underneath. */
-.wordmark {
-  --erode: 0;
-  position: relative;
-  display: block;
-  width: 100%;
-  align-self: center;
-  aspect-ratio: 1440 / 420;
-  background: var(--ink);
-  -webkit-mask-image: var(--mask); mask-image: var(--mask);
-  -webkit-mask-size: contain; mask-size: contain;
-  -webkit-mask-repeat: no-repeat; mask-repeat: no-repeat;
-  -webkit-mask-position: center; mask-position: center;
-}
-.wordmark__placeholder {
-  font-family: var(--font-wordmark);
-  font-weight: var(--wordmark-weight);
-  font-variation-settings: var(--wordmark-variation);
-  /* Sized by JS to fill the measure exactly at any viewport. The clamp is
-     only the pre-JS fallback — it was previously capped at 22rem, which is
-     ~5rem short of what Fraunces needs to reach the margins, so the
-     wordmark never actually touched the edges. */
-  font-size: clamp(4rem, 26vw, 22rem);
-  line-height: 0.78;
-  letter-spacing: -0.018em;
-  text-align: left;
-  margin: 0;
-  align-self: center;
-  white-space: nowrap;
-  /* inline-block, not block: a block element reports the CONTAINER width,
-     which makes any measure-and-fit maths silently return the same number
-     for every typeface. */
-  display: inline-block;
-  user-select: none;
-}
+   all the flavour lives in the layer underneath. SVG outlines, width:100% —
+   exact at every viewport, no font metrics, no fit JS, no FOUT. */
+.wordmark__svg { width: 100%; user-select: none; }
+.wordmark__svg svg { display: block; width: 100%; height: auto; fill: currentColor; }
 
 .arrival__foot { display: flex; justify-content: space-between; align-items: end; gap: 1rem; flex-wrap: wrap; }
 
@@ -232,11 +199,10 @@ body.scroll { transition: background-color 900ms var(--ease), color 900ms var(--
 .btn:hover { background: currentColor; }
 .btn:hover span { mix-blend-mode: difference; }
 
-.closing-mark {
-  font-family: var(--font-display); font-weight: 300;
-  font-size: clamp(4.5rem, 24vw, 20rem); line-height: 0.78;
-  letter-spacing: -0.035em; margin: 0; user-select: none;
-}
+/* the same mark as the hero — spec §1: HOUSE appears twice, unexplained,
+   and it is one drawing, not two faces */
+.closing-mark { width: 100%; margin: 0; user-select: none; }
+.closing-mark svg { display: block; width: 100%; height: auto; fill: currentColor; }
 
 .colophon { display: flex; justify-content: space-between; gap: 1rem; flex-wrap: wrap; padding: var(--gutter); }
 
@@ -325,11 +291,10 @@ html[data-loading] body > *:not(#loader) { visibility: hidden; }
 /* the mark, which the cycle resolves into */
 .loader__mark {
   position: absolute; inset: 0; display: grid; place-items: center;
-  font-family: var(--font-wordmark); font-weight: var(--wordmark-weight);
-  font-size: clamp(2rem, 5.5vw, 4rem); letter-spacing: -0.02em; line-height: 1;
   opacity: 0; transform: scale(0.94);
   transition: opacity 420ms var(--ease), transform 620ms var(--ease);
 }
+.loader__mark svg { display: block; width: clamp(9rem, 22vw, 16rem); height: auto; fill: var(--paper); }
 .loader__mark.on { opacity: 1; transform: none; }
 
 .loader__pct {
@@ -416,7 +381,7 @@ html[data-loading] body > *:not(#loader) { visibility: hidden; }
    it is only made invisible — never display:none, which would break
    both. The striped substrate block is the no-WebGL fallback. */
 .surface.is-canvas .surface__substrate { opacity: 0; }
-.surface .wordmark__placeholder { position: relative; z-index: 2; mix-blend-mode: normal; }
+.surface .wordmark__svg { position: relative; z-index: 2; }
 
 /* ---- 05 WORKS letter migration — board 5 ------------------- */
 .ticker { position: relative; }

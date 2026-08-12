@@ -1,7 +1,1 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64">
-  <rect width="64" height="64" rx="12" fill="#10142e"/>
-  <polygon points="32,10 56,30 50,30 50,52 14,52 14,30 8,30" fill="#f2ebdb"/>
-  <rect x="27" y="38" width="10" height="14" fill="#2e6f8e"/>
-  <rect x="18" y="32" width="7" height="7" fill="#ffcf8a"/>
-  <rect x="39" y="32" width="7" height="7" fill="#ffcf8a"/>
-</svg>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64"><rect width="64" height="64" rx="12" fill="#0b0b0b"/><path transform="translate(9.21,49.50) scale(0.04902,-0.04902)" d="M57 0V714H279V0ZM652 0V714H873V0ZM263 271V439H668V271Z" fill="#f2f1ee"/></svg>
