@@ -3,18 +3,19 @@
    Design rule, absolute: the site is black and white.
    Colour exists ONLY inside the work. No brand accents anywhere.
 
-   The black and the white are the Santana combo from JJ's palette
-   study (PALETTE.md, ruled 2026-08-12): newsprint cream and soft
-   ink — the b&w of a vintage gig poster, not of a screen. Cream
-   instead of white, ink instead of gray, everywhere.
+   The black and the white descend from the Santana combo in JJ's
+   palette study (PALETTE.md, ruled 2026-08-12), stretched for
+   contrast on his 2026-08-12 call: the warm cast stays so it still
+   reads as paper and ink rather than screen values, but the paper
+   sits near white and the ink near black.
    ============================================================ */
 
 :root {
-  --paper: #ede6d4;
-  --ink: #1a1a1a;
+  --paper: #f7f2e5;
+  --ink: #0e0d0b;
 
-  --paper-dim: #d5cdb8;
-  --ink-lift: #8d887b;
+  --paper-dim: #ddd6c3;
+  --ink-lift: #8b867a;
 
   --measure: 34rem;
   --gutter: clamp(1.25rem, 4vw, 4rem);
@@ -547,11 +548,11 @@ html.menu-open body { overflow: hidden; }
   position: absolute; left: 50%; top: 50%; transform: translate(-50%, -50%);
   font-family: var(--font-mono); font-size: 0.75rem; letter-spacing: 0.16em; text-transform: uppercase;
   padding: 0.9rem 1.5rem; border: 1px solid var(--paper); border-radius: 999px;
-  background: rgba(26, 26, 26, 0.55); color: var(--paper); cursor: pointer;
+  background: rgba(14, 13, 11, 0.55); color: var(--paper); cursor: pointer;
   backdrop-filter: blur(4px);
   transition: background-color 200ms var(--ease);
 }
-.pp__play:hover { background: rgba(26, 26, 26, 0.85); }
+.pp__play:hover { background: rgba(14, 13, 11, 0.85); }
 
 /* ---- reel scrub plates (inert until the water room lands) ---- */
 .reel__video { width: min(90%, 60rem); aspect-ratio: 16 / 9; object-fit: cover; display: block; }

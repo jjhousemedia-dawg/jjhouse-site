@@ -34,7 +34,7 @@ The copy is **not** written in studio-site voice. See §4.
 |---|---|
 | **Audience** | Hiring managers and freelance clients. One page, no forking. |
 | **Direction** | **BECOMING.** Rejected: "The Promise", "The House", "Range Is The Point". |
-| **Colour** | Black and white. Colour exists **only inside the work**. No accents, anywhere. The b&w is the **Santana** pair from JJ's palette study (ruled 2026-08-12): paper `#EDE6D4`, ink `#1A1A1A` — newsprint and soft ink, never screen-white or screen-black. |
+| **Colour** | Black and white. Colour exists **only inside the work**. No accents, anywhere. The b&w descends from the **Santana** pair in JJ's palette study, stretched for contrast (both rulings 2026-08-12): paper `#F7F2E5`, ink `#0E0D0B` — near-white and near-black that keep the warm paper cast, never raw `#FFF`/`#000`. |
 | **Light/dark** | One flip only, at the reel. Never flips back. |
 | **Archive** | A `/work` page on jj.house holding all 45 projects. jjhouse.me is linked at the bottom as the older gallery, nothing more. |
 | **Little Dot** | Gets its own beat. |
