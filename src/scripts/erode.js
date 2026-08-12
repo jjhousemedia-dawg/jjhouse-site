@@ -26,10 +26,18 @@
      splatRadius 6e-5 · splatForce 5900
      revealSize 3.9 · edgeSoftness 0.5 · edgeWidth 0.01
 
-   curlStrength is 0, so vorticity confinement is a no-op and the curl and
-   vorticity passes are omitted. edgeWidth 0.01 against a 0.5 threshold is
-   a near-binary cut — that is why their boundary is crisp and identical
-   on both sides of the edge.
+   Their bundle carries curl and vorticity passes but ships curlStrength 0,
+   so on noth.in they are no-ops. We run them ON (uCurlStrength ~15): the
+   confinement force feeds small eddies back into the velocity field, which
+   tears the dye into filaments and ragged edges — the tattered read,
+   arrived at through fluid dynamics rather than noise (noise is what made
+   the first attempt read as smoke; see below). Dye dissipation is also
+   raised from their 0.988 to 0.980 so the sheet heals roughly twice as
+   fast. Both tunable live: ?curl=0 is exactly noth.in's behaviour,
+   ?dyediss=0.988 is their heal rate.
+
+   edgeWidth 0.01 against a 0.5 threshold is a near-binary cut — that is
+   why the boundary is crisp and identical on both sides of the edge.
    ============================================================ */
 
 const VERT = `#version 300 es
@@ -92,6 +100,41 @@ vec4 bilerp(sampler2D sam, vec2 uv, vec2 tsize){
 void main(){
   vec2 coord = vUv - uDt * texture(uVelocity, vUv).xy * uTexelSize;
   fragColor = uDissipation * bilerp(uSource, coord, uTexelSize);
+}`;
+
+/* ---- vorticity confinement: present in their bundle, dormant there ---- */
+const F_CURL = F_HEAD + `
+uniform sampler2D uVelocity;
+uniform vec2 uTexelSize;
+void main(){
+  float L = texture(uVelocity, vUv - vec2(uTexelSize.x, 0.0)).y;
+  float R = texture(uVelocity, vUv + vec2(uTexelSize.x, 0.0)).y;
+  float T = texture(uVelocity, vUv + vec2(0.0, uTexelSize.y)).x;
+  float B = texture(uVelocity, vUv - vec2(0.0, uTexelSize.y)).x;
+  float vorticity = R - L - T + B;
+  fragColor = vec4(0.5 * vorticity, 0.0, 0.0, 1.0);
+}`;
+
+const F_VORTICITY = F_HEAD + `
+uniform sampler2D uVelocity;
+uniform sampler2D uCurl;
+uniform float uCurlStrength;
+uniform float uDt;
+uniform vec2 uTexelSize;
+void main(){
+  float L = texture(uCurl, vUv - vec2(uTexelSize.x, 0.0)).x;
+  float R = texture(uCurl, vUv + vec2(uTexelSize.x, 0.0)).x;
+  float T = texture(uCurl, vUv + vec2(0.0, uTexelSize.y)).x;
+  float B = texture(uCurl, vUv - vec2(0.0, uTexelSize.y)).x;
+  float C = texture(uCurl, vUv).x;
+  vec2 force = 0.5 * vec2(abs(T) - abs(B), abs(R) - abs(L));
+  force /= length(force) + 0.0001;
+  force *= uCurlStrength * C;
+  force.y *= -1.0;
+  vec2 velocity = texture(uVelocity, vUv).xy;
+  velocity += force * uDt;
+  velocity = clamp(velocity, vec2(-1000.0), vec2(1000.0));
+  fragColor = vec4(velocity, 0.0, 1.0);
 }`;
 
 const F_DIVERGENCE = F_HEAD + `
@@ -240,6 +283,7 @@ export function initErode(surface){
   const P = {
     splat: prog(gl, F_SPLAT), advect: prog(gl, F_ADVECT), diverge: prog(gl, F_DIVERGENCE),
     pressure: prog(gl, F_PRESSURE), gradient: prog(gl, F_GRADIENT),
+    curl: prog(gl, F_CURL), vorticity: prog(gl, F_VORTICITY),
     water: prog(gl, F_WATER), composite: prog(gl, F_COMPOSITE),
   };
   if (Object.values(P).some((x) => !x)) return false;
@@ -261,8 +305,12 @@ export function initErode(surface){
     simRes:      k('simres', 256),
     dyeRes:      k('dyeres', 512),
     velDiss:     k('veldiss', 0.962),
-    dyeDiss:     k('dyediss', 0.988),
+    // 0.988 is noth.in's number; 0.980 heals roughly twice as fast per
+    // JJ's note that the return to normal felt slow
+    dyeDiss:     k('dyediss', 0.980),
     iterations:  k('iters', 20),
+    // 0 on noth.in (dormant passes). ~15 tears the dye into filaments.
+    curl:        k('curl', 15),
     splatRadius: k('splatradius', 2.6e-4),
     splatForce:  k('splatforce', 5900),
     revealSize:  k('revealsize', 3.9),
@@ -294,7 +342,7 @@ export function initErode(surface){
     return { get read(){ return a; }, get write(){ return b; }, swap(){ const t = a; a = b; b = t; }, w, h };
   };
 
-  let velocity, dyeFbo, divergence, pressure, water, baseTex, revealTex;
+  let velocity, dyeFbo, divergence, pressure, curlFbo, water, baseTex, revealTex;
   let W = 0, H = 0;
 
   function build(){
@@ -344,6 +392,7 @@ export function initErode(surface){
     velocity   = dbl(sw, shh);
     pressure   = dbl(sw, shh);
     divergence = fbo(sw, shh);
+    curlFbo    = fbo(sw, shh);
     dyeFbo     = dbl(dw, dh);
     water      = fbo(dw, dh);
     revealTex  = water.t;
@@ -473,6 +522,24 @@ export function initErode(surface){
       splat(prev.x, prev.y, x, y,
             (x - prev.x) * CFG.splatForce, (y - prev.y) * CFG.splatForce);
       lastPt = { x, y };
+    }
+
+    // vorticity confinement: sharpen the small eddies the pressure solve
+    // would otherwise smooth away — this is where the tattered edge comes
+    // from. Skipped entirely at ?curl=0, which is noth.in's exact pipeline.
+    if (CFG.curl > 0) {
+      gl.useProgram(P.curl.p);
+      gl.uniform2f(P.curl.u.uTexelSize, velocity.read.texel[0], velocity.read.texel[1]);
+      bind(0, velocity.read.t, P.curl.u.uVelocity);
+      draw(curlFbo);
+
+      gl.useProgram(P.vorticity.p);
+      gl.uniform2f(P.vorticity.u.uTexelSize, velocity.read.texel[0], velocity.read.texel[1]);
+      gl.uniform1f(P.vorticity.u.uCurlStrength, CFG.curl);
+      gl.uniform1f(P.vorticity.u.uDt, dt);
+      bind(0, velocity.read.t, P.vorticity.u.uVelocity);
+      bind(1, curlFbo.t, P.vorticity.u.uCurl);
+      draw(velocity.write); velocity.swap();
     }
 
     // divergence

@@ -369,11 +369,22 @@ html[data-loading] body > *:not(#loader) { visibility: hidden; }
   -webkit-mask-image: linear-gradient(to bottom, #000 0 80%, rgba(0,0,0,0) 99%);
   mask-image: linear-gradient(to bottom, #000 0 80%, rgba(0,0,0,0) 99%);
 }
-/* everything the reader interacts with sits above the ink */
-/* wordmark (0) < reveal overlay (1) < hero UI (2). The overlay paints the
-   plate over the letters and over later sections, but never over the deck
-   copy, the CTA or the footer line. */
-.arrival__top, .arrival__foot { position: relative; z-index: 2; }
+/* ---- text the ink is allowed to run over ---------------------
+   wordmark (0) < reveal overlay (1) < protected text (2). The plate is
+   mostly dark water, so ink-coloured type dies the moment the sheet
+   slides underneath it (JJ hit this on the menu, the deck and the
+   premise statement). White type + difference renders dark on paper,
+   light on the water, and light again after the one-way flip, per
+   pixel, so a half-covered line stays readable on both halves. Same
+   trick the works ticker already uses. The wordmark is deliberately
+   NOT protected: the ink eating the mark is the mechanic, and JJ is
+   cutting a looping video for that slot. */
+.arrival__top, .arrival__foot,
+.inkproof {
+  position: relative; z-index: 2;
+  mix-blend-mode: difference;
+  color: #fff;
+}
 .surface { position: relative; z-index: 0; }
 
 /* When WebGL takes over, the canvas draws the wordmark. The DOM text
