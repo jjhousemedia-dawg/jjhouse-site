@@ -111,6 +111,9 @@ body.scroll { transition: background-color 900ms var(--ease), color 900ms var(--
 }
 .beat--tight { padding-block: clamp(4rem, 10vh, 7rem); }
 .beat--full  { min-height: 100svh; display: grid; align-content: center; }
+/* Empty breathing room between hero and reel: open paper the hero ink can
+   run into. Half a viewport, no content, no padding. */
+.beat--breather { min-height: 50svh; padding: 0; }
 
 .beat__inner { max-width: 78rem; margin-inline: auto; width: 100%; }
 
