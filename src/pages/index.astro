@@ -303,8 +303,13 @@ const sizes = ['project--l', 'project--r', 'project--xl', 'project--l', 'project
           const p = Math.min(1, Math.max(0, -r.top / span));
           const W = row.clientWidth || 1;
 
+          // Watermark scale, behind content. 104px is the desktop size; on
+          // phones the clustered entry (~4.1 letter-widths) overflowed the
+          // right edge, so the big size shrinks until the whole word fits
+          // the row. Small size follows so the split end state fits too.
+          const bigPx = Math.min(104, W / 4.4);
+          const smallPx = Math.min(26, W / 14);
           letters.forEach((el, i) => {
-            const bigPx = 104, smallPx = 26;   // watermark scale, behind content
             // three keyframes: clustered left, scattered, split
             const startX = i * bigPx * 0.78;
             const midX = (i / (n - 1)) * (W - smallPx * 2);
