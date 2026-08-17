@@ -142,15 +142,21 @@ const OBJECTS = [
         // instantly and leave Lenis's internal position desynced from the
         // real one, which breaks every scrubbed mechanic until the next wheel
         // event. Route anchors through Lenis instead.
-        // Anchor duration scales with distance (clamped), ruled by JJ
-        // 2026-08-17: the hero Connect jump should read like a tape
-        // fast-forward — TLDR skippers still glimpse the journey — not a
-        // hard cut. Short hops stay quick; the full-page dive takes ~2.5s.
-        const anchorDuration = (target) => {
+        // Anchor jumps, ruled by JJ 2026-08-17: a tape fast-forward, not a
+        // hard cut — TLDR skippers still glimpse the journey. Duration
+        // scales with distance (short hops stay quick, the full-page dive
+        // takes ~2.5s), and the easing is in-out: it leaves gently,
+        // accelerates through the middle, and comes to a nice halt. (The
+        // Lenis instance default is ease-out — max speed at frame one —
+        // which is exactly the jumpiness JJ flagged.)
+        const anchorOpts = (target) => {
           const dist = Math.abs(target.getBoundingClientRect().top);
-          return Math.min(2.6, 1.2 + (dist / window.innerHeight) * 0.12);
+          return {
+            duration: Math.min(2.6, 1.2 + (dist / window.innerHeight) * 0.12),
+            easing: (t) => (t < 0.5 ? 8 * t * t * t * t : 1 - Math.pow(-2 * t + 2, 4) / 2),
+          };
         };
-        window.__anchorDuration = anchorDuration;
+        window.__anchorOpts = anchorOpts;
         document.addEventListener('click', (e) => {
           const a = e.target.closest('a[href^="#"]');
           if (!a) return;
@@ -159,7 +165,7 @@ const OBJECTS = [
           const target = document.querySelector(id);
           if (!target) return;
           e.preventDefault();
-          lenis.scrollTo(target, { offset: 0, duration: anchorDuration(target) });
+          lenis.scrollTo(target, { offset: 0, ...anchorOpts(target) });
           history.replaceState(null, '', id);
         });
       }
@@ -246,8 +252,8 @@ const OBJECTS = [
             const target = document.querySelector(href.slice(1));
             if (target) {
               if (window.__lenis) {
-                const d = window.__anchorDuration ? window.__anchorDuration(target) : 1.2;
-                window.__lenis.scrollTo(target, { duration: d });
+                const opts = window.__anchorOpts ? window.__anchorOpts(target) : { duration: 1.2 };
+                window.__lenis.scrollTo(target, opts);
               }
               else target.scrollIntoView();
               history.replaceState(null, '', href.slice(1));
