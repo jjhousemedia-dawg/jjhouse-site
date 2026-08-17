@@ -40,7 +40,7 @@ const sizes = ['project--l', 'project--r', 'project--xl', 'project--l', 'project
         <!-- Board 2 + noth.in both carry a CTA in the hero. The only CTA on the
              page was 9,700px down, for a hiring-manager audience. -->
         <p class="arrival__cta">
-          <a class="btn" href="#comein"><span>Book a call &rarr;</span></a>
+          <a class="btn" href="#comein"><span>Connect &rarr;</span></a>
         </p>
       </div>
       <button class="arrival__menu" id="menuBtn" data-menu-open aria-expanded="false">Menu ::</button>
@@ -64,7 +64,7 @@ const sizes = ['project--l', 'project--r', 'project--xl', 'project--l', 'project
 
     <div class="arrival__foot">
       <span class="meta">Creative direction &middot; Los Angeles</span>
-      <span class="meta">LinkedIn / <a href="https://www.instagram.com/jj.duplex/" style="color:inherit">Instagram</a> / Resume</span>
+      <span class="meta"><a href="https://www.linkedin.com/in/jjhousemedia/" target="_blank" rel="noopener" style="color:inherit">LinkedIn</a> / <a href="https://www.instagram.com/jj.duplex/" style="color:inherit">Instagram</a> / <a href="/JJ-House-Resume-2026.pdf" target="_blank" style="color:inherit">Resume</a></span>
     </div>
   </header>
 
@@ -166,7 +166,9 @@ const sizes = ['project--l', 'project--r', 'project--xl', 'project--l', 'project
          story built from a few specific things he makes there, plus visuals
          and maybe links. Label "( the other half )" cut per JJ. -->
     <div class="beat__inner" data-rise>
-      <h2 class="statement">Not everything I make is a film.</h2>
+      <!-- "Not everything I make is a film." → JJ's direction 2026-08-17:
+           straightforward, "digital agency work or something like that." -->
+      <h2 class="statement">Digital agency work.</h2>
       <div class="prose" style="margin-top:2.5rem">
         <p>
           {LDS.channels} brand and creator channels. {LDS.views} views and {LDS.subs} subscribers
@@ -205,11 +207,15 @@ const sizes = ['project--l', 'project--r', 'project--xl', 'project--l', 'project
       <p class="label">( come in )</p>
       <!-- "Tell me what you can already see." cut 2026-08-17 (JJ): not
            saying anything, causing confusion. Closing line TBD with JJ. -->
+      <!-- "Connect" section, ruled 2026-08-17 (JJ): two options — request a
+           connection, or just send an email. The connection button goes to
+           JJ's "Connect With JJ" Google Calendar booking page (short link;
+           deliberately a link, not the Google iframe/button embed, which
+           would put a blue Google widget inside the b/w system — same
+           third-party-weight philosophy as the facade video embeds). -->
       <div class="cta">
+        <a class="btn" href="https://calendar.app.google/53GJJNoNpdsB6dYK6" target="_blank" rel="noopener"><span>Request a connection &rarr;</span></a>
         <a class="btn" href="mailto:jj@jjhouse.me"><span>Email me @</span></a>
-        <!-- interim destination — JJ is picking a booking tool (likely a Google
-             Workspace appointment schedule). Swap this href when he does. -->
-        <a class="btn" href="mailto:jj@jjhouse.me?subject=Call"><span>Book a call &rarr;</span></a>
       </div>
       <div class="closing-mark"><Wordmark /></div>
     </div>
