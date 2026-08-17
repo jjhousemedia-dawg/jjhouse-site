@@ -415,12 +415,17 @@ export function initErode(surface){
   // pointermove and only deliver one per rAF by default; getCoalescedEvents
   // hands back the full high-frequency path the OS actually reported, which
   // is the difference between a smooth stroke and a dotted one on a flick.
-  const queue = [];
-  let lastPt = null, everMoved = false;
+  //
+  // Strokes are tracked PER POINTER ID (the `strokes` map holds each
+  // pointer's previous sample). One shared chain was fine for a mouse, but
+  // two fingers interleave their samples — a single chain draws a streak
+  // BETWEEN the fingers instead of one trail under each.
+  const queue = [];                 // entries: { id, x, y }
+  const strokes = new Map();        // id -> last uv point
+  let everMoved = false;
   // On touch, "the visitor took over" cannot mean everMoved=true forever:
-  // scrolling fires touchmove, so the first scroll would permanently kill
-  // the autonomous drift and the mechanic goes invisible on phones (spec
-  // §5 wants the drift there for exactly that reason). Touch pauses the
+  // the drift is the only way the mechanic stays visible on phones (spec
+  // §5 wants it there for exactly that reason). Touch painting pauses the
   // drift; a mouse or pen retires it.
   let lastTouchT = -1e9;
 
@@ -429,14 +434,14 @@ export function initErode(surface){
     return { x: (cx - r.left) / r.width, y: 1.0 - (cy - r.top) / r.height };
   };
   const onMove = (e) => {
+    if (e.pointerType === 'touch') return;   // touch is handled below
     let evs = [e];
     if (typeof e.getCoalescedEvents === 'function') {
       const c = e.getCoalescedEvents();
       if (c && c.length) evs = c;
     }
-    for (const ev of evs) queue.push(toUv(ev.clientX, ev.clientY));
-    if (e.pointerType === 'touch') lastTouchT = performance.now();
-    else everMoved = true;
+    for (const ev of evs) queue.push({ id: 'mouse', ...toUv(ev.clientX, ev.clientY) });
+    everMoved = true;
   };
   // Listen on the window, not the hero. The sheet now reaches well past the
   // fold, so the cursor has to keep driving it while it is over the section
@@ -444,11 +449,50 @@ export function initErode(surface){
   // off-surface, which is harmless and keeps strokes continuous as the
   // pointer crosses the boundary.
   addEventListener('pointermove', onMove, { passive: true });
-  addEventListener('pointerdown', (e) => { lastPt = null; onMove(e); }, { passive: true });
+  addEventListener('pointerdown', (e) => { strokes.delete('mouse'); onMove(e); }, { passive: true });
+
+  // ---- touch: TWO fingers paint, one finger scrolls (JJ, 2026-08-17) ----
+  // The old single-finger painting fought the scroll gesture: pan-y let the
+  // page claim vertical moves, so a finger only painted on horizontal drags
+  // and a press just stamped a dot. New rule — one finger is pure native
+  // scroll and never touches the sim; two fingers down over the ink sheet
+  // become a paint gesture (preventDefault on touchstart keeps the browser
+  // from claiming it for two-finger scroll / pinch-zoom, which is the
+  // accepted trade: no zoom over the hero). Each finger drives its own
+  // stroke. The invite pulse under the wordmark teaches it; the first real
+  // two-finger stroke fires `jj:inkpaint` so the invite can retire.
+  let paintMode = false, paintedOnce = false;
+  const inCanvas = (t) => {
+    const r = canvas.getBoundingClientRect();
+    return t.clientX >= r.left && t.clientX <= r.right &&
+           t.clientY >= r.top  && t.clientY <= r.bottom;
+  };
+  addEventListener('touchstart', (e) => {
+    if (e.touches.length === 2 &&
+        inCanvas(e.touches[0]) && inCanvas(e.touches[1])) {
+      paintMode = true;
+      e.preventDefault();          // keep the gesture out of scroll/zoom
+      for (const t of e.touches) strokes.delete(t.identifier);
+    }
+  }, { passive: false });
   addEventListener('touchmove', (e) => {
-    for (const t of e.touches) queue.push(toUv(t.clientX, t.clientY));
+    if (!paintMode || e.touches.length < 2) return;
+    e.preventDefault();
+    for (const t of e.touches) queue.push({ id: t.identifier, ...toUv(t.clientX, t.clientY) });
     lastTouchT = performance.now();
-  }, { passive: true });
+    if (!paintedOnce) {
+      paintedOnce = true;
+      try { window.dispatchEvent(new CustomEvent('jj:inkpaint')); } catch (_) {}
+    }
+  }, { passive: false });
+  const endTouch = (e) => {
+    if (e.touches.length < 2) paintMode = false;
+    for (const t of e.changedTouches) strokes.delete(t.identifier);
+  };
+  addEventListener('touchend', endTouch, { passive: true });
+  addEventListener('touchcancel', endTouch, { passive: true });
+  // iOS pinch fires proprietary gesture events alongside touches
+  addEventListener('gesturestart', (e) => { if (paintMode) e.preventDefault(); }, { passive: false });
 
   function splat(x0, y0, x1, y1, dx, dy){
     splats++;
@@ -493,35 +537,36 @@ export function initErode(surface){
 
     if (queue.length) {
       // cap the work per frame, but by SUBSAMPLING the path rather than
-      // dropping its tail — the stroke must still reach where the cursor is
+      // dropping its tail — the stroke must still reach where the cursor is.
+      // Each sample chains off ITS OWN pointer's previous point (strokes
+      // map), so interleaved two-finger samples stay two separate trails.
       const MAXSEG = 24;
       const stride = Math.max(1, Math.ceil(queue.length / MAXSEG));
-      let prev = lastPt || queue[0];
       for (let i = 0; i < queue.length; i += stride) {
         const cur = queue[Math.min(i + stride - 1, queue.length - 1)];
+        const prev = strokes.get(cur.id) || cur;
         splat(prev.x, prev.y, cur.x, cur.y,
               (cur.x - prev.x) * CFG.splatForce, (cur.y - prev.y) * CFG.splatForce);
-        prev = cur;
+        strokes.set(cur.id, cur);
       }
-      lastPt = prev;
       queue.length = 0;
     }
     else if (!everMoved && now - lastTouchT > 2400) {
       // Autonomous sweep until the visitor takes over. The reference does
       // something similar; it also means the mechanic is never invisible to
       // someone who lands and does not move, or on a touch device. After a
-      // touch it waits ~2.4s, then resumes.
+      // touch paint it waits ~2.4s, then resumes.
       const a = time * 1.15;
       const x = 0.5 + Math.sin(a) * 0.34;
       const y = 0.46 + Math.sin(a * 2.1) * 0.16;
-      // If the drift was interrupted (by a touch), do not draw one long
+      // If the drift was interrupted (by a paint), do not draw one long
       // streak from the last finger position to the sweep — restart clean.
-      if (now - lastDriftT > 400) lastPt = null;
+      if (now - lastDriftT > 400) strokes.delete('drift');
       lastDriftT = now;
-      const prev = lastPt || { x, y };
+      const prev = strokes.get('drift') || { x, y };
       splat(prev.x, prev.y, x, y,
             (x - prev.x) * CFG.splatForce, (y - prev.y) * CFG.splatForce);
-      lastPt = { x, y };
+      strokes.set('drift', { x, y });
     }
 
     // vorticity confinement: sharpen the small eddies the pressure solve

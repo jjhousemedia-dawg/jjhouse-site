@@ -54,14 +54,29 @@ body.scroll {
   overflow-x: hidden;
 }
 
-/* ---- the one-way flip -------------------------------------
-   Light for the premise, dark from the reel onward.
-   Never flips back. */
-body.scroll.is-dark {
+/* ---- the flip ---------------------------------------------
+   JJ's rule (2026-08-17): above the reel's midpoint = always light,
+   below = always dark, strictly positional, both directions.
+
+   The dark side is a FIXED, COMPOSITED overlay crossfade, not a
+   background-color transition on body. Animating body's background
+   repaints the whole document every frame for 900ms — on phones that
+   landed right on top of the reel scroll work and made the flip stutter
+   (JJ, 2026-08-17 mobile pass). A fixed pseudo-element fading its opacity
+   is GPU-composited and costs nothing. z-index -1 paints it behind all
+   content but over body's paper background; the difference-blended UI
+   (menu fab, ticker, hero text) reads it exactly like it read the old
+   background. Server-dark pages (work, project pages) load with .is-dark
+   already on body, so the overlay is simply opaque from the first frame. */
+body.scroll { transition: color 900ms var(--ease); }
+body.scroll::before {
+  content: ''; position: fixed; inset: 0; z-index: -1;
   background: var(--ink);
-  color: var(--paper);
+  opacity: 0; transition: opacity 900ms var(--ease);
+  pointer-events: none;
 }
-body.scroll { transition: background-color 900ms var(--ease), color 900ms var(--ease); }
+body.scroll.is-dark { color: var(--paper); }
+body.scroll.is-dark::before { opacity: 1; }
 
 /* ---- type registers, three and only three ------------------ */
 
@@ -144,10 +159,13 @@ body.scroll { transition: background-color 900ms var(--ease), color 900ms var(--
 .reel { min-height: 180svh; position: relative; padding: 0; }
 .reel__sticky { position: sticky; top: 0; height: 100svh; display: grid; place-items: center; overflow: hidden; }
 .reel__frame {
-  /* recedes as you scroll: full bleed -> a screen at the end of a room */
+  /* recedes as you scroll: full bleed -> a screen at the end of a room.
+     NO transition here on purpose: the scale is eased per-frame by a rAF
+     lerp in index.astro. A transition chasing per-scroll-event targets is
+     what made the crop-in jitter on phones (fixed 2026-08-17). */
   width: 100%; height: 100%;
   transform: scale(var(--recede, 1));
-  transition: transform 120ms linear;
+  will-change: transform;
   display: grid; place-items: center;
   background: var(--ink);
   color: #b0aa9c;
@@ -253,6 +271,7 @@ body.scroll { transition: background-color 900ms var(--ease), color 900ms var(--
   html { scroll-behavior: auto; }
   .rise { opacity: 1; transform: none; transition: none; }
   body.scroll { transition: none; }
+  body.scroll::before { transition: none; }
   .reel__frame { transform: none !important; }
 }
 
@@ -430,6 +449,38 @@ html[data-loading] body > *:not(#loader) { visibility: hidden; }
   color: var(--paper);
 }
 .surface { position: relative; z-index: 0; }
+
+/* ---- two-finger paint invite (touch only) --------------------
+   Two fingertip dots pulsing a small downward drag under the mark, in the
+   same difference-blend recipe as the protected hero text so the ink can
+   run underneath without killing it. Revealed by JS only when the sim is
+   running on a touch device; .off retires it after the first real stroke. */
+.paint-invite {
+  /* absolute takes it out of the hero grid's row flow; `top` is set by JS
+     to sit just under the wordmark (the mark's position depends on its own
+     rendered height, which CSS alone can't anchor to from out here) */
+  position: absolute; left: 50%; transform: translateX(-50%);
+  display: grid; justify-items: center; gap: 0.6rem;
+  z-index: 2; mix-blend-mode: difference; color: var(--paper);
+  pointer-events: none; opacity: 0.8;
+  transition: opacity 500ms var(--ease);
+}
+.paint-invite[hidden] { display: none; }
+.paint-invite.off { opacity: 0; }
+.paint-invite__dots { display: flex; gap: 0.5rem; }
+.paint-invite__dots span {
+  width: 0.6rem; height: 0.6rem;
+  border: 1px solid currentColor; border-radius: 50%;
+  animation: invite-drag 2.2s var(--ease) infinite;
+}
+.paint-invite__dots span:last-child { animation-delay: 0.15s; }
+@keyframes invite-drag {
+  0%, 100% { transform: translateY(0); opacity: 0.45; }
+  35%      { transform: translateY(0.4rem); opacity: 1; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .paint-invite__dots span { animation: none; opacity: 0.8; }
+}
 
 /* When WebGL takes over, the canvas draws the wordmark. The DOM text
    stays in the document for screen readers and for the fit measurement,
