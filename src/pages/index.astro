@@ -30,9 +30,12 @@ const sizes = ['project--l', 'project--r', 'project--xl', 'project--l', 'project
   <header class="beat arrival">
     <div class="arrival__top">
       <div>
+        <!-- 01-A trimmed to the plain clause 2026-08-17 (JJ): the second
+             clause ("the part I own…") read as operations/AI-speak. A
+             sensibility-forward second clause may return; workshop it with
+             JJ, never draft-and-ship. -->
         <p class="arrival__deck">
-          I work with brands and artists on films and campaigns, and the part I own is deciding what
-          each one should be.
+          I work with brands and artists on films and campaigns.
         </p>
         <!-- Board 2 + noth.in both carry a CTA in the hero. The only CTA on the
              page was 9,700px down, for a hiring-manager audience. -->
@@ -55,8 +58,7 @@ const sizes = ['project--l', 'project--r', 'project--xl', 'project--l', 'project
     <canvas class="surface__erode" id="erode"></canvas>
 
     <div class="surface" id="surface">
-      <span class="wire-tag">Wire / board 02 &mdash; move across the mark</span>
-      <div class="surface__substrate"><span>[ substrate: swap the water loop for the Blender render ]</span></div>
+      <div class="surface__substrate"></div>
       <div class="wordmark__svg"><Wordmark /></div>
     </div>
 
@@ -73,28 +75,11 @@ const sizes = ['project--l', 'project--r', 'project--xl', 'project--l', 'project
     </div>
   </section>
 
-  <!-- ================= 03 ASIDE ================= -->
-  <section class="beat">
-    <div class="beat__inner inkproof" data-rise>
-      <p class="label">( the premise )</p>
-      <div class="prose">
-        <p>
-          The money goes, the days go, and you make what you can. Sometimes the piece works out what
-          it&rsquo;s actually about, and done well, that&rsquo;s the version everyone later claims to
-          have intended. The rest is just loss, and both can feel the same while you&rsquo;re in it.
-        </p>
-        <p>
-          Produced, cut, done the VFX, run the set, you name it. I learned all of it twice over, once
-          because I wanted to be good and once because running a company meant I couldn&rsquo;t afford
-          not to. What that&rsquo;s good for is telling the two apart while there&rsquo;s still time
-          to act.
-        </p>
-        <p>The work below includes making-of anecdotes. Some fun surprises in there. Enjoy.</p>
-      </div>
-    </div>
-  </section>
+  <!-- 03 ASIDE cut 2026-08-17 (JJ): the (premise) paragraphs read as
+       pessimistic rumination to a cold viewer. Text lives in git history;
+       any return goes through JJ's rewrite, not a paste-back. -->
 
-  <!-- ================= 04 REEL — the one-way flip ================= -->
+  <!-- ================= 04 REEL — the flip point ================= -->
   <section class="reel" id="reel">
     <div class="reel__sticky">
       <!-- Board 9. The pink drawing on JJ's board is the environment the
@@ -120,10 +105,9 @@ const sizes = ['project--l', 'project--r', 'project--xl', 'project--l', 'project
         </div>
       </div>
 
-      <p class="meta" style="position:absolute;bottom:1.25rem;left:50%;transform:translateX(-50%);opacity:.4;text-align:center;max-width:44rem;padding:0 1rem">
-        [ board 4 &mdash; ruled 2026-08-11: the line exists, without any house
-        wordplay. JJ&rsquo;s words to come. ]
-      </p>
+      <!-- 04-A: a line sits here beside the reel, without any house wordplay
+           (ruled 2026-08-11). JJ's words to come — no visible placeholder in
+           the meantime (dev notes stripped from previews 2026-08-17). -->
     </div>
   </section>
 
@@ -165,9 +149,7 @@ const sizes = ['project--l', 'project--r', 'project--xl', 'project--l', 'project
             <div class="project__roles">
               {p.roles.map((r) => <span class="meta">{r}</span>)}
             </div>
-            <p class="project__note">
-              {p.anecdote ?? 'Making-of anecdote goes here. Forty to sixty words, ending on the call JJ made rather than on the chaos.'}
-            </p>
+            {p.anecdote && <p class="project__note">{p.anecdote}</p>}
           </article>
         ))}
       </div>
@@ -178,18 +160,17 @@ const sizes = ['project--l', 'project--r', 'project--xl', 'project--l', 'project
 
   <!-- ================= 06 LITTLE DOT ================= -->
   <section class="beat">
+    <!-- Little Dot framing still open (06-C). JJ's direction 2026-08-17:
+         straightforward over blanket-summary — likely its own works-style
+         story built from a few specific things he makes there, plus visuals
+         and maybe links. Label "( the other half )" cut per JJ. -->
     <div class="beat__inner" data-rise>
-      <p class="label">( the other half )</p>
       <h2 class="statement">Not everything I make is a film.</h2>
       <div class="prose" style="margin-top:2.5rem">
         <p>
           {LDS.channels} brand and creator channels. {LDS.views} views and {LDS.subs} subscribers
           across the tenure. Love Island packaging, Pokemon, originals programmed and written and
           thumbnailed.
-        </p>
-        <p class="meta" style="display:block;margin-top:1.5rem">
-          FIRST PASS &mdash; needs JJ&rsquo;s framing. The argument to land: this is where the
-          strategy half lives, and it is a different kind of proof than a beautiful film.
         </p>
       </div>
     </div>
@@ -199,14 +180,10 @@ const sizes = ['project--l', 'project--r', 'project--xl', 'project--l', 'project
   <section class="beat" id="how">
     <div class="beat__inner" data-rise>
       <p class="label">( how I work )</p>
+      <!-- Trimmed 2026-08-17 (JJ): "All that range…" cut outright; the
+           authentic/unique critique may find a home on the site someday but
+           wasn't linking to how-I-work. Beat needs a real rewrite with JJ. -->
       <div class="principles">
-        <p class="principle">
-          All that range is why I&rsquo;d rather frame the whole project than own one piece of it.
-          That&rsquo;s the job I want, and creative direction is the closest name for it.
-        </p>
-        <p class="principle">
-          &ldquo;Authentic&rdquo; is a vapid say-nothing word. Just like &ldquo;unique&rdquo;. Blah.
-        </p>
         <p class="principle">
           I prefer, &ldquo;How do we position and frame this so it becomes what it&rsquo;s trying to
           be?&rdquo;
@@ -218,44 +195,15 @@ const sizes = ['project--l', 'project--r', 'project--xl', 'project--l', 'project
     </div>
   </section>
 
-  <!-- ============ 07b SCROLL-TRANSFORMING ELEMENTS — board 12 ============ -->
-  <section class="beat">
-    <div class="beat__inner">
-      <div class="morph" id="morph">
-        <span class="wire-tag">Wire / board 12</span>
-        <div class="morph__shape" id="morphShape">
-          <svg viewBox="0 0 400 250" aria-hidden="true">
-            <ellipse cx="200" cy="125" rx="150" ry="78" />
-            <ellipse cx="230" cy="118" rx="96" ry="52" />
-            <ellipse cx="185" cy="132" rx="118" ry="64" />
-          </svg>
-        </div>
-        <div class="morph__cols">
-          <div class="morph__col" data-morphcol>[ scribble text about me ]</div>
-          <div class="morph__col" data-morphcol>[ scribble text about what I&rsquo;m capable of ]</div>
-          <div class="morph__col" data-morphcol>[ other scribble text ]</div>
-        </div>
-      </div>
-    </div>
-  </section>
-
-  <!-- ================= 08 NOW ================= -->
-  <section class="beat beat--tight">
-    <div class="beat__inner" data-rise>
-      <p class="label">( now )</p>
-      <div class="ph" style="max-width:40rem;padding:3rem 1.5rem">
-        NOW
-        <small>what JJ is building and learning right now</small>
-        <small>Blender and AI animation pipeline &middot; MELM wrapping &middot; Embody</small>
-      </div>
-    </div>
-  </section>
+  <!-- 07b MORPH and 08 NOW cut 2026-08-17 (JJ) per the 8/14 ship plan:
+       both were pure wireframe with no written copy. Markup in git history. -->
 
   <!-- ================= 09 COME IN ================= -->
   <footer class="beat" id="comein">
     <div class="beat__inner" data-rise>
       <p class="label">( come in )</p>
-      <p class="statement" style="max-width:24ch">Tell me what you can already see.</p>
+      <!-- "Tell me what you can already see." cut 2026-08-17 (JJ): not
+           saying anything, causing confusion. Closing line TBD with JJ. -->
       <div class="cta">
         <a class="btn" href="mailto:jj@jjhouse.me"><span>Email me @</span></a>
         <!-- interim destination — JJ is picking a booking tool (likely a Google
@@ -290,18 +238,23 @@ const sizes = ['project--l', 'project--r', 'project--xl', 'project--l', 'project
     (function () {
       const reduce = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
 
-      // ---- the one-way flip. Light until the reel, dark forever after. ----
+      // ---- the flip point. Ruled by JJ 2026-08-17: strictly positional. ----
+      // Above the reel's midpoint = always light, below = always dark, no
+      // one-way latch. Evaluated on load, scroll, resize, and pageshow so a
+      // refresh mid-page or a back/forward return can never strand the page
+      // in the wrong mode (the old one-way IntersectionObserver did exactly
+      // that when scroll restoration landed past the reel).
       const reel = document.getElementById('reel');
       if (reel) {
-        const io = new IntersectionObserver(
-          (entries) => {
-            entries.forEach((e) => {
-              if (e.isIntersecting) document.body.classList.add('is-dark');
-            });
-          },
-          { rootMargin: '-45% 0px -45% 0px' }
-        );
-        io.observe(reel);
+        const setTheme = () => {
+          const r = reel.getBoundingClientRect();
+          const dark = r.top + r.height / 2 <= window.innerHeight / 2;
+          document.body.classList.toggle('is-dark', dark);
+        };
+        addEventListener('scroll', setTheme, { passive: true });
+        addEventListener('resize', setTheme);
+        addEventListener('pageshow', setTheme);
+        setTheme();
       }
 
       // ---- the reel recedes as you scroll through it ----
@@ -318,45 +271,10 @@ const sizes = ['project--l', 'project--r', 'project--xl', 'project--l', 'project
         onScroll();
       }
 
-      // ---- the credit ticker ----
-      // Defaults to WORKS. When a project is in view it cycles that project's
-      // own credits, half a second each, hard cuts like burned-in subtitles.
-      // Rate of change is the information: multi-hat projects flicker,
-      // single-hat projects sit still.
-      const slot = document.getElementById('tickerSlot');
-      const projects = [...document.querySelectorAll('[data-roles]')];
-      if (slot && projects.length) {
-        let active = null;
-        let timer = null;
-        let i = 0;
-
-        const stop = () => { if (timer) { clearInterval(timer); timer = null; } };
-
-        const play = (el) => {
-          stop();
-          if (!el) { slot.textContent = 'WORKS'; return; }
-          const roles = (el.dataset.roles || '').split('|').filter(Boolean);
-          if (!roles.length) { slot.textContent = 'WORKS'; return; }
-          i = 0;
-          slot.textContent = roles[0].toUpperCase();
-          if (roles.length === 1 || reduce) return;   // one hat: sit still
-          timer = setInterval(() => {
-            i = (i + 1) % roles.length;
-            slot.textContent = roles[i].toUpperCase();
-          }, 500);
-        };
-
-        const io = new IntersectionObserver(
-          (entries) => {
-            entries.forEach((e) => {
-              if (e.isIntersecting) { active = e.target; play(active); }
-              else if (e.target === active) { active = null; play(null); }
-            });
-          },
-          { rootMargin: '-35% 0px -35% 0px' }
-        );
-        projects.forEach((p) => io.observe(p));
-      }
+      // ---- the credit ticker: CUT 2026-08-17 (JJ). ----
+      // The per-project role cycling ("the flashing between Produce, VFX +
+      // Edit") wasn't working for him. The slot now just says WORKS. Do not
+      // resurrect the flicker; the roles already sit on each card.
 
       // ---- board 5: the WORKS letters migrate ----------------------
       // Whole and large on entry, scattered across the header at the
@@ -444,25 +362,7 @@ const sizes = ['project--l', 'project--r', 'project--xl', 'project--l', 'project
         vb.addEventListener('loadedmetadata', scrub);
       }
 
-      // ---- board 12: text changes then disappears -------------------
-      const cols = [...document.querySelectorAll('[data-morphcol]')];
-      const morph = document.getElementById('morph');
-      const shape = document.getElementById('morphShape');
-      if (cols.length && morph && !reduce) {
-        const onScroll = () => {
-          const r = morph.getBoundingClientRect();
-          const p = 1 - Math.min(1, Math.max(0, (r.top + r.height * 0.5) / window.innerHeight));
-          if (shape) shape.style.transform =
-            `rotate(${(p - 0.5) * 26}deg) scale(${0.85 + p * 0.3})`;
-          cols.forEach((c, i) => {
-            const local = Math.min(1, Math.max(0, (p - i * 0.14) * 2.4));
-            c.style.opacity = String(local < 0.6 ? local / 0.6 : 1 - (local - 0.6) / 0.4);
-            c.style.transform = `translateY(${(1 - local) * 22}px)`;
-          });
-        };
-        addEventListener('scroll', onScroll, { passive: true });
-        onScroll();
-      }
+      // (board 12 morph script removed with the 07b beat, 2026-08-17)
     })();
   </script>
 </Scroll>

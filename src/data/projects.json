@@ -559,7 +559,37 @@
       ],
       "category": "work",
       "featured": false,
-      "anecdote": null
+      "anecdote": "One shot, 15 seconds, one model who keeps multiplying across a very detailed couch. Frankenstein compositing!",
+      "story": [
+        "This was a VFX job where I felt like a fireman or something. My friend Jeff Prosser, a really talented director who’d been working in-house for AMIRI, brought me on for a 15-second spot for the Pacific Flat sneaker: one shot, one room, one model, except she keeps multiplying. The camera punches in on a shoe product detail, pulls back out, revealing another clone of her in the room. Repeat a few times. The way this effect is most easily done is with motion control: the camera repeats the exact same move every take, and the clone versions can stack more cleanly. We did not have motion control. They did do a great job with choreo, spacing, lighting consistency, and human camera operating. But it was still a crack-them-knuckles, grind-those-fingers post job!",
+        "The set was a beautiful sunken 1970s couch arrangement. My gorgeous nemesis. Zooming in on a foot stepping onto the ground would have been its own kind of challenge. Stepping onto a couch means the ground deforms. The cushion sinks, the seams bend, and every version of her had to press into the same fabric seeming at the same time. Those seams were a gift and a problem in equal measure: a grid I could line everything up against, and a grid the viewer could line everything up against too. Nothing could be smudged over while it was in frame. It became puppet tools and compositing stacked on compositing in After Effects, solve one problem, inherit a new one, layer on layer. If you saw under the hood… <em>“bruh.”</em>",
+        "The other half of the job was the timing. I retimed her walks take by take, then match-moved my digital zooms to the real camera operating, so the shot could hand off from a real push to a built one and back without you feeling the seam. There is one step where I had to splice her leg so her shin and foot are footfalling from one take and her other leg and upper body are from two other shots. I really hope you don’t know which one that was. This being a high-fashion ad, the product fidelity was not negotiable. Every one of those layers had to hold up at the resolution where you are admiring a shoe, and feeling the brand’s emotional benefits.",
+        "The final output is 15 seconds and looks effortless (unless you’re also a VFX artist). It’s right here and it’s short, just watch it. I’m glad Jeff called. The job inspired me: when I later creative-directed a campaign for a small fashion label called Field Journal, the first setup I wrote was a duplication moment. <a href=\"/work/field-journal\">Check it out here.</a>"
+      ],
+      "credits": "dir Jeff Prosser · client AMIRI · JJ House: VFX"
+    },
+    {
+      "slug": "field-journal",
+      "title": "Field Journal",
+      "artist": "Field Journal",
+      "work": "Campaign",
+      "video": null,
+      "roles": [
+        "Creative Direction",
+        "Direct",
+        "Edit"
+      ],
+      "category": "work",
+      "featured": false,
+      "anecdote": "Met a fashion designer at a birthday party; 7 days later, three friends and I shot a campaign for his label.",
+      "story": [
+        "I met Jeffrey Siu at my friend Josh’s birthday party. Josh is a designer, his wife Isobel is a fashion designer, and Jeffrey, their friend visiting from Milan, consults on design for C.P. Company while bootstrapping a label of his own on the side: Field Journal. Jeffrey’s showing me photos on his phone. I see Field Journal creates backpacks, jackets, and oversized workwear jeans. All with awesome silhouettes. I’d done VFX on a Stone Island spot, so it was easy to talk techwear. My bold roommate was a great hype man and said, “Well, you two should make something.” Jeffrey, in town for ten more days, was down.",
+        "This is the most complete creative-direction job I’ve done. I spent a few days on a vision board and scripts, a set of fashion scenarios written loose enough to DIY on a hybrid stills-and-video day blasting around the South Bay. I got to make something real for a real brand, and Jeffrey got media for a label he was funding himself.",
+        "The thread I was pulling on: Jeffrey’s work is grounded, enriched-craftsman techwear, urban without being sci-fi. I kept thinking about what it means to be an honest person in a surveillance state. I was swirling the comic series <em>Transmetropolitan</em> and fun, kinetic cinema. So the setups played with that energy: existing inside watched, urban spaces, and subverting them.",
+        "The hero setup, which I called Spycraft, we shot at an indie storage facility in Redondo Beach, so liminal and cool. Its lobby had a comically big and obvious security camera, twenty-foot floor-to-ceiling mirrors with nothing extruding from them but alarm systems, an elevator up to a storage floor with a view of the semi-operational power plant (if you know the area, you’ll geotag it). I cut it in a thriller-narrow aspect ratio, over the Ocean’s Eleven soundtrack “$160 Million Chinese Man.” Luke Orlando, a director friend with a cinematography background and a great eye for this tone of work, shot it; he kept finding Dutch angles that stretched the frames and evoked the comic/manga that we both love. My actor friend Danny Cron modeled, bringing the whole mood alive.",
+        "I was inspired to do the duplication setup from the AMIRI job (<a href=\"/work/amiri-pacific-flat\">that story is on this site too</a>), scored with something uncanny and a little whimsical. Jeffrey ended up using the two hero videos. The thing that never ran anywhere official is my favorite: I took sequences of Danny into Photoshop and turned them into comic-strip pages. Nobody asked for them. I found them noodling in post. I love them. They’re below."
+      ],
+      "credits": "brand Field Journal (Jeffrey Siu) · camera + photography Luke Orlando · model Danny Cron · JJ House: creative direction, direction, edit"
     },
     {
       "slug": "manchester-orchestra-no-rule",

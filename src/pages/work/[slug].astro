@@ -32,11 +32,15 @@ const next = data.projects[(idx + 1) % data.projects.length];
 
     <!-- Facade embed: the still loads, the player only on request. Moves
          to self-hosted Mux per spec §1; until then youtube-nocookie /
-         player.vimeo keep third-party weight off the first paint. -->
-    <div class="pp__media" id="ppMedia" data-type={p.video.type} data-vid={p.video.id} data-title={p.title}>
-      <img src={`/thumbs/${p.slug}.webp`} alt={`${p.title} — still`} width="1280" height="720" decoding="async" />
-      <button class="pp__play" id="ppPlay">Play &#9654;</button>
-    </div>
+         player.vimeo keep third-party weight off the first paint.
+         p.video may be null (Field Journal's hero videos are still on JJ's
+         external drive) — the page then runs text-first, no media block. -->
+    {p.video && (
+      <div class="pp__media" id="ppMedia" data-type={p.video.type} data-vid={p.video.id} data-title={p.title}>
+        <img src={`/thumbs/${p.slug}.webp`} alt={`${p.title} — still`} width="1280" height="720" decoding="async" />
+        <button class="pp__play" id="ppPlay">Play &#9654;</button>
+      </div>
+    )}
 
     <!-- Two shapes, per the dictation pipeline. p.story is the finished
          diary-prose memoir (array of paragraphs, sparing inline HTML for
