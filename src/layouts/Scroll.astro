@@ -107,7 +107,7 @@ const OBJECTS = [
         <a class="menu__link" href="/#work">Featured work</a>
         <a class="menu__link" href="/work">Everything &#8627;</a>
         <a class="menu__link" href="/#how">How I work</a>
-        <a class="menu__link" href="/#comein">Come in</a>
+        <a class="menu__link" href="/#comein">Connect</a>
       </nav>
       <div class="menu__meta">
         <a href="mailto:jj@jjhouse.me">jj@jjhouse.me</a>
@@ -142,6 +142,15 @@ const OBJECTS = [
         // instantly and leave Lenis's internal position desynced from the
         // real one, which breaks every scrubbed mechanic until the next wheel
         // event. Route anchors through Lenis instead.
+        // Anchor duration scales with distance (clamped), ruled by JJ
+        // 2026-08-17: the hero Connect jump should read like a tape
+        // fast-forward — TLDR skippers still glimpse the journey — not a
+        // hard cut. Short hops stay quick; the full-page dive takes ~2.5s.
+        const anchorDuration = (target) => {
+          const dist = Math.abs(target.getBoundingClientRect().top);
+          return Math.min(2.6, 1.2 + (dist / window.innerHeight) * 0.12);
+        };
+        window.__anchorDuration = anchorDuration;
         document.addEventListener('click', (e) => {
           const a = e.target.closest('a[href^="#"]');
           if (!a) return;
@@ -150,7 +159,7 @@ const OBJECTS = [
           const target = document.querySelector(id);
           if (!target) return;
           e.preventDefault();
-          lenis.scrollTo(target, { offset: 0, duration: 1.2 });
+          lenis.scrollTo(target, { offset: 0, duration: anchorDuration(target) });
           history.replaceState(null, '', id);
         });
       }
@@ -236,7 +245,10 @@ const OBJECTS = [
             close();
             const target = document.querySelector(href.slice(1));
             if (target) {
-              if (window.__lenis) window.__lenis.scrollTo(target, { duration: 1.2 });
+              if (window.__lenis) {
+                const d = window.__anchorDuration ? window.__anchorDuration(target) : 1.2;
+                window.__lenis.scrollTo(target, { duration: d });
+              }
               else target.scrollIntoView();
               history.replaceState(null, '', href.slice(1));
             }
