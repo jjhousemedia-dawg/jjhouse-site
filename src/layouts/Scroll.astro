@@ -98,9 +98,18 @@ const OBJECTS = [
 
     <slot />
 
+    <!-- Menu survives the whole page — ruled by JJ 2026-08-17: the option
+         must never disappear and come back, especially at the bottom. One
+         fixed trigger in the layout (every page gets it, including /work
+         and project pages, which previously had NO trigger at all); the
+         hero's inline button and the ticker's MENU slot were retired so the
+         corner never doubles up. mix-blend difference keeps it legible
+         across the light/dark flip. -->
+    <button class="menu-fab" data-menu-open aria-expanded="false">Menu ::</button>
+
     <!-- ---- the menu. One overlay for every page; opened by any
-         [data-menu-open] trigger (hero button, works ticker). Always ink
-         on paper-text regardless of the flip. ---- -->
+         [data-menu-open] trigger. Always ink on paper-text regardless of
+         the flip. ---- -->
     <div id="menu" class="menu" hidden>
       <button class="menu__close" id="menuClose" aria-label="Close menu">Close ::</button>
       <nav class="menu__nav" aria-label="Site">
