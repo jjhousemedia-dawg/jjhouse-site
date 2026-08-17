@@ -16,9 +16,11 @@ const idx = data.projects.findIndex((x) => x.slug === p.slug);
 const next = data.projects[(idx + 1) % data.projects.length];
 ---
 
-{/* noindex until the anecdotes exist — real URLs to share, but Google
-    should never index a page of empty brackets. Ruled in (JJ, 2026-08-11). */}
-<Scroll dark={true} noindex={true} title={`${p.title} — JJ House`} desc={`${p.title}. ${p.roles.join(', ')}.`}>
+{/* noindex until the copy exists — real URLs to share, but Google should
+    never index a page of empty brackets. Ruled in (JJ, 2026-08-11).
+    Pages with a written story (p.story) are index-eligible per that same
+    logic: the brackets are gone. First one: Used To Know Me, 2026-08-17. */}
+<Scroll dark={true} noindex={!p.story} title={`${p.title} — JJ House`} desc={`${p.title}. ${p.roles.join(', ')}.`}>
   <div class="pp">
     <a class="pp__back" href="/#work">&#8624; Back</a>
 
@@ -36,27 +38,37 @@ const next = data.projects[(idx + 1) % data.projects.length];
       <button class="pp__play" id="ppPlay">Play &#9654;</button>
     </div>
 
-    <!-- Spec §7 fixes the anecdote shape. Four lines, 40 to 60 words,
-         ending on a call JJ made rather than on the chaos. Conditions
-         named as causes, never people. -->
-    <dl class="pp__anecdote">
-      <div class="pp__beat">
-        <dt>what it was trying to be</dt>
-        <dd>[ one line &mdash; JJ ]</dd>
+    <!-- Two shapes, per the dictation pipeline. p.story is the finished
+         diary-prose memoir (array of paragraphs, sparing inline HTML for
+         emphasis); until a project has one, the Spec §7 four-line scaffold
+         holds the page: 40 to 60 words, ending on a call JJ made rather
+         than on the chaos, conditions named as causes, never people. -->
+    {p.story ? (
+      <div class="prose pp__story">
+        {p.story.map((par) => <p set:html={par} />)}
       </div>
-      <div class="pp__beat">
-        <dt>what went wrong</dt>
-        <dd>[ one line, dry, no self-pity ]</dd>
-      </div>
-      <div class="pp__beat">
-        <dt>the call</dt>
-        <dd>[ one line &mdash; load-bearing. The anecdote ends here, not on the chaos. ]</dd>
-      </div>
-      <div class="pp__beat">
-        <dt>what it bought</dt>
-        <dd>[ one line, result in it ]</dd>
-      </div>
-    </dl>
+    ) : (
+      <dl class="pp__anecdote">
+        <div class="pp__beat">
+          <dt>what it was trying to be</dt>
+          <dd>[ one line &mdash; JJ ]</dd>
+        </div>
+        <div class="pp__beat">
+          <dt>what went wrong</dt>
+          <dd>[ one line, dry, no self-pity ]</dd>
+        </div>
+        <div class="pp__beat">
+          <dt>the call</dt>
+          <dd>[ one line &mdash; load-bearing. The anecdote ends here, not on the chaos. ]</dd>
+        </div>
+        <div class="pp__beat">
+          <dt>what it bought</dt>
+          <dd>[ one line, result in it ]</dd>
+        </div>
+      </dl>
+    )}
+
+    {p.credits && <p class="meta pp__credits">{p.credits}</p>}
 
     <script is:inline>
       (function () {
