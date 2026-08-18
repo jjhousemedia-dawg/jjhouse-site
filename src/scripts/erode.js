@@ -459,9 +459,21 @@ export function initErode(surface){
   // become a paint gesture (preventDefault on touchstart keeps the browser
   // from claiming it for two-finger scroll / pinch-zoom, which is the
   // accepted trade: no zoom over the hero). Each finger drives its own
-  // stroke. The invite pulse under the wordmark teaches it; the first real
-  // two-finger stroke fires `jj:inkpaint` so the invite can retire.
-  let paintMode = false, paintedOnce = false;
+  // stroke. Nothing on the page SAYS this — the paired ambient wisps in the
+  // frame loop below demonstrate it (JJ, 2026-08-17: the hint should be the
+  // effect itself, not a UI element).
+  //
+  // Finger strokes run at roughly half-to-2/3 the visual width of the old
+  // touch stroke (JJ's call, 2026-08-17 — "half as thick, maybe 2/3"): a
+  // mouse-scale stamp reads as a slab on a phone-sized sheet. Width goes
+  // with sqrt(radius); the force is trimmed too because the velocity field
+  // it injects is what fattens the trail after the stamp. Both live-tunable
+  // from the preview URL, e.g. ?touchr=0.15&touchf=0.4 (thinner) or
+  // ?touchr=0.44&touchf=0.7 (previous weight).
+  const TOUCH_R = () => CFG.splatRadius * k('touchr', 0.2);
+  const TOUCH_F = k('touchf', 0.5);
+  const TOUCHY = window.matchMedia('(hover: none)').matches;
+  let paintMode = false;
   const inCanvas = (t) => {
     const r = canvas.getBoundingClientRect();
     return t.clientX >= r.left && t.clientX <= r.right &&
@@ -478,12 +490,8 @@ export function initErode(surface){
   addEventListener('touchmove', (e) => {
     if (!paintMode || e.touches.length < 2) return;
     e.preventDefault();
-    for (const t of e.touches) queue.push({ id: t.identifier, ...toUv(t.clientX, t.clientY) });
+    for (const t of e.touches) queue.push({ id: t.identifier, r: TOUCH_R(), f: TOUCH_F, ...toUv(t.clientX, t.clientY) });
     lastTouchT = performance.now();
-    if (!paintedOnce) {
-      paintedOnce = true;
-      try { window.dispatchEvent(new CustomEvent('jj:inkpaint')); } catch (_) {}
-    }
   }, { passive: false });
   const endTouch = (e) => {
     if (e.touches.length < 2) paintMode = false;
@@ -494,7 +502,7 @@ export function initErode(surface){
   // iOS pinch fires proprietary gesture events alongside touches
   addEventListener('gesturestart', (e) => { if (paintMode) e.preventDefault(); }, { passive: false });
 
-  function splat(x0, y0, x1, y1, dx, dy){
+  function splat(x0, y0, x1, y1, dx, dy, radius){
     splats++;
     gl.useProgram(P.splat.p);
     bind(0, velocity.read.t, P.splat.u.uTarget);
@@ -502,7 +510,7 @@ export function initErode(surface){
     gl.uniform2f(P.splat.u.uPoint0, x0, y0);
     gl.uniform2f(P.splat.u.uPoint, x1, y1);
     gl.uniform3f(P.splat.u.uColor, dx, dy, 0);
-    gl.uniform1f(P.splat.u.uRadius, CFG.splatRadius);
+    gl.uniform1f(P.splat.u.uRadius, radius || CFG.splatRadius);
     draw(velocity.write); velocity.swap();
 
     bind(0, dyeFbo.read.t, P.splat.u.uTarget);
@@ -545,28 +553,73 @@ export function initErode(surface){
       for (let i = 0; i < queue.length; i += stride) {
         const cur = queue[Math.min(i + stride - 1, queue.length - 1)];
         const prev = strokes.get(cur.id) || cur;
+        const fscale = CFG.splatForce * (cur.f || 1);
         splat(prev.x, prev.y, cur.x, cur.y,
-              (cur.x - prev.x) * CFG.splatForce, (cur.y - prev.y) * CFG.splatForce);
+              (cur.x - prev.x) * fscale, (cur.y - prev.y) * fscale,
+              cur.r);
         strokes.set(cur.id, cur);
       }
       queue.length = 0;
     }
     else if (!everMoved && now - lastTouchT > 2400) {
-      // Autonomous sweep until the visitor takes over. The reference does
-      // something similar; it also means the mechanic is never invisible to
-      // someone who lands and does not move, or on a touch device. After a
+      // Autonomous motion until the visitor takes over — the mechanic must
+      // never be invisible to someone who lands and does not move. After a
       // touch paint it waits ~2.4s, then resumes.
-      const a = time * 1.15;
-      const x = 0.5 + Math.sin(a) * 0.34;
-      const y = 0.46 + Math.sin(a * 2.1) * 0.16;
-      // If the drift was interrupted (by a paint), do not draw one long
-      // streak from the last finger position to the sweep — restart clean.
-      if (now - lastDriftT > 400) strokes.delete('drift');
+      if (now - lastDriftT > 400) { strokes.delete('drift'); strokes.delete('wispA'); strokes.delete('wispB'); }
       lastDriftT = now;
-      const prev = strokes.get('drift') || { x, y };
-      splat(prev.x, prev.y, x, y,
-            (x - prev.x) * CFG.splatForce, (y - prev.y) * CFG.splatForce);
-      strokes.set('drift', { x, y });
+
+      if (!TOUCHY) {
+        // Mouse devices: the continuous lissajous sweep, unchanged.
+        const a = time * 1.15;
+        const x = 0.5 + Math.sin(a) * 0.34;
+        const y = 0.46 + Math.sin(a * 2.1) * 0.16;
+        const prev = strokes.get('drift') || { x, y };
+        splat(prev.x, prev.y, x, y,
+              (x - prev.x) * CFG.splatForce, (y - prev.y) * CFG.splatForce);
+        strokes.set('drift', { x, y });
+      } else {
+        // Touch devices: the hint IS the effect (JJ, 2026-08-17). Every few
+        // seconds two thin parallel wisps — spaced like fingertips, moving
+        // together — brush across the sheet around the wordmark, then the
+        // foam closes back over them. No UI, no label: the sheet itself
+        // demonstrates the two-finger gesture. Wisps sit in the hero's
+        // first viewport (the old drift orbit painted mostly below the
+        // fold, so on phones the mechanic was invisible at load).
+        const PERIOD = 6500, DUR = 1800;
+        const tt = now - t0;
+        const phase = tt % PERIOD;
+        if (phase < DUR) {
+          const cyc = Math.floor(tt / PERIOD);
+          // deterministic per-cycle variation, no Math.random mid-loop
+          const rnd = (n) => { const s = Math.sin((cyc + 1) * n) * 43758.5453; return s - Math.floor(s); };
+          const f0 = phase / DUR;
+          const f = f0 < 0.5 ? 2 * f0 * f0 : 1 - Math.pow(-2 * f0 + 2, 2) / 2;   // ease in-out
+          // a gentle arc near the wordmark band of the (3x-tall) canvas:
+          // uv y 1 = canvas top; the mark sits ~55-65svh down a 300svh
+          // sheet, so ~0.78-0.84 keeps the wisps in the first viewport.
+          const x0 = 0.28 + rnd(12.9) * 0.2, y0 = 0.80 + rnd(78.2) * 0.035;
+          const x1 = x0 + 0.24 + rnd(39.4) * 0.14, y1 = y0 - 0.03 - rnd(51.7) * 0.02;
+          const cxv = x0 + (x1 - x0) * f;
+          const cyv = y0 + (y1 - y0) * f + Math.sin(f * Math.PI) * 0.012 * (rnd(7.3) > 0.5 ? 1 : -1);
+          // fingertip spacing, perpendicular to the path, in PIXELS —
+          // uv units are wildly anisotropic on a 3x-tall canvas
+          const dpx = (x1 - x0) * W, dpy = -(y1 - y0) * H;
+          const dl = Math.hypot(dpx, dpy) || 1;
+          const SPACE = 22;                       // px each side ≈ 44px between "fingers"
+          const ox = (-dpy / dl) * SPACE / W, oy = (dpx / dl) * SPACE / H;
+          // truly wispy — a hint, not a mark. Tunable: ?wispr=&wispf=
+          const WISP_R = CFG.splatRadius * k('wispr', 0.05);
+          const FORCE = CFG.splatForce * k('wispf', 0.4);
+          for (const [id, sx, sy] of [['wispA', ox, oy], ['wispB', -ox, -oy]]) {
+            const px2 = cxv + sx, py2 = cyv + sy;
+            if (f0 < 0.04) strokes.delete(id);    // new cycle starts a clean chain
+            const prev = strokes.get(id) || { x: px2, y: py2 };
+            splat(prev.x, prev.y, px2, py2,
+                  (px2 - prev.x) * FORCE, (py2 - prev.y) * FORCE, WISP_R);
+            strokes.set(id, { x: px2, y: py2 });
+          }
+        }
+      }
     }
 
     // vorticity confinement: sharpen the small eddies the pressure solve
