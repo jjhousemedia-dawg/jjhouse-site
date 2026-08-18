@@ -265,6 +265,23 @@ const sizes = ['project--l', 'project--r', 'project--xl', 'project--l', 'project
       try { ok = initErode(surface); } catch (err) { console.error('[erode]', err); }
       if (ok) surface.classList.add('is-canvas');
     }
+
+    // Every visit drops into the loop at a random point (JJ, 2026-08-18),
+    // so no two arrivals meet the same material. Runs in BOTH paths — the
+    // WebGL texture and the no-WebGL fallback read the same element. Safe
+    // with the loop: the 0/end seam is seamless (verified against the
+    // source EXRs), so a start at 41s just plays 41->70->0->... forever.
+    // Seeks land keyframe-accurate (keyint 120 = 4s GOPs, faststart), and
+    // Vercel serves range requests, so the browser fetches from the seek
+    // point rather than the whole head of the file.
+    const sv = document.querySelector('video.substrate__video');
+    if (sv) {
+      const randomize = () => {
+        if (sv.duration && isFinite(sv.duration)) sv.currentTime = Math.random() * sv.duration;
+      };
+      if (sv.readyState >= 1) randomize();
+      else sv.addEventListener('loadedmetadata', randomize, { once: true });
+    }
   </script>
 
   <script is:inline>
