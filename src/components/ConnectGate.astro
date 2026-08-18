@@ -1,0 +1,176 @@
+---
+/**
+ * ( connect ) code gate — 2026-08-18
+ *
+ * Why this exists: Skarlett's note, 8/18 — a public booking link exposes the
+ * whole calendar to anyone who finds the site. Two doors instead of one gate:
+ * "Email me" stays open to everybody, the calendar is for people already in
+ * conversation.
+ *
+ * The calendar URL is NOT in the built site. CONNECT_TOKEN below is that URL
+ * encrypted (AES-GCM, key stretched from the code word with PBKDF2/200k). Wrong
+ * code fails the GCM auth tag, so there is nothing to read out of the bundle.
+ *
+ * TO CHANGE THE CODE WORD:
+ *   node scripts/make-connect-token.mjs "your new words"
+ * then paste the printed value over CONNECT_TOKEN. Nothing else changes.
+ *
+ * Current code word: "open house"  (case- and spacing-insensitive)
+ */
+const CONNECT_TOKEN =
+  'ome5kZdMWQwRzY2ptctpjQuXi1a/NZb5XDuuj+k/KMBxAIfW1B/HjyU1DN7vnBR3iZWN0/hfnwISEI4RrNOzHVh2wJ6/jczxJs3uOtKO8MMCG/I5mo9keSs=';
+---
+
+<div class="cta">
+  <button class="btn" type="button" data-gate-toggle aria-expanded="false" aria-controls="connect-gate">
+    <span>Meeting request &rarr;</span>
+  </button>
+  <a class="btn" href="mailto:jj@jjhouse.me"><span>Email me</span></a>
+</div>
+
+<form class="gate" id="connect-gate" data-token={CONNECT_TOKEN} hidden>
+  <label class="label gate__label" for="gate-code">( code )</label>
+  <div class="gate__row">
+    <input
+      class="gate__input"
+      id="gate-code"
+      name="code"
+      type="text"
+      autocomplete="off"
+      autocapitalize="off"
+      autocorrect="off"
+      spellcheck="false"
+      enterkeyhint="go"
+      aria-describedby="gate-msg"
+    />
+    <button class="btn gate__go" type="submit"><span>Enter &rarr;</span></button>
+  </div>
+  <p class="gate__msg" id="gate-msg" role="status" aria-live="polite"></p>
+</form>
+
+<noscript>
+  <p class="label">( email me for a time — the request form needs javascript )</p>
+</noscript>
+
+<style>
+  .gate { margin: -3rem 0 4rem; }
+  .gate[hidden] { display: none; }
+
+  .gate__label { margin: 0 0 0.75rem; }
+
+  .gate__row { display: flex; gap: 0.75rem; flex-wrap: wrap; align-items: center; }
+
+  .gate__input {
+    font-family: var(--font-mono);
+    font-size: 0.75rem;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    padding: 0.85rem 1.4rem;
+    border: 1px solid currentColor;
+    border-radius: 999px;
+    background: transparent;
+    color: inherit;
+    width: min(18rem, 100%);
+  }
+  .gate__input::placeholder { color: inherit; opacity: 0.35; }
+
+  .gate__msg {
+    font-family: var(--font-mono);
+    font-size: 0.75rem;
+    letter-spacing: 0.08em;
+    text-transform: lowercase;
+    opacity: 0.55;
+    margin: 1rem 0 0;
+    min-height: 1.2em;
+  }
+
+  /* the button is a <button> now, not an <a> — keep it identical to .btn peers */
+  button.btn { background: transparent; cursor: pointer; }
+
+  .gate__input:focus-visible,
+  .btn:focus-visible { outline: 1px solid currentColor; outline-offset: 3px; }
+
+  /* round 6 rule: 44px minimum on touch */
+  @media (pointer: coarse) {
+    .gate__input, .gate__go { min-height: 44px; }
+  }
+
+  /* the reveal is a fade, and only if the visitor wants motion */
+  @media (prefers-reduced-motion: no-preference) {
+    .gate[data-in] { animation: gate-in 320ms var(--ease) both; }
+    @keyframes gate-in { from { opacity: 0; transform: translateY(-0.35rem); } to { opacity: 1; transform: none; } }
+  }
+</style>
+
+<script>
+  const form = document.getElementById('connect-gate');
+  const toggle = document.querySelector('[data-gate-toggle]');
+  if (form && toggle) {
+    const input = form.querySelector('.gate__input');
+    const msg = form.querySelector('.gate__msg');
+    const ITER = 200_000;
+    const PREFIX = 'https://calendar.app.google/';
+
+    toggle.addEventListener('click', () => {
+      const open = form.hasAttribute('hidden');
+      if (open) {
+        form.removeAttribute('hidden');
+        form.setAttribute('data-in', '');
+        toggle.setAttribute('aria-expanded', 'true');
+        input.focus();
+      } else {
+        form.setAttribute('hidden', '');
+        form.removeAttribute('data-in');
+        toggle.setAttribute('aria-expanded', 'false');
+      }
+    });
+
+    // must match norm() in scripts/make-connect-token.mjs exactly
+    const norm = (s) => s.normalize('NFKC').toLowerCase().replace(/[^a-z0-9]+/g, '');
+    const b64 = (s) => Uint8Array.from(atob(s), (c) => c.charCodeAt(0));
+
+    async function unlock(code) {
+      const blob = b64(form.dataset.token);
+      const salt = blob.slice(0, 16);
+      const iv = blob.slice(16, 28);
+      const ct = blob.slice(28);
+      const base = await crypto.subtle.importKey(
+        'raw', new TextEncoder().encode(norm(code)), 'PBKDF2', false, ['deriveKey']
+      );
+      const key = await crypto.subtle.deriveKey(
+        { name: 'PBKDF2', salt, iterations: ITER, hash: 'SHA-256' },
+        base, { name: 'AES-GCM', length: 256 }, false, ['decrypt']
+      );
+      const out = await crypto.subtle.decrypt({ name: 'AES-GCM', iv }, key, ct);
+      const url = new TextDecoder().decode(out);
+      if (!url.startsWith(PREFIX)) throw new Error('bad payload');
+      return url;
+    }
+
+    form.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const code = input.value;
+      if (!norm(code)) { input.focus(); return; }
+      msg.textContent = '( checking )';
+      try {
+        const url = await unlock(code);
+        msg.textContent = '( open — see you soon )';
+        const win = window.open(url, '_blank', 'noopener');
+        if (!win) {
+          // popup blocked after the async gap: hand over a real link instead
+          msg.innerHTML = '';
+          const a = document.createElement('a');
+          a.className = 'btn';
+          a.href = url;
+          a.target = '_blank';
+          a.rel = 'noopener';
+          a.innerHTML = '<span>Open the calendar &rarr;</span>';
+          msg.appendChild(a);
+        }
+      } catch {
+        msg.textContent = '( not that one )';
+        input.select();
+      }
+    });
+  }
+</script>

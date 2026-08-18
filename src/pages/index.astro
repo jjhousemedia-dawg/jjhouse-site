@@ -2,6 +2,7 @@
 import Scroll from '../layouts/Scroll.astro';
 import data from '../data/projects.json';
 import Wordmark from '../components/Wordmark.astro';
+import ConnectGate from '../components/ConnectGate.astro';
 
 // --- beat 05 selection -------------------------------------------------
 // PLACEHOLDER PICK. Chosen to cover range and to include the two projects
@@ -205,18 +206,27 @@ const sizes = ['project--l', 'project--r', 'project--xl', 'project--l', 'project
   <!-- ================= 07 HOW I WORK ================= -->
   <section class="beat" id="how">
     <div class="beat__inner" data-rise>
-      <p class="label">( how I work )</p>
+      <p class="label">( how i work )</p>
       <!-- JJ's own two-liner, 2026-08-17, verbatim (lowercase open and
            no closing punctuation on line one are his — do not normalize
            without asking). Note "frame a project", not "frame this". -->
       <div class="principles">
-        <p class="principle">
-          instead of yapping on &lsquo;unique&rsquo; and &lsquo;authentic&rsquo;
-        </p>
-        <p class="principle">
-          I prefer, &ldquo;How do we position and frame a project so it becomes what it&rsquo;s
-          trying to be?&rdquo;
-        </p>
+        <!-- Round 9, 2026-08-18. Skarlett: "I don't know where to look first."
+             These were two identical .principle blocks with a 4.5rem gap
+             between them — set as twins, so the eye had no entry point and
+             the weaker line read first. But it is ONE sentence in two moves:
+             a throwaway dismissal, then the line that actually matters. So
+             the setup is demoted and pulled close, and the quote carries the
+             weight. All lowercase per JJ 8/18; wording still his, verbatim. -->
+        <div class="principle-group">
+          <p class="principle__aside">
+            instead of yapping on &lsquo;unique&rsquo; and &lsquo;authentic&rsquo;
+          </p>
+          <p class="principle principle--quote">
+            <span class="principle__u">i prefer, &ldquo;how do we position and frame a project</span>
+            <span class="principle__u">so it becomes what it&rsquo;s trying to be?&rdquo;</span>
+          </p>
+        </div>
       </div>
 
       <!-- Board 11's skills list was wired here; JJ ruled it out 2026-08-11.
@@ -239,10 +249,12 @@ const sizes = ['project--l', 'project--r', 'project--xl', 'project--l', 'project
            deliberately a link, not the Google iframe/button embed, which
            would put a blue Google widget inside the b/w system — same
            third-party-weight philosophy as the facade video embeds). -->
-      <div class="cta">
-        <a class="btn" href="https://calendar.app.google/53GJJNoNpdsB6dYK6" target="_blank" rel="noopener"><span>Meeting request &rarr;</span></a>
-        <a class="btn" href="mailto:jj@jjhouse.me"><span>Email me</span></a>
-      </div>
+      <!-- 2026-08-18, Skarlett: "that's a dangerous button." A public booking
+           link shows the whole calendar to anyone who finds the site. Two
+           doors instead of one gate — "Email me" stays open to everybody, the
+           calendar asks for a code word. The URL is encrypted into the
+           component and is NOT in the built bundle; see ConnectGate.astro. -->
+      <ConnectGate />
       <div class="closing-mark"><Wordmark /></div>
     </div>
     <div class="colophon">
