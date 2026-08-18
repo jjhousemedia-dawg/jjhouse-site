@@ -202,7 +202,15 @@ void main(){
   fragColor = vec4(col, 1.0);
 }`;
 
-/* ---- composite: their shader, unchanged ---- */
+/* ---- composite: their shader, plus the wordmark-rect mapping ----
+   When the substrate video is live, the reveal is no longer cover-fit to
+   the whole (3x-tall) canvas: it occupies a rect derived from the DOM
+   wordmark's box, so the video's letters sit exactly under the SVG
+   letters. uRectFade is method A at the frame border: the dissolve band
+   straddles the edge (attenuation 0.5 exactly on it) and CLAMP_TO_EDGE
+   keeps feeding the border row's colours through the outer half, so
+   whatever colour the loop is passing through softly continues, then
+   melts into the page. The frame line itself is never visible. */
 const F_COMPOSITE = F_HEAD + `
 uniform sampler2D uBaseTexture;
 uniform sampler2D uRevealTexture;
@@ -214,6 +222,8 @@ uniform float uBaseImageAspect;
 uniform float uRevealImageAspect;
 uniform float uPlaneAspect;
 uniform float uDebug;
+uniform vec4  uRevealRect;   // canvas-uv placement (x, y bottom-left, w, h); w<=0 = cover path
+uniform float uRectFade;     // edge dissolve half-width, as a fraction of the rect
 vec2 coverUv(vec2 uv, float imageAspect, float planeAspect){
   vec2 ratio = vec2(
     min(planeAspect / imageAspect, 1.0),
@@ -230,12 +240,22 @@ void main(){
   vec2 baseUv = coverUv(vUv, uBaseImageAspect, uPlaneAspect);
   baseUv = clamp(baseUv, 0.001, 0.999);
   vec4 baseColor = texture(uBaseTexture, baseUv);
-  vec2 revealUv = coverUv(vUv, uRevealImageAspect, uPlaneAspect);
-  revealUv = clamp(revealUv, 0.001, 0.999);
+  vec2 revealUv;
+  float rectAtt = 1.0;
+  if (uRevealRect.z > 0.0) {
+    revealUv = (vUv - uRevealRect.xy) / uRevealRect.zw;
+    vec2 e = min(revealUv, vec2(1.0) - revealUv);   // signed distance to nearest edge, per axis
+    rectAtt = smoothstep(-uRectFade, uRectFade, e.y)
+            * smoothstep(-uRectFade * 0.5, uRectFade * 0.5, e.x);
+    revealUv = clamp(revealUv, 0.0, 1.0);
+  } else {
+    revealUv = coverUv(vUv, uRevealImageAspect, uPlaneAspect);
+    revealUv = clamp(revealUv, 0.001, 0.999);
+  }
   vec4 revealColor = texture(uRevealTexture, revealUv);
   float raw  = dye * uRevealSize;
   float mask = smoothstep(uEdgeSoftness, uEdgeSoftness + uEdgeWidth, raw);
-  mask = clamp(mask, 0.0, 1.0);
+  mask = clamp(mask, 0.0, 1.0) * rectAtt;
   fragColor = mix(baseColor, revealColor, mask);
 }`;
 
@@ -345,6 +365,55 @@ export function initErode(surface){
   let velocity, dyeFbo, divergence, pressure, curlFbo, water, baseTex, revealTex;
   let W = 0, H = 0;
 
+  // ---- the substrate video: JJ's Blender wordmark loop ----
+  // The <video> lives in .surface__substrate (where it is also the no-WebGL
+  // fallback, CSS-mask-faded). Here it feeds the reveal texture. The water
+  // loop stays as the stand-in until the first frame is delivered — and as
+  // the permanent fallback if the video never arrives (blocked autoplay
+  // with no interaction, decode failure, save-data proxies).
+  const video = surface.querySelector('video.substrate__video');
+  const VID_FRAC = k('vidfrac', 0.90);   // letters span 90% of frame width (ortho_scale 4.9256 vs 4.433 m)
+  const VID_YOFF = k('vidyoff', 0);      // vertical trim, fraction of video height (+ = down)
+  const VID_FADE = Math.max(k('vidfade', 0.10), 0.002);  // method-A dissolve half-width
+  let videoTex = null, videoReady = false, lastVidT = -1;
+  let revealRect = [0, 0, 0, 0];
+  if (video) {
+    videoTex = texA();
+    gl.bindTexture(gl.TEXTURE_2D, videoTex);
+    gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, 1, 1, 0, gl.RGBA, gl.UNSIGNED_BYTE,
+                  new Uint8Array([14, 13, 11, 255]));   // ink until the first frame lands
+    // Muted autoplay is normally allowed, but play() can still reject
+    // (power-save modes, iOS Low Power). Retry when the tab is shown.
+    const tryPlay = () => { const p = video.play(); if (p && p.catch) p.catch(() => {}); };
+    tryPlay();
+    document.addEventListener('visibilitychange', () => { if (!document.hidden) tryPlay(); });
+    video.addEventListener('loadedmetadata', () => placeRect());
+  }
+
+  // letter-band -> wordmark-rect mapping. The video frame is wider than the
+  // DOM wordmark by 1/VID_FRAC and centred on it; everything is measured
+  // off live rects so it holds at any viewport. Scroll never moves the
+  // canvas and the mark relative to each other, so this only needs to run
+  // on build/resize/metadata, not per frame.
+  function placeRect(){
+    if (!video) return;
+    const cr = canvas.getBoundingClientRect();
+    const mr = textEl.getBoundingClientRect();
+    if (!cr.width || !cr.height || !mr.width) { revealRect = [0, 0, 0, 0]; return; }
+    const va = (video.videoWidth && video.videoHeight)
+      ? video.videoWidth / video.videoHeight : 16 / 9;
+    const vw = mr.width / VID_FRAC;
+    const vh = vw / va;
+    const cx = mr.left + mr.width  / 2 - cr.left;
+    const cy = mr.top  + mr.height / 2 - cr.top + VID_YOFF * vh;
+    revealRect = [
+      (cx - vw / 2) / cr.width,
+      1.0 - (cy + vh / 2) / cr.height,   // shader uv y is up; origin = rect's bottom-left
+      vw / cr.width,
+      vh / cr.height,
+    ];
+  }
+
   function build(){
     const r = canvas.getBoundingClientRect();
     const dpr = Math.min(window.devicePixelRatio || 1, 2);
@@ -354,7 +423,7 @@ export function initErode(surface){
     // is sized in svh so its rect does not actually change. Rebuilding the
     // FBOs anyway wipes the dye field mid-scroll. Only rebuild on a real
     // size change.
-    if (velocity && nW === W && nH === H && canvas.width === Math.round(nW * dpr)) return;
+    if (velocity && nW === W && nH === H && canvas.width === Math.round(nW * dpr)) { placeRect(); return; }
     W = nW;
     H = nH;
     canvas.width = Math.round(W * dpr);
@@ -397,6 +466,7 @@ export function initErode(surface){
     water      = fbo(dw, dh);
     revealTex  = water.t;
     gl.bindFramebuffer(gl.FRAMEBUFFER, null);
+    placeRect();
   }
 
   const draw = (target) => {
@@ -677,18 +747,31 @@ export function initErode(surface){
     bind(1, dyeFbo.read.t, P.advect.u.uSource);
     draw(dyeFbo.write); dyeFbo.swap();
 
-    // the stand-in plate
-    gl.useProgram(P.water.p);
-    gl.uniform1f(P.water.u.uTime, time);
-    gl.uniform1f(P.water.u.uAspect, W / H);
-    draw(water);
+    // the plate: the wordmark video once it delivers frames; the water
+    // stand-in until then (and for good, if it never does)
+    if (video && video.readyState >= 2) {
+      if (video.currentTime !== lastVidT) {
+        lastVidT = video.currentTime;
+        gl.bindTexture(gl.TEXTURE_2D, videoTex);
+        gl.pixelStorei(gl.UNPACK_FLIP_Y_WEBGL, true);
+        gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, gl.RGBA, gl.UNSIGNED_BYTE, video);
+        gl.pixelStorei(gl.UNPACK_FLIP_Y_WEBGL, false);
+        if (!videoReady) { videoReady = true; placeRect(); }
+      }
+    }
+    if (!videoReady) {
+      gl.useProgram(P.water.p);
+      gl.uniform1f(P.water.u.uTime, time);
+      gl.uniform1f(P.water.u.uAspect, W / H);
+      draw(water);
+    }
 
     // composite — their shader, their constants
     gl.enable(gl.BLEND);
     gl.blendFuncSeparate(gl.SRC_ALPHA, gl.ONE_MINUS_SRC_ALPHA, gl.ONE, gl.ONE_MINUS_SRC_ALPHA);
     gl.useProgram(P.composite.p);
     bind(0, baseTex, P.composite.u.uBaseTexture);
-    bind(1, revealTex, P.composite.u.uRevealTexture);
+    bind(1, videoReady ? videoTex : revealTex, P.composite.u.uRevealTexture);
     bind(2, dyeFbo.read.t, P.composite.u.uDye);
     gl.uniform1f(P.composite.u.uRevealSize, CFG.revealSize);
     gl.uniform1f(P.composite.u.uEdgeSoftness, CFG.edgeSoftness);
@@ -697,6 +780,12 @@ export function initErode(surface){
     gl.uniform1f(P.composite.u.uRevealImageAspect, W / H);
     gl.uniform1f(P.composite.u.uPlaneAspect, W / H);
     gl.uniform1f(P.composite.u.uDebug, DBGMODE);
+    if (videoReady) {
+      gl.uniform4f(P.composite.u.uRevealRect, revealRect[0], revealRect[1], revealRect[2], revealRect[3]);
+    } else {
+      gl.uniform4f(P.composite.u.uRevealRect, 0, 0, 0, 0);
+    }
+    gl.uniform1f(P.composite.u.uRectFade, VID_FADE);
     draw(null);
 
     frameNo++;

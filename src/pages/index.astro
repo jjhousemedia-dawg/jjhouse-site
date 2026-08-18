@@ -57,7 +57,23 @@ const sizes = ['project--l', 'project--r', 'project--xl', 'project--l', 'project
     <canvas class="surface__erode" id="erode"></canvas>
 
     <div class="surface" id="surface">
-      <div class="surface__substrate"></div>
+      <div class="surface__substrate">
+        <!-- The substrate: JJ's 70s Blender wordmark loop (2100f @ 30).
+             Two lives at once. No WebGL2: it shows here directly, edge-faded
+             by the CSS mask (method A). WebGL2: the div is opacity:0 but the
+             video keeps playing and erode.js samples it every frame as the
+             reveal texture, rect-mapped so its letters sit exactly under the
+             SVG letters (frame width = mark width / 0.90, per the ortho cam's
+             4.9256 scale). Codec order = first the browser can hardware-
+             decode: AV1 10-bit, HEVC for Safari, H.264 floor. crossorigin
+             keeps the WebGL texture untainted. -->
+        <video class="substrate__video" muted loop autoplay playsinline preload="metadata"
+               poster="/hero/house_wordmark_poster.jpg" crossorigin="anonymous" aria-hidden="true">
+          <source src="/hero/house_wordmark_1080p_av1.mp4"  type='video/mp4; codecs="av01.0.08M.10"' />
+          <source src="/hero/house_wordmark_1080p_hevc.mp4" type='video/mp4; codecs="hvc1"' />
+          <source src="/hero/house_wordmark_1080p_h264.mp4" type="video/mp4" />
+        </video>
+      </div>
       <div class="wordmark__svg"><Wordmark /></div>
     </div>
 

@@ -398,6 +398,18 @@ html[data-loading] body > *:not(#loader) { visibility: hidden; }
   font-family: var(--font-mono); font-size: 0.625rem; letter-spacing: 0.12em;
   text-transform: uppercase; opacity: 0.9; text-align: center; padding: 0 1rem;
 }
+.substrate__video {
+  /* The no-WebGL fallback view of the wordmark loop. Method A on the frame
+     edges: the video dissolves into the paper before its border is ever
+     felt, whatever colour the loop is passing through — the mask does not
+     care what the pixels are. In WebGL mode this element is opacity:0 via
+     .is-canvas but KEEPS PLAYING: it is the texture source for the reveal,
+     and the same fade is applied in the shader instead. */
+  position: absolute; inset: 0; width: 100%; height: 100%;
+  object-fit: cover;
+  -webkit-mask-image: linear-gradient(to bottom, transparent 0, #000 14%, #000 86%, transparent 100%);
+  mask-image: linear-gradient(to bottom, transparent 0, #000 14%, #000 86%, transparent 100%);
+}
 .surface__erode {
   /* Reaches well past the hero on purpose. Torn ink runs downhill and has
      to be able to cross the fold and lie over the section below, which is
