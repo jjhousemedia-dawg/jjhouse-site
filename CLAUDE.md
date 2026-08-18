@@ -53,17 +53,43 @@ Project memory carries the same state under `jjhouse-website` and `jjhouse-infra
 
 ---
 
-## Current state
+## Current state — as of 2026-08-17
 
-Branch **`rebuild/scroll`** holds the real direction:
+Branch **`preview/blockout-wire`** is the active build. `rebuild/scroll` is superseded (do not
+build on it). `main` is old production; nothing touches it without JJ's say-so.
 
-- `src/pages/index.astro` — ten-beat scroll: arrival, premise, aside, reel, work, Little Dot, how I work, now, come in
-- `src/pages/work.astro` — 45-project archive, the `View all ↳` destination
-- `src/data/projects.json` — project-first, one entry per project with a `roles` array
-- `src/layouts/Scroll.astro`, `src/styles/scroll.css` — monochrome system
+`docs/SITE-SPEC.md` was last updated 2026-08-06 and **predates the 2026-08-17 rounds** — it is
+still canonical for the mechanics and prohibitions, but where it disagrees with the code on this
+branch or with this section, the code and this section win. The 8/17 rounds, in git history and in
+project memory (`jjhouse-website`):
 
-Placeholders in there are deliberate and marked: the hero WebGL surface, the reel video, the Now
-beat, every per-project anecdote, and the beat 05 project selection.
+- **Beats cut by JJ:** 02 premise statement, 03 aside, 07b MORPH, 08 NOW, the credit-ticker role
+  cycling, "( the other half )", "Tell me what you can already see." None of these come back
+  without JJ initiating it. The page currently carries **no thesis copy at all** — deliberate.
+- **Live:** hero "I work with brands and artists on films and campaigns." · positional theme flip
+  (light above the reel midpoint, dark below, both directions, via a composited `body::before`
+  overlay crossfade) · ( connect ) with "Meeting request →" (Google Calendar booking link) +
+  "Email me" · persistent "Menu ::" fab on every page · ( how I work ) is JJ's verbatim copy —
+  do not normalize its lowercase open or missing period · finished stories on UTKM, AMIRI Pacific
+  Flat, Field Journal (`story` arrays in `projects.json`).
+- **Mobile pass (rounds 6-8):** coarse-pointer tap targets · safe-area insets · archive rows
+  restack under 46rem · WORKS ghost letters scale to viewport · reel recede is a rAF lerp (NO CSS
+  transition — reintroducing one brings back the phone jitter) · touch ink: **one finger scrolls
+  and never paints; two fingers paint**, per-finger stroke chains, thinner-than-mouse stamps ·
+  the two-finger hint is **paired ambient wisps in the sim itself** (erode.js TOUCHY branch) —
+  an explicit dots-and-label invite existed for a few hours on 8/17 and JJ cut it; do not bring
+  UI hints back. Feel is live-tunable from any preview URL:
+  `?touchr=&touchf=` (finger stroke radius/force factors, defaults 0.2/0.5) and
+  `?wispr=&wispf=` (wisp factors, defaults 0.05/0.4). When JJ settles on numbers, bake them into
+  `erode.js` defaults.
+- **Remaining real gaps:** 04-A line beside the reel · 06-C Little Dot story · hero second clause
+  (workshop with JJ — sensibilities, not operations) · ( connect ) closing line · Field Journal
+  hero videos + comic pages (on JJ's external drive) · featured-six confirmation + credit fixes.
+
+**Vercel:** project `jjhouse-site`, per-branch previews. Per-deployment URLs freeze at their
+commit — always use the branch alias
+`jjhouse-site-git-preview-blockout-wire-jj-2698s-projects.vercel.app` (login-gated; JJ views
+signed into vercel.com).
 
 ---
 
@@ -96,7 +122,16 @@ read as 2D. The substrate is Blender geo-nodes work, in colour. **This is not th
 He is not comfortable in a terminal. Give GUI steps, or exactly one copy-paste block with no prose
 mixed into it — he once pasted a whole message including file contents into PowerShell.
 
-He works on the **PC** (`C:\Users\jjhou\jjhouse-site`) and keeps docs on the **MacBook**.
-He pushes via **GitHub Desktop**. Nothing touches `main` without his say-so; preview branches only.
+He has GitHub Desktop clones on **both machines** — `C:\Users\jjhou\jjhouse-site` on the PC and
+`/Users/johnhouse/Documents/GitHub/jjhouse-site` on the Mac — and pushes via **GitHub Desktop**.
+Nothing touches `main` without his say-so; preview branches only.
+
+The working loop (proven on the Mac, 2026-08-17; same shape on the PC): the AI session edits a
+clone or its own checkout, verifies the build passes (`npm run build`), delivers changed files
+into JJ's local clone, and **JJ reviews the diff in GitHub Desktop, commits, and pushes** — that
+review is the gate. GitHub Desktop clones default to `main`: confirm the clone is on
+`preview/blockout-wire` (Current Branch dropdown) before delivering files into it. If a session
+has shell access to the clone, treat git as read-only (`status`/`log`/`diff`); index-writing
+commands have left stale `.git/index.lock` files behind on sandboxed mounts.
 
 He iterates at word level and responds far better to options with tradeoffs than to a finished verdict.
