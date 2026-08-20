@@ -1,0 +1,135 @@
+{
+ "bpm": 128,
+ "beatsPerBar": 4,
+ "bars": 16,
+ "loopSeconds": 30.0,
+ "loopFrames24fps": 720,
+ "framesPerBar": 45,
+ "key": "D dorian",
+ "note": "barPitchSets[i] is the set the scroll instrument may play during bar i+1. Both sets are chord tones + safe extensions, so nothing can clash. Transport.position tells you the bar; swap the set on the bar line.",
+ "barPitchSets": [
+  [
+   62,
+   64,
+   65,
+   69,
+   72
+  ],
+  [
+   62,
+   64,
+   65,
+   69,
+   72
+  ],
+  [
+   62,
+   64,
+   65,
+   69,
+   72
+  ],
+  [
+   62,
+   64,
+   65,
+   69,
+   72
+  ],
+  [
+   62,
+   64,
+   65,
+   69,
+   72
+  ],
+  [
+   62,
+   64,
+   65,
+   69,
+   72
+  ],
+  [
+   62,
+   64,
+   65,
+   69,
+   72
+  ],
+  [
+   62,
+   64,
+   65,
+   69,
+   72
+  ],
+  [
+   62,
+   64,
+   67,
+   69,
+   71
+  ],
+  [
+   62,
+   64,
+   67,
+   69,
+   71
+  ],
+  [
+   62,
+   64,
+   67,
+   69,
+   71
+  ],
+  [
+   62,
+   64,
+   67,
+   69,
+   71
+  ],
+  [
+   62,
+   64,
+   67,
+   69,
+   71
+  ],
+  [
+   62,
+   64,
+   67,
+   69,
+   71
+  ],
+  [
+   62,
+   64,
+   67,
+   69,
+   71
+  ],
+  [
+   62,
+   64,
+   67,
+   69,
+   71
+  ]
+ ],
+ "totalityPing": {
+  "midi": 83,
+  "name": "B5",
+  "why": "the dorian 6 - consonant over both chords but OUTSIDE both scroll sets, so it reads as arrival rather than as another scroll note"
+ },
+ "scrollRules": {
+  "minNoteIntervalMs": 117,
+  "quantizeTo": "16n",
+  "maxVoices": 4,
+  "velocityCurve": "inverse - a fast flick is QUIETER than a deliberate scroll"
+ }
+}

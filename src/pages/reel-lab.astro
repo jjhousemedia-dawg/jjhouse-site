@@ -1,0 +1,530 @@
+---
+// /reel-lab — the eclipse dial bench. Not part of the site.
+//
+// ── The model ────────────────────────────────────────────────────────────────
+// Two independent time axes, which is the whole idea:
+//
+//   AMBIENT  wall clock. Reeds, water, and the REEL's 720-frame loop. Never
+//            scrubbed, never stops. The reel does its loop irrespective of
+//            anything the scroll is doing.
+//   ECLIPSE  a pure function of scroll POSITION, 0..1, instantly reversible.
+//            Scroll down and it advances, scroll up and it retreats, let go and
+//            a damped follower settles it while the ambient layer keeps moving.
+//
+// Because eclipse time is a position rather than a playhead, there is no wait
+// and no scroll lock: by the time you have scrolled past the span you ARE at
+// totality. Scroll back up and the eclipse unwinds, then the reel grows back to
+// full-bleed and you are at the top of the page again.
+//
+// ── What the stand-in is faking, and what it is arguing for ──────────────────
+// The three backdrops are JJ's SixnFive reference stills cross-dissolved by `e`.
+// The sun, moon and corona are NOT from the stills — they are drawn procedurally
+// over a sampled sky patch, because a three-key cross-dissolve of three different
+// suns ghosts badly in the middle. That is not a limitation of the stand-in; it
+// is the argument for the real render:
+//
+//   Render THREE ambient loops of the same 720-frame animation under the three
+//   lighting keys (day / crescent / totality) and cross-fade them by `e`, with
+//   the sun/moon/corona held out as a separate scrubbable element. 2,160 frames
+//   instead of the seven-segment plan's 5,040, and the only shape that supports
+//   instant bidirectional scrub. The reel is composited in the browser, so it
+//   loops independently and a re-cut never invalidates the marsh.
+//
+// ── Tunables ─────────────────────────────────────────────────────────────────
+//   ?leadvh=120     scroll span for the reel full-bleed -> receded move
+//   ?handoffvh=70   scroll span over which the marsh hands off to WORKS
+//   ?eclipsevh=220  scroll span for the eclipse dial
+//   ?tau=0.12       follower time constant, seconds. 0 = hard 1:1 to the scrollbar
+//   ?reelw=26 ?reelx=49 ?reelbottom=51   the receded reel rect, % of frame
+//   ?horizon=50.5   waterline the reflection mirrors across
+//   ?refl=0.34 ?reflblur=2.5 ?ripple=1.1
+//   ?sunx=86 ?suny=17 ?sunr=3.1          sun centre and radius, % of frame width
+//   ?glint=0        drop the procedural sun glade, show the stills' own reflection
+//   ?glintstretch=2.4 ?glintop=0.52 ?glintblur=3 ?glintripple=5
+//   ?patch=0        disable the procedural sun, show the stills' own suns
+---
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<meta name="robots" content="noindex" />
+<title>reel-lab — eclipse dial bench</title>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&display=swap" />
+<style>
+  :root { --paper:#F7F2E5; --ink:#0E0D0B; }
+  * { box-sizing:border-box; }
+  body { margin:0; background:#07070a; color:var(--paper);
+         font-family:'IBM Plex Mono',monospace; font-size:11px; letter-spacing:.06em; }
+
+  .stage { position:fixed; inset:0; display:grid; place-items:center; background:#07070a; z-index:1; }
+  .frame { position:relative; aspect-ratio:16/9; width:min(100vw, calc(100vh * 16 / 9)); overflow:hidden; background:#101018; }
+  .bg   { position:absolute; inset:0; width:100%; height:100%; object-fit:cover; }
+  .sky  { position:absolute; inset:0; width:100%; height:100%; pointer-events:none; }
+
+  .reel { position:absolute; transform:translate(-50%,-50%); aspect-ratio:16/9; }
+  .reel video { display:block; width:100%; height:100%; object-fit:cover; }
+  .refl { position:absolute; transform:translate(-50%,-50%); aspect-ratio:16/9; pointer-events:none;
+          -webkit-mask-image:linear-gradient(to bottom, rgba(0,0,0,.95), rgba(0,0,0,0) 88%);
+                  mask-image:linear-gradient(to bottom, rgba(0,0,0,.95), rgba(0,0,0,0) 88%); }
+  .refl canvas { display:block; width:100%; height:100%; }
+  .vig { position:absolute; inset:0; pointer-events:none;
+         background:radial-gradient(ellipse at 50% 45%, transparent 55%, rgba(0,0,0,.35) 100%); }
+
+  .gate { position:fixed; inset:0; z-index:30; display:grid; place-items:center; text-align:center;
+          background:rgba(7,7,10,.72); backdrop-filter:blur(2px); cursor:pointer;
+          text-transform:uppercase; letter-spacing:.22em; }
+  .gate strong { display:block; font-size:13px; font-weight:500; margin-bottom:.9rem; }
+  .gate span { display:block; font-size:10px; opacity:.55; letter-spacing:.14em; line-height:2; }
+  .gate[hidden] { display:none; }
+
+  .hud, .foot {
+    position:fixed; z-index:20; left:0; right:0; display:flex; gap:1.1rem; align-items:center; flex-wrap:wrap;
+    padding:.6rem .9rem; background:rgba(7,7,10,.80); backdrop-filter:blur(6px);
+    font-size:10px; text-transform:uppercase; letter-spacing:.1em;
+  }
+  .hud  { top:0;    border-bottom:1px solid rgba(247,242,229,.16); }
+  .foot { bottom:0; border-top:1px solid rgba(247,242,229,.16); }
+  .hud b, .foot b { font-weight:500; opacity:.45; margin-right:.4em; }
+  .v { font-variant-numeric:tabular-nums; }
+  .seg { color:#ffd9a0; }
+  .lit { color:#9dffb0; }
+  button { font:inherit; text-transform:uppercase; letter-spacing:.1em; background:none; color:inherit;
+           border:1px solid rgba(247,242,229,.4); border-radius:999px; padding:.25rem .7rem; cursor:pointer; }
+  button:hover { background:var(--paper); color:#07070a; }
+  button[aria-pressed="true"] { background:var(--paper); color:#07070a; }
+  .spacer { flex:1 1 auto; }
+
+  .meters { display:flex; gap:.35rem; align-items:flex-end; height:16px; }
+  .meter { width:16px; height:16px; background:rgba(247,242,229,.16); position:relative; }
+  .meter i { position:absolute; left:0; right:0; bottom:0; background:var(--paper); height:0%; }
+  .meter em { position:absolute; top:17px; left:0; font-style:normal; font-size:8px; opacity:.4; }
+
+  .track { flex:1 1 240px; min-width:150px; height:3px; background:rgba(247,242,229,.16); position:relative; }
+  .track i { position:absolute; inset:0 auto 0 0; background:var(--paper); width:0%; }
+  .track s { position:absolute; top:-4px; bottom:-4px; width:1px; background:#ffd9a0; text-decoration:none; }
+
+  .runway { position:relative; z-index:0; }
+  .works { position:relative; z-index:2; min-height:100vh; background:var(--paper); color:var(--ink);
+           display:grid; place-items:center; }
+  .works h2 { margin:0; font-size:clamp(3rem, 14vw, 12rem); letter-spacing:-.02em; font-weight:500; }
+</style>
+</head>
+<body>
+
+<div class="stage" id="stageEl">
+  <div class="frame" id="frame">
+    <img class="bg" id="bgBase"     src="/reel-lab/bg/base.webp"     alt="" />
+    <img class="bg" id="bgCrescent" src="/reel-lab/bg/crescent.webp" alt="" style="opacity:0" />
+    <img class="bg" id="bgTotality" src="/reel-lab/bg/totality.webp" alt="" style="opacity:0" />
+    <canvas class="sky" id="sky" width="1920" height="1080"></canvas>
+
+    <div class="refl" id="refl"><canvas id="reflCanvas" width="320" height="180"></canvas></div>
+    <div class="reel" id="reel">
+      <video id="reelVideo" src="/reel-lab/reel_v04_720p.mp4" muted loop playsinline autoplay preload="auto"></video>
+    </div>
+    <div class="vig"></div>
+  </div>
+</div>
+
+<div class="hud">
+  <span><b>eclipse</b><span class="v seg" id="hE">0.000</span></span>
+  <span><b>stage</b><span class="v" id="hStage">BASE</span></span>
+  <span><b>reel bar</b><span class="v" id="hBar">–</span></span>
+  <span><b>frame</b><span class="v" id="hFrame">–</span></span>
+  <span><b>drift</b><span class="v" id="hDrift">–</span></span>
+  <span><b>fps</b><span class="v" id="hFps">–</span></span>
+  <div class="meters" id="meters"></div>
+  <span class="spacer"></span>
+  <span class="lit" id="hLock"></span>
+  <button id="btnSound" aria-pressed="false">sound</button>
+</div>
+
+<div class="foot">
+  <span><b>dial</b></span>
+  <div class="track" id="track"><i id="trackFill"></i><s style="left:18%"></s><s style="left:52%"></s><s style="left:86%"></s></div>
+  <button data-e="0">base</button>
+  <button data-e="0.35">partial</button>
+  <button data-e="0.69">crescent</button>
+  <button data-e="1">totality</button>
+</div>
+
+<div class="gate" id="gate">
+  <div>
+    <strong>click for sound</strong>
+    <span>the bed is muted until you ask &mdash; same gesture unlocks the audiocontext</span>
+    <span>then scroll: the reel recedes, the eclipse dials in, scroll back up to unwind it</span>
+  </div>
+</div>
+
+<div class="runway" id="runway">
+  <div id="spLead"></div>
+  <div id="spEclipse"></div>
+  <div id="spHandoff"></div>
+  <section class="works"><h2>WORKS</h2></section>
+</div>
+
+<script>
+import { ReelBed, STEMS, BARS, LOOP_FRAMES } from '../scripts/reelbed.js';
+import { EclipseScrub, TotalityPing, ORDER } from '../scripts/eclipse-stage.js';
+
+const q   = new URLSearchParams(location.search);
+const num = (k, d) => { const v = parseFloat(q.get(k)); return Number.isFinite(v) ? v : d; };
+const $   = (id) => document.getElementById(id);
+const clamp01 = (x) => x < 0 ? 0 : x > 1 ? 1 : x;
+const lerp = (a, b, t) => a + (b - a) * t;
+const smooth = (t) => t * t * (3 - 2 * t);
+const smoothstep = (a, b, x) => smooth(clamp01((x - a) / (b - a)));
+
+const cfg = {
+  leadVh:    num('leadvh', 120),
+  eclipseVh: num('eclipsevh', 220),
+  handoffVh: num('handoffvh', 70),
+  tau:       num('tau', 0.12),
+  reelw:     num('reelw', 26),
+  reelx:     num('reelx', 49),
+  reelbottom:num('reelbottom', 51),
+  horizon:   num('horizon', 52),
+  refl:      num('refl', 0.34),
+  reflblur:  num('reflblur', 2.5),
+  ripple:    num('ripple', 1.1),
+  sunx:      num('sunx', 86),
+  suny:      num('suny', 17),
+  sunr:      num('sunr', 3.1),
+  patch:     q.get('patch') !== '0',
+  glint:        q.get('glint') !== '0',
+  glintStretch: num('glintstretch', 2.4),
+  glintOp:      num('glintop', 0.52),
+  glintBlur:    num('glintblur', 7),
+  glintRipple:  num('glintripple', 9),
+};
+
+$('spLead').style.height    = cfg.leadVh + 'vh';
+$('spEclipse').style.height = cfg.eclipseVh + 'vh';
+$('spHandoff').style.height = cfg.handoffVh + 'vh';
+
+const video  = $('reelVideo');
+const bgBase = $('bgBase');
+const bgCres = $('bgCrescent');
+const bgTot  = $('bgTotality');
+const reelEl = $('reel');
+const reflEl = $('refl');
+const rctx   = $('reflCanvas').getContext('2d');
+const sky    = $('sky');
+const sctx   = sky.getContext('2d');
+reflEl.style.filter = `blur(${cfg.reflblur}px)`;
+
+const meterEls = STEMS.map((n) => {
+  const d = document.createElement('div');
+  d.className = 'meter';
+  d.innerHTML = '<i></i><em>' + n.slice(3, 6) + '</em>';
+  $('meters').appendChild(d);
+  return d.querySelector('i');
+});
+
+const bed  = new ReelBed('/reel-lab/audio/');
+const ping = new TotalityPing(bed);
+const dial = new EclipseScrub(bed, {
+  tau: cfg.tau,
+  onTotality: () => { ping.fire(); $('hLock').textContent = 'unlocked'; },
+  onLeaveTotality: () => { $('hLock').textContent = ''; },
+});
+
+let loaded = false;
+bed.load().then(() => { loaded = true; })
+          .catch((e) => { $('hLock').textContent = 'audio failed: ' + e.message; });
+
+async function arm() {
+  if (!loaded || bed.started) return;
+  await bed.start();
+  bed.setMuted(false);
+  $('btnSound').setAttribute('aria-pressed', 'true');
+  $('gate').hidden = true;
+  await video.play().catch(() => {});
+  // The reel has been free-running since page load, so at the moment the bed
+  // arms it can be anywhere in its 30 s. One seek puts it on the clock; after
+  // this, syncVideo only ever has milliseconds to shave.
+  if (video.duration) video.currentTime = bed.phase() * video.duration;
+}
+$('gate').addEventListener('click', arm);
+$('btnSound').addEventListener('click', () => {
+  if (!bed.started) return arm();
+  const next = !bed.muted;
+  bed.setMuted(next);
+  $('btnSound').setAttribute('aria-pressed', String(!next));
+});
+
+// ── scroll is the single source of truth ─────────────────────────────────────
+let leadPx = 0, eclipsePx = 0;
+function measure() {
+  leadPx    = cfg.leadVh    / 100 * innerHeight;
+  eclipsePx = cfg.eclipseVh / 100 * innerHeight;
+}
+function readScroll(snap) {
+  const y = scrollY;
+  const p = clamp01((y - leadPx) / eclipsePx);
+  snap ? dial.snap(p) : dial.request(p);
+  return y;
+}
+measure(); readScroll(true);
+addEventListener('scroll', () => readScroll(false), { passive: true });
+addEventListener('resize', () => { measure(); readScroll(true); });
+
+// The stage buttons scroll the page rather than setting state directly, so scroll
+// position stays the only source of truth and the move is visible.
+function goTo(e) { scrollTo({ top: leadPx + e * eclipsePx, behavior: 'smooth' }); }
+document.querySelectorAll('[data-e]').forEach((b) =>
+  b.addEventListener('click', () => goTo(parseFloat(b.dataset.e))));
+addEventListener('keydown', (ev) => {
+  const map = { '1': 0, '2': 0.35, '3': 0.69, '4': 1 };
+  if (ev.key in map) goTo(map[ev.key]);
+  if (ev.key === 'm' && bed.started) {
+    const n = !bed.muted; bed.setMuted(n);
+    $('btnSound').setAttribute('aria-pressed', String(!n));
+  }
+});
+
+// ── the procedural sun / moon, and its reflection in the water ──────────────
+//
+// The three stills each carry their own sun AND their own sun-glade in the water,
+// and cross-dissolving them ghosts two of each through the middle of the dial. So
+// both are erased and drawn instead — and crucially they are drawn from ONE source
+// canvas, blitted twice: once into the sky, once mirrored and rippled into the
+// water. That is why the reflection can never disagree with the sun. Whatever the
+// dial is showing, the water is showing the same thing.
+//
+// This is the technique to carry into the real render. Hold the sun, moon and
+// corona out of the marsh plates and reflect them in the browser off a water
+// distortion map — the SAME map that carries the reel's reflection. One cheap
+// 720-frame pass buys an accurate reflection for both, and neither one is baked
+// into anything.
+const SUN = { x: cfg.sunx / 100 * 1920, y: cfg.suny / 100 * 1080, r: cfg.sunr / 100 * 1920 };
+const MOON_DIR = { x: 0.86, y: -0.51 };            // moon enters from upper right
+const PATCH_R  = SUN.r * 4.4;                      // covers every still's own sun + corona
+const PATCH_D  = PATCH_R * 2;
+const MIRROR_X = 1920 - SUN.x;                     // clean sky/water at the same height
+const K        = 512 / PATCH_D;                    // frame px -> source-canvas px
+
+const sunCv = document.createElement('canvas'); sunCv.width = sunCv.height = 512;
+const uctx  = sunCv.getContext('2d');
+const patch = document.createElement('canvas'); patch.width = 256; patch.height = 256;
+const pctx  = patch.getContext('2d');
+const wpat  = document.createElement('canvas'); wpat.width = 128; wpat.height = 256;
+const wctx  = wpat.getContext('2d');
+const samp  = document.createElement('canvas'); samp.width = samp.height = 8;
+const sampCtx = samp.getContext('2d', { willReadFrequently: true });
+
+const horizonPx = () => cfg.horizon / 100 * 1080;
+const mirrorY   = () => 2 * horizonPx() - SUN.y;
+
+/**
+ * Erase a region of the stills by stamping real pixels over it, lifted from the
+ * mirrored x position at the same height. A flat averaged colour leaves a visible
+ * halo — the sky brightens toward the sun, so the ring average comes out darker
+ * than its surroundings. Borrowed pixels carry the right gradient and clouds.
+ */
+function stampFrom(ctx2, cv, imgA, imgB, t, sx, sy, rx, ry, dx, dy) {
+  const W = cv.width, H = cv.height;
+  ctx2.globalCompositeOperation = 'source-over';
+  ctx2.globalAlpha = 1;
+  ctx2.clearRect(0, 0, W, H);
+  ctx2.drawImage(imgA, sx - rx, sy - ry, rx * 2, ry * 2, 0, 0, W, H);
+  if (t > 0) { ctx2.globalAlpha = t; ctx2.drawImage(imgB, sx - rx, sy - ry, rx * 2, ry * 2, 0, 0, W, H); }
+  ctx2.globalAlpha = 1;
+  ctx2.globalCompositeOperation = 'destination-in';
+  const m = ctx2.createRadialGradient(W / 2, H / 2, 0, W / 2, H / 2, W / 2);
+  m.addColorStop(0.00, 'rgba(0,0,0,1)');
+  m.addColorStop(0.55, 'rgba(0,0,0,1)');
+  m.addColorStop(1.00, 'rgba(0,0,0,0)');
+  ctx2.save(); ctx2.translate(W / 2, H / 2); ctx2.scale(1, H / W); ctx2.translate(-W / 2, -H / 2);
+  ctx2.fillStyle = m; ctx2.fillRect(-W, -H, W * 3, H * 3); ctx2.restore();
+  ctx2.globalCompositeOperation = 'source-over';
+  sctx.drawImage(cv, dx - rx, dy - ry, rx * 2, ry * 2);
+}
+
+/** One pixel of the blended sky, for tinting the moon. */
+function skyColourAt(imgA, imgB, t) {
+  sampCtx.globalAlpha = 1;
+  sampCtx.drawImage(imgA, MIRROR_X - 4, SUN.y - 4, 8, 8, 0, 0, 8, 8);
+  if (t > 0) { sampCtx.globalAlpha = t; sampCtx.drawImage(imgB, MIRROR_X - 4, SUN.y - 4, 8, 8, 0, 0, 8, 8); }
+  sampCtx.globalAlpha = 1;
+  const d = sampCtx.getImageData(3, 3, 1, 1).data;
+  return [d[0], d[1], d[2]];
+}
+
+/** The single source of truth for what the sun is doing, drawn once per frame. */
+function paintSun(e, skyRGB) {
+  const [r, g, b] = skyRGB;
+  const C = 256, R = SUN.r * K;
+  uctx.clearRect(0, 0, 512, 512);
+  let grd;
+
+  // the glow, dimming as the disc is covered
+  const lit = Math.pow(1 - e, 0.55);
+  grd = uctx.createRadialGradient(C, C, R * 0.6, C, C, R * 3.4);
+  grd.addColorStop(0, `rgba(255,244,214,${0.55 * lit})`);
+  grd.addColorStop(1, 'rgba(255,244,214,0)');
+  uctx.fillStyle = grd; uctx.beginPath(); uctx.arc(C, C, R * 3.4, 0, 7); uctx.fill();
+
+  // the corona, only in the last stretch — the thing worth arriving at
+  const cor = smoothstep(0.86, 1, e);
+  if (cor > 0) {
+    grd = uctx.createRadialGradient(C, C, R * 0.98, C, C, R * 3.1);
+    grd.addColorStop(0.00, `rgba(255,252,245,${0.85 * cor})`);
+    grd.addColorStop(0.18, `rgba(226,232,246,${0.34 * cor})`);
+    grd.addColorStop(1.00, 'rgba(226,232,246,0)');
+    uctx.fillStyle = grd; uctx.beginPath(); uctx.arc(C, C, R * 3.1, 0, 7); uctx.fill();
+  }
+
+  // the disc
+  uctx.fillStyle = `rgba(255,248,228,${0.96 * (1 - smoothstep(0.985, 1, e))})`;
+  uctx.beginPath(); uctx.arc(C, C, R, 0, 7); uctx.fill();
+
+  // the moon, clipped to the disc — a new moon against a bright sky is invisible,
+  // so the only thing that should ever appear is the bite it takes out of the sun.
+  // Opaque, not a punch-out: in the sky it occludes the corona correctly, and in
+  // the additively-composited reflection black adds nothing, so at totality the
+  // water shows the corona ring around a disc where no light arrives.
+  const d = (1 - e) * R * 2.06;
+  uctx.save();
+  uctx.beginPath(); uctx.arc(C, C, R * 1.02, 0, 7); uctx.clip();
+  uctx.fillStyle = `rgb(${Math.max(6, r * 0.12)|0},${Math.max(6, g * 0.12)|0},${Math.max(12, b * 0.16)|0})`;
+  uctx.beginPath(); uctx.arc(C + MOON_DIR.x * d, C + MOON_DIR.y * d, R * 1.02, 0, 7); uctx.fill();
+  uctx.restore();
+}
+
+/**
+ * The sun glade. The same source canvas, flipped about the waterline, stretched
+ * toward the viewer and broken into bands the way a real glitter path is broken by
+ * wave slope. Composited additively, which is what specular light on water is —
+ * so at totality the corona ring adds and the moon adds nothing, and the disc
+ * reads dark by being the one place no light arrives.
+ */
+const GBANDS = 96;
+const glade  = document.createElement('canvas');
+glade.width  = 220;
+glade.height = Math.round(256 * cfg.glintStretch);
+const gctx   = glade.getContext('2d');
+
+function drawGlade(ts) {
+  const gw = glade.width, gh = glade.height;
+  const bhS = 512 / GBANDS, bhD = gh / GBANDS;
+  const amp = cfg.glintRipple * (gw / PATCH_D);      // ripple in glade-canvas px
+
+  // Build the broken reflection at low resolution first. Blurring is per-draw, so
+  // thirty blurred blits straight onto a 1920-wide canvas costs thirty full blurs;
+  // doing it here and blitting once costs one.
+  gctx.globalCompositeOperation = 'source-over';
+  gctx.clearRect(0, 0, gw, gh);
+  for (let i = 0; i < GBANDS; i++) {
+    const off = Math.sin(ts * 1.15 + i * 0.62) * amp * (0.30 + i / GBANDS)
+              + Math.sin(ts * 0.47 + i * 1.90) * amp * 0.45;
+    gctx.drawImage(sunCv,
+      0, 512 - (i + 1) * bhS, 512, bhS,               // flipped: sample bottom-up
+      off, i * bhD, gw, bhD + 1);
+  }
+
+  // taper both ends so the glade dissolves into the water instead of stopping
+  gctx.globalCompositeOperation = 'destination-in';
+  const fade = gctx.createLinearGradient(0, 0, 0, gh);
+  fade.addColorStop(0.00, 'rgba(0,0,0,0)');
+  fade.addColorStop(0.16, 'rgba(0,0,0,1)');
+  fade.addColorStop(0.62, 'rgba(0,0,0,0.85)');
+  fade.addColorStop(1.00, 'rgba(0,0,0,0)');
+  gctx.fillStyle = fade; gctx.fillRect(0, 0, gw, gh);
+  gctx.globalCompositeOperation = 'source-over';
+
+  const Dv = PATCH_D * cfg.glintStretch;
+  sctx.save();
+  sctx.globalCompositeOperation = 'lighter';
+  sctx.globalAlpha = cfg.glintOp;
+  if ('filter' in sctx) sctx.filter = `blur(${cfg.glintBlur}px)`;
+  sctx.drawImage(glade, SUN.x - PATCH_R, mirrorY() - Dv / 2, PATCH_D, Dv);
+  sctx.restore();
+}
+
+function drawSky(e, imgA, imgB, t, ts) {
+  sctx.clearRect(0, 0, 1920, 1080);
+  if (!cfg.patch) return;
+  const skyRGB = skyColourAt(imgA, imgB, t);
+
+  // erase the stills' own sun, and their own reflection of it
+  stampFrom(pctx, patch, imgA, imgB, t, MIRROR_X, SUN.y, PATCH_R, PATCH_R, SUN.x, SUN.y);
+  if (cfg.glint) {
+    const my = mirrorY();
+    stampFrom(wctx, wpat, imgA, imgB, t, MIRROR_X, my, SUN.r * 2.8, SUN.r * 6.0, SUN.x, my);
+  }
+
+  paintSun(e, skyRGB);
+  sctx.drawImage(sunCv, SUN.x - PATCH_R, SUN.y - PATCH_R, PATCH_D, PATCH_D);
+  if (cfg.glint) drawGlade(ts);
+}
+
+// ── the reflection ───────────────────────────────────────────────────────────
+const BANDS = 45;
+function paintReflection(t) {
+  if (video.readyState < 2 || !video.videoHeight) return;
+  const cv = rctx.canvas, w = cv.width, h = cv.height, bh = h / BANDS;
+  const sy = video.videoHeight / h;
+  rctx.clearRect(0, 0, w, h);
+  for (let i = 0; i < BANDS; i++) {
+    const off = Math.sin(t * 1.6 + i * 0.55) * cfg.ripple * (0.35 + i / BANDS);
+    rctx.drawImage(video, 0, (h - (i + 1) * bh) * sy, video.videoWidth, bh * sy,
+                   off, i * bh, w, bh + 1);
+  }
+}
+
+// ── main loop ────────────────────────────────────────────────────────────────
+let fpsT = performance.now(), fpsN = 0, fps = 0;
+function tick(ts) {
+  const y = scrollY;
+  const a = clamp01(y / leadPx);              // reel: full-bleed -> receded
+  const e = dial.update(ts);                  // eclipse: damped scroll position
+  const o = clamp01((y - leadPx - eclipsePx) / (cfg.handoffVh / 100 * innerHeight));  // hand off to WORKS
+
+  // backdrops: base @0, crescent @0.5, totality @1, piecewise cross-dissolve
+  const half = e <= 0.5;
+  const t    = smooth(half ? e / 0.5 : (e - 0.5) / 0.5);
+  bgCres.style.opacity = half ? String(t) : '1';
+  bgTot.style.opacity  = half ? '0'       : String(t);
+  drawSky(e, half ? bgBase : bgCres, half ? bgCres : bgTot, t, ts / 1000);
+
+  // the reel recedes on the lead-in, and the backdrop arrives behind it
+  const ea = smooth(a);
+  const w  = lerp(100, cfg.reelw, ea);
+  const cx = lerp(50,  cfg.reelx, ea);
+  const cy = lerp(50,  cfg.reelbottom - cfg.reelw / 2, ea);
+  reelEl.style.width = w + '%';
+  reelEl.style.left  = cx + '%';
+  reelEl.style.top   = cy + '%';
+  reelEl.style.boxShadow = ea > 0.5 ? '0 0 60px 8px rgba(255,240,210,.10)' : 'none';
+  bgBase.style.opacity = String(smoothstep(0, 0.55, a));
+  sky.style.opacity    = String(smoothstep(0, 0.55, a));
+
+  reflEl.style.width   = w + '%';
+  reflEl.style.left    = cx + '%';
+  reflEl.style.top     = (2 * cfg.horizon - cy) + '%';
+  reflEl.style.opacity = String(cfg.refl * smoothstep(0.55, 1, a));
+
+  $('stageEl').style.opacity = String(1 - o);
+  paintReflection(ts / 1000);
+  const err = bed.syncVideo(video);
+
+  fpsN++; if (ts - fpsT > 500) { fps = Math.round(fpsN * 1000 / (ts - fpsT)); fpsT = ts; fpsN = 0; }
+  $('hE').textContent     = e.toFixed(3);
+  $('hStage').textContent = dial.stage;
+  $('hBar').textContent   = bed.started ? bed.bar() + '/' + BARS : '–';
+  $('hFrame').textContent = bed.started ? bed.frame() + '/' + LOOP_FRAMES : '–';
+  $('hDrift').textContent = bed.started ? (err * 1000).toFixed(0) + 'ms' : '–';
+  $('hFps').textContent   = String(fps);
+  $('trackFill').style.width = (e * 100) + '%';
+  STEMS.forEach((n, i) => { meterEls[i].style.height = (bed.stemGain(n) * 100) + '%'; });
+
+  requestAnimationFrame(tick);
+}
+requestAnimationFrame(tick);
+</script>
+</body>
+</html>

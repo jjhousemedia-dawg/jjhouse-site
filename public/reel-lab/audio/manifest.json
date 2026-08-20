@@ -1,0 +1,28 @@
+{
+  "bpm": 128,
+  "bars": 16,
+  "beatsPerBar": 4,
+  "key": "D dorian",
+  "chords": ["Dm9", "G6/9"],
+  "loopSeconds": 30.0,
+  "loopSamples": 1440000,
+  "loopFrames": 720,
+  "framesPerBar": 45,
+  "fps": 24,
+  "sampleRate": 48000,
+  "stems": [
+    { "id": "01_pulse", "file": "01_pulse.opus", "role": "kick + offbeat hat + rimshot" },
+    { "id": "02_bass",  "file": "02_bass.opus",  "role": "root motion" },
+    { "id": "03_pad",   "file": "03_pad.opus",   "role": "harmony bed - never mutes" },
+    { "id": "04_motif", "file": "04_motif.opus", "role": "sparse top" },
+    { "id": "05_bloom", "file": "05_bloom.opus", "role": "sub pedal + shimmer" }
+  ],
+  "stages": {
+    "BASE":     ["03_pad"],
+    "PARTIAL":  ["01_pulse", "02_bass", "03_pad"],
+    "CRESCENT": ["01_pulse", "02_bass", "03_pad", "04_motif"],
+    "TOTALITY": ["01_pulse", "02_bass", "03_pad", "04_motif", "05_bloom"]
+  },
+  "totalityPing": { "midi": 83, "name": "B5", "note": "dorian 6 - outside both scroll sets" },
+  "scroll": { "pitchSets": "reelbed_scroll_pitchsets.json", "quantizeMs": 117.1875, "maxVoices": 4 }
+}
