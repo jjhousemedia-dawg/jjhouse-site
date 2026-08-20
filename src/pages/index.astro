@@ -31,7 +31,7 @@ const sizes = ['project--l', 'project--r', 'project--xl', 'project--l', 'project
 
 <Scroll loader={true} title="JJ House — Creative Director" desc="JJ House. Creative director in Los Angeles.">
   <!-- ================= 01 ARRIVAL ================= -->
-  <header class="beat arrival">
+  <header class="beat arrival" id="top">
     <div class="arrival__top">
       <div>
         <!-- 01-A trimmed to the plain clause 2026-08-17 (JJ): the second
@@ -169,7 +169,13 @@ const sizes = ['project--l', 'project--r', 'project--xl', 'project--l', 'project
            flows, at the fold it stops — and because the plate rides the
            same pin, reel and environment also LEAVE together when the hold
            runs out (JJ, 2026-08-20 round 2). The script only owns what
-           comes after the pin. -->
+           comes after the pin.
+
+           On PHONES the same beat starts one pose earlier (JJ, 2026-08-20
+           mobile round): the frame arrives scaled to cover the viewport —
+           the reel felt as a 9:16 video — and recedes straight back into
+           the marsh from there. See --entry-cover in scroll.css and the
+           start-pose maths in the loop below. -->
       <div class="reel__frame" id="reelFrame">
         <video
           class="reel__video" id="reelVideo"
@@ -331,7 +337,17 @@ const sizes = ['project--l', 'project--r', 'project--xl', 'project--l', 'project
            calendar asks for a code word. The URL is encrypted into the
            component and is NOT in the built bundle; see ConnectGate.astro. -->
       <ConnectGate />
-      <div class="closing-mark"><Wordmark /></div>
+      <!-- The S in the closing mark is the way back up (JJ, 2026-08-20):
+           hover hints the coil, press compresses it, release fires the
+           spring while the page rides the same tape-rewind the anchor
+           links already use. On touch, a slow idle spring every few
+           seconds does the inviting instead (CSS, hover: none). No
+           caption, deliberately — curiosity is the label. The hit area is
+           an invisible <a href="#top"> over the S's slice of the drawing,
+           so with JS off it is still an ordinary jump-to-top link; the
+           layout's anchor handler carries the Lenis scroll, and the
+           inline script below only owns the spring. -->
+      <div class="closing-mark"><a class="smark" id="sTop" href="#top" aria-label="Back to top"></a><Wordmark /></div>
     </div>
     <div class="colophon">
       <span class="meta">&copy; 2026 JJ House &middot; Los Angeles</span>
@@ -377,16 +393,31 @@ const sizes = ['project--l', 'project--r', 'project--xl', 'project--l', 'project
       const reduce = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
 
       // ---- the flip point. Ruled by JJ 2026-08-17: strictly positional. ----
-      // Above the reel's midpoint = always light, below = always dark, no
-      // one-way latch. Evaluated on load, scroll, resize, and pageshow so a
-      // refresh mid-page or a back/forward return can never strand the page
-      // in the wrong mode (the old one-way IntersectionObserver did exactly
-      // that when scroll restoration landed past the reel).
+      // Both directions, no one-way latch. Evaluated on load, scroll,
+      // resize, and pageshow so a refresh mid-page or a back/forward return
+      // can never strand the page in the wrong mode (the old one-way
+      // IntersectionObserver did exactly that when scroll restoration
+      // landed past the reel).
+      //
+      // WHERE it flips, re-ruled 2026-08-20 (JJ, mobile pass): the moment
+      // the recede has fully settled — the marsh is fully seen, the plate
+      // still covers the whole viewport, so the 900ms crossfade runs where
+      // nobody can see it. The old midpoint rule put the flip 2svh AFTER
+      // the pin released on phones (hold 95svh, section midpoint 97.5svh),
+      // so the fade played out in the open on the way into Works — the
+      // "extra beat of background colour change" JJ flagged. The recede
+      // loop hands the settle distance over via settlePx (it already knows
+      // travel, including any ?travel= override); the midpoint rule stays
+      // as the fallback for reduced motion, where there is no recede.
       const reel = document.getElementById('reel');
+      let settlePx = null;   // set by the recede loop's measure()
+      let setTheme = () => {};
       if (reel) {
-        const setTheme = () => {
+        setTheme = () => {
           const r = reel.getBoundingClientRect();
-          const dark = r.top + r.height / 2 <= window.innerHeight / 2;
+          const dark = settlePx != null
+            ? -r.top >= settlePx
+            : r.top + r.height / 2 <= window.innerHeight / 2;
           document.body.classList.toggle('is-dark', dark);
         };
         addEventListener('scroll', setTheme, { passive: true });
@@ -417,7 +448,7 @@ const sizes = ['project--l', 'project--r', 'project--xl', 'project--l', 'project
       if (frame && reel && !reduce) {
         let cur = 0, raf = null, idle = 0;
         // read once per resize, not per frame: all are media-query values
-        let travel = 0, svh = 0, sEnd = 0.34, dxEnd = 0, yEnd = 0, line = 0;
+        let travel = 0, svh = 0, sEnd = 0.34, dxEnd = 0, yEnd = 0, line = 0, cover = 0;
         const stage = reel.querySelector('.reel__stage');
         const shadow = reel.querySelector('.reel__shadow');
         const pic = frame.querySelector('.reel__video');
@@ -431,6 +462,13 @@ const sizes = ['project--l', 'project--r', 'project--xl', 'project--l', 'project
           let sy = parseFloat(cs.getPropertyValue('--screen-y')) || 0.4546;
           let cap = parseFloat(cs.getPropertyValue('--recede-cap')) || 1;
           line = parseFloat(cs.getPropertyValue('--frame-line')) || 0;
+          // --entry-cover: how much of the viewport the frame fills at the
+          // START of the beat. 0 (desktop) = the noth.in full-width entry,
+          // untouched. 1 (phones) = the frame arrives scaled to COVER the
+          // pin — a 9:16 centre-crop of the 16:9 cut, the reel felt as a
+          // portrait video — and the recede pulls it straight back out of
+          // that into the marsh. Unitless, like every knob here.
+          cover = parseFloat(cs.getPropertyValue('--entry-cover')) || 0;
           // ⛔ --recede-travel is a UNITLESS MULTIPLIER, deliberately.
           // getComputedStyle hands back custom properties as raw tokens, so
           // a value of `100svh` parseFloats to 100 and the recede finished
@@ -456,6 +494,7 @@ const sizes = ['project--l', 'project--r', 'project--xl', 'project--l', 'project
           if (q.has('cap'))    cap    = parseFloat(q.get('cap'))    || cap;
           if (q.has('travel')) travel = svh * (parseFloat(q.get('travel')) || 1);
           if (q.has('bw'))     line   = parseFloat(q.get('bw'))     || line;
+          if (q.has('cover'))  { const v = parseFloat(q.get('cover')); if (isFinite(v)) cover = v; }
 
           // Project the slot through the plate's cover-crop, so the settled
           // reel matches the Blender construction at ANY viewport:
@@ -470,13 +509,31 @@ const sizes = ['project--l', 'project--r', 'project--xl', 'project--l', 'project
           sEnd  = Math.min((sw * dw) / pw, cap);   // settled scale of the full-width frame
           dxEnd = ox + sx * dw - pw / 2;           // 0 while the slot is centred
           yEnd  = oy + sy * dh;                    // settled BOTTOM edge of the picture
+
+          // hand the settle distance to the theme flip: dark the moment
+          // the recede completes, while the plate still owns the viewport
+          settlePx = travel;
+          setTheme();
         };
         const tick = () => {
           const r = reel.getBoundingClientRect();
           const target = Math.min(1, Math.max(0, -r.top / travel));
           cur += (target - cur) * 0.16;
           if (Math.abs(target - cur) < 0.0004) { cur = target; idle++; } else { idle = 0; }
-          const s = 1 - cur * (1 - sEnd);          // current scale
+          const F = frame.offsetHeight;
+          const V = (pic && pic.offsetHeight) || F;
+          // THE START (JJ, 2026-08-20 mobile round): the old start was
+          // scale 1 / translate 0 — full width, top of the pin — which on
+          // a phone is a short strip at the TOP of the screen that then
+          // shrinks and slides DOWN to the slot: it read as falling, not
+          // receding. Now the start pose is its own keyframe: scaled to
+          // cover the pin (s0) and centred in it (dy0), and the recede
+          // lerps pose-to-pose on one clock, so the reel pulls straight
+          // back off the glass into the scene. cover = 0 collapses s0 to
+          // 1 and dy0 to 0: the desktop entry, bit-for-bit.
+          const s0  = 1 + Math.max(0, svh / F - 1) * cover;
+          const dy0 = ((svh - F) / 2) * cover;
+          const s = s0 + (sEnd - s0) * cur;        // current scale
           frame.style.setProperty('--recede', String(s));
           // The frame sits at the pin's top and scales about its own
           // centre, so the picture's bottom edge sits at F/2 + (V - F/2)·s
@@ -485,10 +542,9 @@ const sizes = ['project--l', 'project--r', 'project--xl', 'project--l', 'project
           // on the same eased clock as the scale. Applied left of scale()
           // in the transform list, so the offset is in real pixels and
           // does not shrink with it.
-          const F = frame.offsetHeight;
-          const V = (pic && pic.offsetHeight) || F;
           const dyEnd = yEnd - F / 2 - (V - F / 2) * sEnd;
-          frame.style.setProperty('--reeldy', (dyEnd * cur).toFixed(1) + 'px');
+          const dy = dy0 + (dyEnd - dy0) * cur;
+          frame.style.setProperty('--reeldy', dy.toFixed(1) + 'px');
           frame.style.setProperty('--reeldx', (dxEnd * cur).toFixed(1) + 'px');
 
           // The frame line: eased in with the recede (full-bleed carries
@@ -503,7 +559,7 @@ const sizes = ['project--l', 'project--r', 'project--xl', 'project--l', 'project
           // is full-bleed, gone again by the time it reaches the slot,
           // where the rendered water reflection takes over.
           if (shadow) {
-            const bottomNow = dyEnd * cur + F / 2 + (V - F / 2) * s;
+            const bottomNow = dy + F / 2 + (V - F / 2) * s;
             const shw = (pic ? pic.offsetWidth : frame.offsetWidth) * s * 0.92;
             const shh = Math.max(12, shw * 0.10);
             shadow.style.setProperty('--shw', shw.toFixed(1) + 'px');
@@ -641,6 +697,29 @@ const sizes = ['project--l', 'project--r', 'project--xl', 'project--l', 'project
           rv.pause();
           rv.style.cursor = 'pointer';
           rv.addEventListener('click', () => { if (rv.paused) rv.play(); else rv.pause(); });
+        }
+      }
+
+      // ---- the S fires you back to the top (JJ, 2026-08-20) ----------
+      // The scroll itself belongs to the layout's anchor handler (the
+      // .smark is a real #top link); this only owns the spring. The
+      // animation restarts by class removal + a forced style flush —
+      // getBoundingClientRect, not offsetWidth, because an SVG <g> has
+      // no offsetWidth. animationend is filtered by name so the touch
+      // idle spring (s-idle, same element) can never eat the class.
+      const sTop = document.getElementById('sTop');
+      if (sTop && !reduce) {
+        const mark = sTop.closest('.closing-mark');
+        const sGlyph = mark && mark.querySelector('.wm-s');
+        if (sGlyph) {
+          sTop.addEventListener('click', () => {
+            sGlyph.classList.remove('is-firing');
+            void sGlyph.getBoundingClientRect().width;
+            sGlyph.classList.add('is-firing');
+          });
+          sGlyph.addEventListener('animationend', (e) => {
+            if (e.animationName === 's-fire') sGlyph.classList.remove('is-firing');
+          });
         }
       }
 

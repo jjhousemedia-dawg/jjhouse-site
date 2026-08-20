@@ -113,6 +113,28 @@ project memory (`jjhouse-website`):
   bake winners into `scroll.css`. ⛔ Never cancel a sticky element's flow height with a
   negative bottom margin — sticky clamps the margin box; that bug bled the marsh a viewport
   into Works.
+- **Mobile round + players + the S (2026-08-20 round 4):** phones get their own full-screen
+  reel moment — the frame STARTS scaled to cover the pin (a 9:16 centre-crop of the cut,
+  `--entry-cover: 1` under 46rem, `?cover=` tunes) and the recede lerps pose-to-pose to the
+  slot, so it reads as pulling straight back instead of shrinking down the page; the pin gets
+  `overflow-x: clip` (clip, never hidden — hidden grows scrollWidth) for the crop's side
+  overflow. The theme flip now lands the moment the recede SETTLES (`settlePx` handed from the
+  recede loop to `setTheme`), so the 900ms crossfade runs while the plate still owns the
+  viewport — the old midpoint rule fired 2svh AFTER the pin released on phones and the fade
+  played out in the open before Works; midpoint stays as the reduced-motion fallback. The
+  two-finger paint ZONE (erode.js `uZoneRect`) allows ink at full strength from the deck line
+  to the reel frame's top, full width — the wordmark video rect was silently fencing phones to
+  a ~220px band (`?zone=0` restores, `?zonefade=` tunes). The work overlay's players are
+  stripped to zero host chrome (`controls=0` both hosts; Vimeo honours it only on paid-owner
+  videos, best-effort by ruling until Mux), autoplay MUTED on open, a transparent shield drives
+  play/pause over postMessage so host hover chrome never wakes, and one site-styled Sound pill
+  unmutes; the static `/work/` pages deliberately KEEP native controls — they are the no-JS
+  fallback and postMessage needs JS. The closing mark's S is the back-to-top control: hover
+  hints the coil, press loads it, release fires `s-fire` while the layout's anchor handler
+  rides the `#top` link (the hero now carries `id="top"`); touch gets a slow `s-idle` breath
+  instead of hover; no caption by ruling. The S animates the `<g class="wm-s">` wrapper in
+  Wordmark.astro — a CSS transform directly on the path would REPLACE its attribute
+  translate/flip and throw the glyph off the canvas.
 - **Remaining real gaps:** 04-A line beside the reel · 06-C Little Dot story · hero second clause
   (workshop with JJ — sensibilities, not operations) · ( connect ) closing line · Field Journal
   hero videos + comic pages (on JJ's external drive) · featured-six confirmation + credit fixes.

@@ -224,6 +224,8 @@ uniform float uPlaneAspect;
 uniform float uDebug;
 uniform vec4  uRevealRect;   // canvas-uv placement (x, y bottom-left, w, h); w<=0 = cover path
 uniform float uRectFade;     // edge dissolve half-width, as a fraction of the rect
+uniform vec4  uZoneRect;     // canvas-uv PAINT ZONE (deck line -> reel top); w<=0 = off
+uniform vec2  uZoneFade;     // zone edge dissolve half-width, rect units per axis
 vec2 coverUv(vec2 uv, float imageAspect, float planeAspect){
   vec2 ratio = vec2(
     min(planeAspect / imageAspect, 1.0),
@@ -251,6 +253,20 @@ void main(){
   } else {
     revealUv = coverUv(vUv, uRevealImageAspect, uPlaneAspect);
     revealUv = clamp(revealUv, 0.001, 0.999);
+  }
+  // The paint ZONE (JJ, 2026-08-20 mobile round): ink may show anywhere
+  // between the deck line and the reel frame's top, at full strength,
+  // not only inside the video rect's fade. Outside the rect the clamped
+  // revealUv keeps feeding the border rows' colours, so torn ink piles
+  // up beyond the letters — which is what the desktop rect (a viewport
+  // tall) was already doing by accident, and what the phone rect (a
+  // ~220px band) was fencing off. max(), so the zone can only ADD.
+  if (uZoneRect.z > 0.0) {
+    vec2 zuv = (vUv - uZoneRect.xy) / uZoneRect.zw;
+    vec2 ez = min(zuv, vec2(1.0) - zuv);
+    float zoneAtt = smoothstep(-uZoneFade.x, uZoneFade.x, ez.x)
+                  * smoothstep(-uZoneFade.y, uZoneFade.y, ez.y);
+    rectAtt = max(rectAtt, zoneAtt);
   }
   vec4 revealColor = texture(uRevealTexture, revealUv);
   float raw  = dye * uRevealSize;
@@ -377,6 +393,18 @@ export function initErode(surface){
   const VID_FADE = Math.max(k('vidfade', 0.10), 0.002);  // method-A dissolve half-width
   let videoTex = null, videoReady = false, lastVidT = -1;
   let revealRect = [0, 0, 0, 0];
+
+  // The paint ZONE (JJ, 2026-08-20 mobile round): the band where ink is
+  // allowed to appear at full strength — the deck line down to the reel
+  // frame's top, full width. On desktop the video rect is about a
+  // viewport tall so painting already FELT unfenced; on a phone that
+  // rect is a ~220px band around the mark, which is why two-finger
+  // painting seemed to only work "near the wordmark". Same zone on both
+  // — it just only changes what phones see. ?zone=0 restores the old
+  // fencing; ?zonefade= tunes the edge dissolve in px.
+  const ZONE_ON = k('zone', 1);
+  const ZONE_FADE_PX = Math.max(k('zonefade', 48), 1);
+  let zoneRect = [0, 0, 0, 0], zoneFade = [0.001, 0.001];
   if (video) {
     videoTex = texA();
     gl.bindTexture(gl.TEXTURE_2D, videoTex);
@@ -396,8 +424,29 @@ export function initErode(surface){
   // canvas and the mark relative to each other, so this only needs to run
   // on build/resize/metadata, not per frame.
   function placeRect(){
-    if (!video) return;
     const cr = canvas.getBoundingClientRect();
+
+    // the zone first — it does not need the video. Measured off the live
+    // rects of the deck and the reel SECTION (never the frame: its
+    // transform moves). Canvas and both anchors ride the same document,
+    // so the differences are scroll-independent; build/resize/metadata
+    // is enough, same as the reveal rect.
+    zoneRect = [0, 0, 0, 0];
+    if (ZONE_ON && cr.width && cr.height) {
+      const deckEl = hero.querySelector('.arrival__deck');
+      const reelEl = document.getElementById('reel');
+      if (deckEl && reelEl) {
+        const zTop = deckEl.getBoundingClientRect().top - cr.top;
+        const zBot = reelEl.getBoundingClientRect().top - cr.top;
+        const zH = Math.min(zBot, cr.height) - Math.max(zTop, 0);
+        if (zH > 4) {
+          zoneRect = [0, 1 - Math.min(zBot, cr.height) / cr.height, 1, zH / cr.height];
+          zoneFade = [ZONE_FADE_PX / cr.width, ZONE_FADE_PX / zH];
+        }
+      }
+    }
+
+    if (!video) return;
     const mr = textEl.getBoundingClientRect();
     if (!cr.width || !cr.height || !mr.width) { revealRect = [0, 0, 0, 0]; return; }
     const va = (video.videoWidth && video.videoHeight)
@@ -786,6 +835,8 @@ export function initErode(surface){
       gl.uniform4f(P.composite.u.uRevealRect, 0, 0, 0, 0);
     }
     gl.uniform1f(P.composite.u.uRectFade, VID_FADE);
+    gl.uniform4f(P.composite.u.uZoneRect, zoneRect[0], zoneRect[1], zoneRect[2], zoneRect[3]);
+    gl.uniform2f(P.composite.u.uZoneFade, zoneFade[0], zoneFade[1]);
     draw(null);
 
     frameNo++;
