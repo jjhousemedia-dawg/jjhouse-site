@@ -21,19 +21,34 @@
   "projects": [
     {
       "slug": "redondo-red-stories-to-tell",
-      "title": "Redondo Red — Stories to Tell",
+      "title": "Redondo Red — Stories to tell",
       "artist": "Redondo Red",
-      "work": "Stories to Tell",
+      "work": "Stories to tell",
       "video": {
         "type": "youtube",
         "id": "nC3fdpPx-II"
       },
       "roles": [
-        "Direct"
+        "Direct",
+        "Edit",
+        "VFX"
       ],
       "category": "work",
       "featured": false,
-      "anecdote": null
+      "anecdote": "The concept was Redondo on the run, fleeing south, dodging death at every corner. Then I found out Brendon and Tanya were about to have a baby, and the quieter story took over. We shot in their house, with their Cortez, their truck, their dog. A time capsule of their life, on celluloid. Full story inside.",
+      "story": [
+        "When I first listened to Stories to tell, I knew the music video had to be an epic. And just like the content of the song, the process of making it became a self-reflective practice—unlocking meaning, identity, and importance along the way.",
+        "The initial concept had Redondo on the run—fleeing south across the border, dodging death at every corner. But with more playthroughs, and learning what was happening in Brendon’s real life, I realized there was a quieter, and far more monumental, story to tell.",
+        "Brendon and Tanya were expecting a child. Well—more than expecting. Tanya was basically about to pop.",
+        "But did that also mean Redondo Red was expecting a child?<br>Is the artist the man, and vice versa?<br>How do real-life moments—especially ones of pure, undeniable greatness—impact the identity of the artist?",
+        "Those questions danced around in my head as my DoP, Pedro, and I set out to film.",
+        "I’m still amazed by the honesty and involvement Brendon and Tanya brought to this. As I tried to navigate the heady tension between the Artist, the Man, and his Family, they offered every element of their real lives. Where we filmed is where they lived. The Cortez was theirs. The truck. The wardrobe. The dog… Hazel!",
+        "A time capsule of their life, caught on celluloid.",
+        "I’d rather not prescribe much more intention to the piece. It should speak for itself.",
+        "But do I think you’ll like it? Yes.<br>Is it true to heart? Absolutely.<br>Did I say what I meant to say? I’m not sure.",
+        "But hey—if I tried, and if I failed… at least I…"
+      ],
+      "credits": "dp Pedro Bringas · starring Redondo Red & Tanya · film, dev + scan Spectra Film · a West of 20 post · JJ House: director, editor, VFX"
     },
     {
       "slug": "gnome-sometimes-the-grass-is-greener",
