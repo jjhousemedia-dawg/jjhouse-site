@@ -53,7 +53,7 @@ Project memory carries the same state under `jjhouse-website` and `jjhouse-infra
 
 ---
 
-## Current state — as of 2026-08-17
+## Current state — as of 2026-08-19
 
 Branch **`preview/blockout-wire`** is the active build. `rebuild/scroll` is superseded (do not
 build on it). `main` is old production; nothing touches it without JJ's say-so.
@@ -82,6 +82,20 @@ project memory (`jjhouse-website`):
   `?touchr=&touchf=` (finger stroke radius/force factors, defaults 0.2/0.5) and
   `?wispr=&wispf=` (wisp factors, defaults 0.05/0.4). When JJ settles on numbers, bake them into
   `erode.js` defaults.
+- **Work overlay (2026-08-19, sixnfive.com reference):** featured cards and every
+  archive row open the project as a full-viewport overlay (`WorkOverlay.astro`)
+  instead of navigating away — archive rows no longer hand visitors to
+  youtube.com. The host's player (youtube-nocookie / player.vimeo, white
+  progress bar, minimal chrome) embeds immediately; content is lifted from the
+  project's own static /work/ page (fetch + parse — one source of truth, no
+  AJAX endpoint, still pure static). The exit is the scroll: opacity maps over
+  a 72svh tail zone with a ( keep scrolling ) cue, bottom releases you back to
+  the page you left, at the spot you left it. URL pushStates to /work/slug
+  while open; ESC and the back button quietly work; scroll is the only
+  VISIBLE exit (all four calls ruled by JJ 8/19). Story-less projects show
+  clean — title, roles, player — never the bracket scaffold. The overlay rides
+  its own Lenis instance; the page Lenis stops underneath, menu-fab (z 900)
+  stays above the overlay (z 800).
 - **Remaining real gaps:** 04-A line beside the reel · 06-C Little Dot story · hero second clause
   (workshop with JJ — sensibilities, not operations) · ( connect ) closing line · Field Journal
   hero videos + comic pages (on JJ's external drive) · featured-six confirmation + credit fixes.

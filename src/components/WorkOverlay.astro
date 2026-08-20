@@ -1,0 +1,309 @@
+---
+/**
+ * Work overlay — 2026-08-19. The sixnfive.com step-in / scroll-out.
+ *
+ * Reference mechanic (read out of their theme JS, main.js + project.js):
+ * clicking a project keeps the page you were on exactly where it is, lays a
+ * full-viewport frame over it with its own scroll, loads the project into
+ * that frame, and pushes the project URL. There is no close button. The way
+ * out is THE SCROLL: when the frame's own scroll reaches its bottom, the
+ * frame fades and you are back on the page you left, at the spot you left it.
+ * (Their version snaps to a 600ms fade at the very bottom; ours maps the
+ * fade onto the last stretch of scroll — the tail — so the page underneath
+ * reappears WITH the gesture, which is the feel JJ actually described.)
+ *
+ * Ruled by JJ 2026-08-19:
+ * - Player: the host's player (youtube-nocookie / player.vimeo), embedded
+ *   immediately when the overlay opens. You clicked to see the work; it is
+ *   ready. No autoplay. White progress bar, minimal chrome — the b/w system.
+ * - Story-less projects (43 of 46): clean — title, roles, player, credits.
+ *   The four-line bracket scaffold stays a standalone-page thing; a cold
+ *   viewer in the overlay never meets empty brackets.
+ * - URL: pushState to /work/slug while open. Shareable and honest — the
+ *   copied link is the project's real page. Back closes the overlay.
+ * - Exit: scroll is the only VISIBLE exit. ESC and the back button quietly
+ *   work. A faint ( keep scrolling ) cue sits in the tail.
+ *
+ * How content gets here: no AJAX endpoint exists and none is allowed (pure
+ * static, JJ ruled 8/18 against an adapter). But every project already HAS a
+ * static page — /work/[slug]/ — so the overlay fetches that built HTML,
+ * parses it, and lifts the pieces it wants. One source of truth, and with
+ * JS off the links are ordinary navigations to those same pages.
+ *
+ * Scroll feel: the page Lenis is stopped while the overlay is up (same shape
+ * as the menu) and a second Lenis instance rides the overlay's own wrapper,
+ * so the frame scrolls like the rest of the site. Destroyed on close.
+ */
+---
+<section class="wo" id="wo" hidden role="dialog" aria-modal="true" aria-label="Project" tabindex="-1">
+  <div class="wo__scroll" id="woScroll">
+    <div class="wo__inner" id="woInner">
+      <p class="wo__loading label">( loading )</p>
+      <article class="wo__body" id="woBody"></article>
+      <div class="wo__tail" aria-hidden="true">
+        <span class="wo__cue label">( keep scrolling )</span>
+      </div>
+    </div>
+  </div>
+</section>
+
+<script>
+  import Lenis from 'lenis';
+
+  const wo = document.getElementById('wo');
+  const scroller = document.getElementById('woScroll');
+  const inner = document.getElementById('woInner');
+  const body = document.getElementById('woBody');
+  const tail = wo && wo.querySelector('.wo__tail');
+
+  if (wo && scroller && inner && body && tail) {
+    const reduce = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    // The page this script was built into — '/' or '/work'. Read once,
+    // before any pushState muddies location.pathname.
+    const HOST_PATH = location.pathname;
+
+    let isOpen = false;
+    let closing = false;
+    let releasing = false;
+    let lenis2 = null;
+    let raf2 = 0;
+    let lastFocus = null;
+
+    // ---- fetch + cache. pointerover prefetch makes most opens instant. ----
+    const cache = new Map();
+    const fetchProject = (slug) => {
+      if (!cache.has(slug)) {
+        const p = fetch(`/work/${slug}/`).then((r) => {
+          if (!r.ok) throw new Error(String(r.status));
+          return r.text();
+        });
+        // a failed fetch must not poison the cache
+        p.catch(() => { cache.delete(slug); });
+        cache.set(slug, p);
+      }
+      return cache.get(slug);
+    };
+
+    const slugFrom = (a) => {
+      if (a.origin !== location.origin) return null;
+      const m = a.pathname.match(/^\/work\/([^/]+)\/?$/);
+      return m ? m[1] : null;
+    };
+
+    // ---- the player. Host chrome kept to the floor; colour is the work's. ----
+    const esc = (s) => String(s).replace(/&/g, '&amp;').replace(/"/g, '&quot;').replace(/</g, '&lt;');
+    const embed = (type, id, title) => {
+      const src = type === 'youtube'
+        ? `https://www.youtube-nocookie.com/embed/${encodeURIComponent(id)}?rel=0&modestbranding=1&playsinline=1&color=white`
+        : `https://player.vimeo.com/video/${encodeURIComponent(id)}?color=ffffff&title=0&byline=0&portrait=0&dnt=1`;
+      return `<div class="pp__media wo__media"><iframe src="${src}" title="${esc(title)}" allow="autoplay; fullscreen; picture-in-picture; encrypted-media" allowfullscreen></iframe></div>`;
+    };
+
+    const render = (html, slug) => {
+      const doc = new DOMParser().parseFromString(html, 'text/html');
+      const pp = doc.querySelector('.pp');
+      if (!pp) throw new Error('unexpected page shape');
+      const pick = (sel) => {
+        const el = pp.querySelector(sel);
+        return el ? el.outerHTML : '';
+      };
+      const media = pp.querySelector('#ppMedia');
+      const mediaHtml = media
+        ? embed(media.dataset.type, media.dataset.vid, media.dataset.title || 'Video')
+        : '';
+      // Clean shape (JJ, 8/19): the bracket scaffold (.pp__anecdote) is
+      // deliberately NOT picked. Story and credits ride along when they exist.
+      body.innerHTML =
+        pick('.pp__title') +
+        pick('.pp__roles') +
+        mediaHtml +
+        pick('.pp__story') +
+        pick('.pp__credits') +
+        pick('.pp__next');
+      body.dataset.slug = slug;
+    };
+
+    // ---- overlay scroll: the fade IS the scroll ----------------------------
+    // Opacity maps over the tail zone, so the page underneath resolves in
+    // exactly as fast as the visitor commits — and scrolling back up
+    // un-fades. Bottom = release.
+    const onScroll = () => {
+      if (!isOpen || closing) return;
+      const max = scroller.scrollHeight - scroller.clientHeight;
+      if (max <= 0) return;
+      const zone = Math.min(tail.offsetHeight || 1, max);
+      const t = Math.min(1, Math.max(0, (scroller.scrollTop - (max - zone)) / zone));
+      wo.style.opacity = String(1 - t * t); // gentle start, committed end
+      if (scroller.scrollTop >= max - 1 && !releasing) {
+        releasing = true;
+        exitByScroll();
+      }
+    };
+    scroller.addEventListener('scroll', onScroll, { passive: true });
+
+    const startLenis2 = () => {
+      if (reduce) return;
+      lenis2 = new Lenis({
+        wrapper: scroller,
+        content: inner,
+        duration: 1.05,
+        easing: (t) => Math.min(1, 1.001 - Math.pow(2, -10 * t)),
+        smoothWheel: true,
+        touchMultiplier: 1.6,
+      });
+      const loop = (time) => {
+        if (!lenis2) return;
+        lenis2.raf(time);
+        raf2 = requestAnimationFrame(loop);
+      };
+      raf2 = requestAnimationFrame(loop);
+    };
+    const stopLenis2 = () => {
+      cancelAnimationFrame(raf2);
+      if (lenis2) { lenis2.destroy(); lenis2 = null; }
+    };
+
+    // ---- lifecycle ---------------------------------------------------------
+    const openOverlay = async (slug, push = true) => {
+      if (isOpen) return;
+      isOpen = true;
+      releasing = false;
+      lastFocus = document.activeElement;
+      body.innerHTML = '';
+      wo.classList.add('is-loading');
+      wo.hidden = false;
+      document.documentElement.classList.add('wo-open');
+      if (window.__lenis) window.__lenis.stop();
+      wo.style.transition = reduce ? 'none' : 'opacity 600ms var(--ease)';
+      wo.style.opacity = '0';
+      void wo.offsetWidth; // commit the start frame
+      wo.style.opacity = '1';
+      // hand opacity over to the scroll map once the entrance lands
+      setTimeout(() => { wo.style.transition = 'none'; }, reduce ? 0 : 620);
+      if (push) history.pushState({ wo: slug }, '', `/work/${slug}`);
+      scroller.scrollTop = 0;
+      startLenis2();
+      wo.focus({ preventScroll: true });
+      try {
+        const html = await fetchProject(slug);
+        if (!isOpen) return;
+        render(html, slug);
+      } catch (err) {
+        // dead overlay is worse than a page load — fall through to the real page
+        location.href = `/work/${slug}`;
+        return;
+      }
+      wo.classList.remove('is-loading');
+    };
+
+    const teardown = () => {
+      isOpen = false;
+      releasing = false;
+      stopLenis2();
+      wo.hidden = true;
+      wo.style.opacity = '0';
+      body.innerHTML = '';
+      document.documentElement.classList.remove('wo-open');
+      if (window.__lenis) window.__lenis.start();
+      if (lastFocus && lastFocus.focus) lastFocus.focus({ preventScroll: true });
+    };
+
+    // Scroll exit: the fade already happened WITH the scroll; the overlay is
+    // at opacity 0. Consume the history entry we pushed — the popstate
+    // handler below sees `closing` and finishes at once.
+    const exitByScroll = () => {
+      if (!isOpen || closing) return;
+      closing = true;
+      history.back();
+    };
+
+    // ESC / "All work" while the archive is underneath: quick fade, then
+    // walk history back so the stack stays clean.
+    const closeThenBack = () => {
+      if (!isOpen || closing) return;
+      closing = true;
+      wo.style.transition = reduce ? 'none' : 'opacity 420ms var(--ease)';
+      wo.style.opacity = '0';
+      setTimeout(() => {
+        closing = false;
+        teardown();
+        history.back();
+      }, reduce ? 0 : 430);
+    };
+
+    window.addEventListener('popstate', (e) => {
+      const st = e.state;
+      if (isOpen && !(st && st.wo)) {
+        if (closing) {
+          // scroll exit completing — already faded
+          closing = false;
+          teardown();
+        } else {
+          // real back button
+          closing = true;
+          wo.style.transition = reduce ? 'none' : 'opacity 420ms var(--ease)';
+          wo.style.opacity = '0';
+          setTimeout(() => { closing = false; teardown(); }, reduce ? 0 : 430);
+        }
+      } else if (!isOpen && st && st.wo) {
+        // forward button back into a project
+        openOverlay(st.wo, false);
+      }
+    });
+
+    window.addEventListener('keydown', (e) => {
+      if (e.key !== 'Escape' || !isOpen) return;
+      const menu = document.getElementById('menu');
+      if (menu && !menu.hidden) return; // menu's own ESC wins
+      closeThenBack();
+    });
+
+    // ---- in-overlay navigation: Next swaps in place ------------------------
+    const swap = async (slug) => {
+      try {
+        const p = fetchProject(slug);
+        body.classList.add('is-swapping');
+        const html = await p;
+        if (!isOpen) return;
+        render(html, slug);
+        history.replaceState({ wo: slug }, '', `/work/${slug}`);
+        if (lenis2) lenis2.scrollTo(0, { immediate: true });
+        scroller.scrollTop = 0;
+        wo.style.opacity = '1';
+        requestAnimationFrame(() => body.classList.remove('is-swapping'));
+      } catch (err) {
+        location.href = `/work/${slug}`;
+      }
+    };
+
+    document.addEventListener('click', (e) => {
+      if (e.defaultPrevented) return;
+      const a = e.target.closest('a');
+      if (!a) return;
+      if (e.metaKey || e.ctrlKey || e.shiftKey || e.altKey || e.button !== 0) return;
+      if (a.target === '_blank') return;
+      const slug = slugFrom(a);
+      if (isOpen && wo.contains(a)) {
+        if (slug) { e.preventDefault(); swap(slug); return; }
+        if ((a.pathname === '/work' || a.pathname === '/work/') && (HOST_PATH === '/work' || HOST_PATH === '/work/')) {
+          // "All work" with the archive already underneath — just step out
+          e.preventDefault();
+          closeThenBack();
+        }
+        return;
+      }
+      if (!isOpen && slug) {
+        e.preventDefault();
+        openOverlay(slug);
+      }
+    });
+
+    // warm the cache the moment a row or card is even considered
+    document.addEventListener('pointerover', (e) => {
+      const a = e.target.closest('a');
+      if (!a || wo.contains(a)) return;
+      const slug = slugFrom(a);
+      if (slug) fetchProject(slug).catch(() => {});
+    }, { passive: true });
+  }
+</script>

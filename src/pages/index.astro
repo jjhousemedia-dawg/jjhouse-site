@@ -3,6 +3,7 @@ import Scroll from '../layouts/Scroll.astro';
 import data from '../data/projects.json';
 import Wordmark from '../components/Wordmark.astro';
 import ConnectGate from '../components/ConnectGate.astro';
+import WorkOverlay from '../components/WorkOverlay.astro';
 
 // --- beat 05 selection -------------------------------------------------
 // PLACEHOLDER PICK. Chosen to cover range and to include the two projects
@@ -182,6 +183,11 @@ const sizes = ['project--l', 'project--r', 'project--xl', 'project--l', 'project
       <p class="viewall" data-rise><a href="/work">View all &#8627;</a></p>
     </div>
   </section>
+
+  <!-- Featured cards open in the work overlay (WorkOverlay.astro, the
+       sixnfive step-in / scroll-out, 2026-08-19). The hrefs stay real
+       /work/ pages — no JS, no overlay, same destination. -->
+  <WorkOverlay />
 
   <!-- ================= 06 LITTLE DOT ================= -->
   <section class="beat">

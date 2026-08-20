@@ -723,8 +723,47 @@ html.menu-open body { overflow: hidden; }
   }
 }
 
+/* ---- work overlay — the sixnfive step-in / scroll-out --------------
+   Reference: sixnfive.com (read out of their theme JS). A fixed frame
+   with its own scroll lies over the page you were on; the page under-
+   neath keeps its spot (body scroll locked, same shape as the menu).
+   The exit is the scroll itself: opacity maps over the tail zone in
+   WorkOverlay.astro, so the page underneath resolves back in WITH the
+   gesture. z-index 800 keeps Menu :: (900) and the menu (1000) above
+   it — the option never disappears, per JJ 2026-08-17. */
+.wo {
+  position: fixed; inset: 0; z-index: 800;
+  background: var(--ink); color: var(--paper);
+  opacity: 0;
+}
+.wo:focus { outline: none; }
+html.wo-open body { overflow: hidden; }
+.wo__scroll {
+  position: absolute; inset: 0;
+  overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
+  overscroll-behavior: contain;
+}
+.wo__inner { min-height: 100%; }
+.wo__body {
+  padding: var(--gutter);
+  padding-top: clamp(3rem, 9svh, 5.5rem);
+  max-width: 72rem; margin-inline: auto;
+  transition: opacity 300ms var(--ease);
+}
+.wo__body.is-swapping { opacity: 0; }
+.wo__media { margin-top: 1rem; }
+.wo__loading { display: none; padding: var(--gutter); opacity: 0.5; }
+.wo.is-loading .wo__loading { display: block; }
+/* no tail while empty: an overlay with nothing in it must not be exitable
+   by a single flick before the content lands */
+.wo.is-loading .wo__tail { display: none; }
+.wo__tail { height: 72svh; display: grid; place-items: center; }
+.wo__cue { opacity: 0.35; }
+
 @media (prefers-reduced-motion: reduce) {
   .menu { transition: none; }
   .project__media img { transition: none; }
   .archive__peek { transition: none; }
+  .wo, .wo__body { transition: none; }
 }

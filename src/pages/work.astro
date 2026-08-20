@@ -1,14 +1,14 @@
 ---
 import Scroll from '../layouts/Scroll.astro';
 import data from '../data/projects.json';
+import WorkOverlay from '../components/WorkOverlay.astro';
 
-// Video-less projects (video: null — e.g. Field Journal until its hero
-// videos come off JJ's external drive) link to their own /work/ page
-// instead of out to a player.
-const url = (p) =>
-  !p.video ? `/work/${p.slug}`
-  : p.video.type === 'youtube' ? `https://www.youtube.com/watch?v=${p.video.id}`
-  : `https://vimeo.com/${p.video.id}`;
+// Every row is its own /work/ page now — WorkOverlay.astro intercepts the
+// click and opens it as the sixnfive-style overlay (scroll to the bottom to
+// step back out), with the host's player embedded inside. Ruled by JJ
+// 2026-08-19: no more handing visitors to youtube.com mid-list. With JS off
+// the same links are ordinary navigations to the same pages.
+const url = (p) => `/work/${p.slug}`;
 
 const work = data.projects.filter((p) => p.category === 'work');
 const personal = data.projects.filter((p) => p.category === 'personal');
@@ -35,10 +35,13 @@ const groups = [
         <p class="label">{g.label}</p>
         <div class="archive__list">
           {g.items.map((p, i) => (
-            <a class="archive__row" href={url(p)} target={p.video ? '_blank' : undefined} rel={p.video ? 'noopener' : undefined} data-thumb={p.video ? `/thumbs/${p.slug}.webp` : undefined}>
+            <a class="archive__row" href={url(p)} data-thumb={p.video ? `/thumbs/${p.slug}.webp` : undefined}>
               <span class="archive__n">{String(i + 1).padStart(2, '0')}</span>
               <span class="archive__t">{p.title}</span>
-              <span class="archive__r">{p.roles.length ? p.roles.join(' · ') : (p.video?.type ?? '')}</span>
+              {/* the host-name fallback ("youtube") made sense when rows
+                  linked out to the host; now they open in the overlay, so
+                  a role-less row just leaves the column quiet */}
+              <span class="archive__r">{p.roles.length ? p.roles.join(' · ') : ''}</span>
             </a>
           ))}
         </div>
@@ -51,6 +54,8 @@ const groups = [
     </p>
     <img class="archive__peek" id="peek" alt="" width="1280" height="720" hidden />
   </main>
+
+  <WorkOverlay />
 
   <script is:inline>
     // Hover peek: the row under the cursor shows its still, trailing the
