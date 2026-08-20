@@ -14,3 +14,7 @@ preview-out.log
 dev-out.log
 
 _thumbgrab/
+
+# local-only: video masters (too big for git) and parked deletions
+videos/
+_to_delete/
