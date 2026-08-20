@@ -112,20 +112,20 @@ const sizes = ['project--l', 'project--r', 'project--xl', 'project--l', 'project
   <section class="reel" id="reel">
     <!-- Board 9's environment, and it is a real render now: the hero still
          off the marsh scene (`ReelBG_hero_cleanenv_f257`, 5760x3240), not
-         the perspective-grid stand-in. The stage pins for the whole beat
-         and takes NO flow space (sticky inside an absolute wrapper), so the
-         frame below it starts at the section's top and the two overlap. The
-         wrapper is also the clamp: it spans exactly the section, so the
-         plate cannot overhang into Works the way the old negative-margin
-         version did (see .reel__stagewrap in scroll.css).
+         the perspective-grid stand-in. Plate, cast shadow and reel frame
+         all live inside ONE sticky pin (.reel__pin — 2026-08-20 round 2),
+         so they pin, hold and DEPART as a single unit: the reel can no
+         longer scroll away ahead of the marsh once it has settled. The
+         pin's real height is also the clamp that keeps the plate out of
+         Works (no negative margins near sticky, ever — see scroll.css).
 
          The ladder is AVIF -> WebP -> JPEG at six widths; a 20px WebP is
          inlined as the background so something in the right colours paints
          before any rung arrives. `--plate-pos` is the crop anchor: 16:9
          art on a portrait phone has to lose something, and this is the
          knob that decides what. -->
-    <div class="reel__stagewrap" aria-hidden="true">
-      <div class="reel__stage">
+    <div class="reel__pin">
+      <div class="reel__stage" aria-hidden="true">
         <picture>
           <source type="image/avif" sizes="100vw" srcset="/reel-bg/marsh_day_640.avif 640w, /reel-bg/marsh_day_960.avif 960w, /reel-bg/marsh_day_1280.avif 1280w, /reel-bg/marsh_day_1920.avif 1920w, /reel-bg/marsh_day_2560.avif 2560w, /reel-bg/marsh_day_3840.avif 3840w" />
           <source type="image/webp" sizes="100vw" srcset="/reel-bg/marsh_day_640.webp 640w, /reel-bg/marsh_day_960.webp 960w, /reel-bg/marsh_day_1280.webp 1280w, /reel-bg/marsh_day_1920.webp 1920w, /reel-bg/marsh_day_2560.webp 2560w, /reel-bg/marsh_day_3840.webp 3840w" />
@@ -135,7 +135,13 @@ const sizes = ['project--l', 'project--r', 'project--xl', 'project--l', 'project
           />
         </picture>
       </div>
-    </div>
+
+      <!-- The shadow the reel casts on its way in: an ellipse under the
+           frame's bottom edge that rides the plate's foreground floor (the
+           steps, the bed) and dissipates as the reel reaches the screen
+           slot. Geometry is written per-frame by the recede loop; the
+           material lives on .reel__shadow in scroll.css. -->
+      <div class="reel__shadow" aria-hidden="true"></div>
 
       <!-- The Sound toggle (board 9) is OUT for now — ruled by JJ
            2026-08-20. It was already inert, and with a real reel under it
@@ -158,9 +164,12 @@ const sizes = ['project--l', 'project--r', 'project--xl', 'project--l', 'project
            min(90%, 60rem) and began receding the moment the section did,
            so it never had a full-width moment at all.
 
-           `position: sticky; top: 0` IS that behaviour, exactly, with no
-           scroll maths: below the fold it flows, at the fold it stops. The
-           script only owns what comes after the pin. -->
+           The shared `.reel__pin` (sticky, one viewport tall) IS that
+           behaviour, exactly, with no scroll maths: below the fold it
+           flows, at the fold it stops — and because the plate rides the
+           same pin, reel and environment also LEAVE together when the hold
+           runs out (JJ, 2026-08-20 round 2). The script only owns what
+           comes after the pin. -->
       <div class="reel__frame" id="reelFrame">
         <video
           class="reel__video" id="reelVideo"
@@ -173,15 +182,14 @@ const sizes = ['project--l', 'project--r', 'project--xl', 'project--l', 'project
           <source src="/reel/reel_v04_1080p.mp4" type="video/mp4" />
         </video>
 
-        <!-- The reflection is ONE decode, not two. Board 9's separate
-             REFLECT.mp4 pass belongs to the Blender render; until that
-             exists, a second 1080p decode buys nothing and costs a phone
-             its battery, so the beauty plate is mirrored into a small
-             canvas per frame instead. Normal blend at 0.34 -- screen blend
-             is invisible over a bright backdrop and this cut is mostly
-             dark (measured on /reel-lab, 2026-08-19). -->
-        <canvas class="reel__mirror" id="reelMirror" width="320" height="100" aria-hidden="true"></canvas>
+        <!-- No page-space reflection any more (cut 2026-08-20, JJ): the
+             marsh render carries the physically-accurate one in its water,
+             and the canvas mirror argued with it. When the video backdrop
+             lands, the rendered reflection (raw + k·REEL lightgroup pass)
+             gets an animated mask reveal timed to the recede, so it
+             appears as the reel goes deeper into the scene. -->
       </div>
+    </div>
 
     <!-- The scroll the recede spends, as a real element.
 
@@ -409,13 +417,20 @@ const sizes = ['project--l', 'project--r', 'project--xl', 'project--l', 'project
       if (frame && reel && !reduce) {
         let cur = 0, raf = null, idle = 0;
         // read once per resize, not per frame: all are media-query values
-        let depth = 0.667, travel = 0, resty = 0.49, svh = 0;
+        let travel = 0, svh = 0, sEnd = 0.34, dxEnd = 0, yEnd = 0, line = 0;
         const stage = reel.querySelector('.reel__stage');
+        const shadow = reel.querySelector('.reel__shadow');
         const pic = frame.querySelector('.reel__video');
+        const AR = 16 / 9;   // the plate's aspect (5760x3240 render)
         const measure = () => {
           const cs = getComputedStyle(frame);
-          depth = parseFloat(cs.getPropertyValue('--recede-depth')) || 0.667;
-          resty = parseFloat(cs.getPropertyValue('--recede-resty')) || 0.49;
+          // the Blender screen slot, as fractions of the PLATE IMAGE —
+          // measured off the v023 passB matte; see .reel__frame in scroll.css
+          let sw = parseFloat(cs.getPropertyValue('--screen-w')) || 0.3413;
+          let sx = parseFloat(cs.getPropertyValue('--screen-x')) || 0.5;
+          let sy = parseFloat(cs.getPropertyValue('--screen-y')) || 0.4546;
+          let cap = parseFloat(cs.getPropertyValue('--recede-cap')) || 1;
+          line = parseFloat(cs.getPropertyValue('--frame-line')) || 0;
           // ⛔ --recede-travel is a UNITLESS MULTIPLIER, deliberately.
           // getComputedStyle hands back custom properties as raw tokens, so
           // a value of `100svh` parseFloats to 100 and the recede finished
@@ -431,34 +446,71 @@ const sizes = ['project--l', 'project--r', 'project--xl', 'project--l', 'project
           travel = svh * (parseFloat(cs.getPropertyValue('--recede-travel')) || 1);
 
           // Live-tunable from any preview URL while JJ settles the numbers,
-          // same deal as the touch-ink factors in erode.js: ?depth= &travel=
-          // &resty= (e.g. ?depth=0.7&resty=0.52). Bake the winners into
-          // scroll.css when he calls them.
+          // same deal as the touch-ink factors in erode.js: ?sw= (slot
+          // width, image fraction) &sy= (slot bottom edge, image fraction)
+          // &cap= &travel= &bw= (frame line, visual px). Bake the winners
+          // into scroll.css when he calls them.
           const q = new URLSearchParams(location.search);
-          if (q.has('depth'))  depth  = parseFloat(q.get('depth'))  || depth;
+          if (q.has('sw'))     sw     = parseFloat(q.get('sw'))     || sw;
+          if (q.has('sy'))     sy     = parseFloat(q.get('sy'))     || sy;
+          if (q.has('cap'))    cap    = parseFloat(q.get('cap'))    || cap;
           if (q.has('travel')) travel = svh * (parseFloat(q.get('travel')) || 1);
-          if (q.has('resty'))  resty  = parseFloat(q.get('resty'))  || resty;
+          if (q.has('bw'))     line   = parseFloat(q.get('bw'))     || line;
+
+          // Project the slot through the plate's cover-crop, so the settled
+          // reel matches the Blender construction at ANY viewport:
+          // object-fit: cover at 50%/50% draws the 16:9 plate at
+          // max(page width, svh·AR) wide and centres the overflow, so a
+          // feature at image-fraction (fx, fy) renders at ox + fx·dw,
+          // oy + fy·dh. The cap keeps portrait phones sane — their crop
+          // can blow the slot up wider than the page itself.
+          const pw = frame.offsetWidth || window.innerWidth;
+          const dw = Math.max(pw, svh * AR), dh = dw / AR;
+          const ox = (pw - dw) / 2, oy = (svh - dh) / 2;
+          sEnd  = Math.min((sw * dw) / pw, cap);   // settled scale of the full-width frame
+          dxEnd = ox + sx * dw - pw / 2;           // 0 while the slot is centred
+          yEnd  = oy + sy * dh;                    // settled BOTTOM edge of the picture
         };
         const tick = () => {
           const r = reel.getBoundingClientRect();
           const target = Math.min(1, Math.max(0, -r.top / travel));
           cur += (target - cur) * 0.16;
           if (Math.abs(target - cur) < 0.0004) { cur = target; idle++; } else { idle = 0; }
-          frame.style.setProperty('--recede', String(1 - cur * depth));
-          // The frame is pinned by its TOP and scales about its own centre,
-          // so the picture's bottom edge sits at F/2 + (V - F/2)·s plus the
-          // translate. Solve for the translate that rests that edge at
-          // resty·svh — just above the marsh's far waterline, mirror on the
-          // water — and walk there on the same eased clock as the scale.
-          // (The old version walked the frame's centre to the window's
-          // centre, which parked the picture wherever the frame's height
-          // said, half off the top of the screen at the settled scale.)
-          // Applied left of scale() in the transform list, so the offset is
-          // in real pixels and does not shrink with it.
+          const s = 1 - cur * (1 - sEnd);          // current scale
+          frame.style.setProperty('--recede', String(s));
+          // The frame sits at the pin's top and scales about its own
+          // centre, so the picture's bottom edge sits at F/2 + (V - F/2)·s
+          // plus the translate. Solve for the translate that rests that
+          // edge on the Blender slot's bottom edge (yEnd) and walk there
+          // on the same eased clock as the scale. Applied left of scale()
+          // in the transform list, so the offset is in real pixels and
+          // does not shrink with it.
           const F = frame.offsetHeight;
           const V = (pic && pic.offsetHeight) || F;
-          const dyEnd = resty * svh - F / 2 - (V - F / 2) * (1 - depth);
+          const dyEnd = yEnd - F / 2 - (V - F / 2) * sEnd;
           frame.style.setProperty('--reeldy', (dyEnd * cur).toFixed(1) + 'px');
+          frame.style.setProperty('--reeldx', (dxEnd * cur).toFixed(1) + 'px');
+
+          // The frame line: eased in with the recede (full-bleed carries
+          // none), counter-scaled so it holds a constant visual width at
+          // every scale. outline, not border — no layout under the maths.
+          frame.style.setProperty('--bw', ((line * cur) / s).toFixed(2) + 'px');
+
+          // The cast shadow. Its centre hugs the picture's current bottom
+          // edge, so it rides the plate's foreground floor — the steps and
+          // the bed — while the reel crosses them. Width tracks the reel;
+          // opacity is a bump (peak mid-crossing): nothing while the reel
+          // is full-bleed, gone again by the time it reaches the slot,
+          // where the rendered water reflection takes over.
+          if (shadow) {
+            const bottomNow = dyEnd * cur + F / 2 + (V - F / 2) * s;
+            const shw = (pic ? pic.offsetWidth : frame.offsetWidth) * s * 0.92;
+            const shh = Math.max(12, shw * 0.10);
+            shadow.style.setProperty('--shw', shw.toFixed(1) + 'px');
+            shadow.style.setProperty('--shh', shh.toFixed(1) + 'px');
+            shadow.style.setProperty('--shy', (bottomNow - shh * 0.4).toFixed(1) + 'px');
+            shadow.style.setProperty('--sho', (1.8 * cur * (1 - cur)).toFixed(3));
+          }
           if (idle > 20) { raf = null; return; }   // settled — sleep until the next scroll
           raf = requestAnimationFrame(tick);
         };
@@ -556,43 +608,15 @@ const sizes = ['project--l', 'project--r', 'project--xl', 'project--l', 'project
         let near = false;
         const want = () => !reduce && near && document.visibilityState !== 'hidden';
 
-        // ---- the reflection, mirrored off the one decode ---------------
-        // Deliberately tiny. The result is masked away by 72% and blurred,
-        // so the extra pixels would be thrown out anyway; 320x100 keeps the
-        // per-frame drawImage off a phone's critical path. Canvas y=0 is
-        // the BOTTOM row of the picture — that is what a reflection shows.
-        const mir = document.getElementById('reelMirror');
-        const g = mir && mir.getContext && !reduce ? mir.getContext('2d') : null;
-        const W = mir ? mir.width : 0;
-        const FH = (W * 9) / 16;        // the whole frame, drawn at canvas width
-        let mraf = null;
-        const draw = () => {
-          if (rv.readyState >= 2) {
-            g.setTransform(1, 0, 0, -1, 0, FH);
-            g.drawImage(rv, 0, 0, W, FH);
-            g.setTransform(1, 0, 0, 1, 0, 0);
-          }
-          mraf = requestAnimationFrame(draw);
-        };
-        // TRAP, cost a test run: this used to be driven ONLY by the video's
-        // own play/pause events, and it never started. `autoplay` fires
-        // `play` before the IntersectionObserver's first callback lands, so
-        // at that instant near===false and the loop declined to start — and
-        // no second `play` event ever came, because by the time the observer
-        // said yes the video was already playing. Anything gated on the same
-        // state as playback has to be re-evaluated wherever that state is
-        // written, not only where playback changes.
-        const spin = () => {
-          if (!g) return;
-          const on = want() && !rv.paused;
-          if (on && !mraf) mraf = requestAnimationFrame(draw);
-          if (!on && mraf) { cancelAnimationFrame(mraf); mraf = null; }
-        };
-
+        // (The canvas-mirror reflection that lived here was cut 2026-08-20
+        // with its element — the marsh render owns the reflection now. The
+        // TRAP it documented still generalises: anything gated on the same
+        // state as playback must be re-evaluated wherever that state is
+        // written, not only where playback changes — which is why apply()
+        // hangs off the observer, visibilitychange AND the play listener.)
         const apply = () => {
           if (want()) { const pr = rv.play(); if (pr && pr.catch) pr.catch(() => {}); }
           else if (!rv.paused) rv.pause();
-          spin();
         };
         // 50%, not 100%: at 100% the reel is already inside the root at
         // scroll 0 and starts decoding 1080p while the hero's WebGL erode
@@ -607,9 +631,7 @@ const sizes = ['project--l', 'project--r', 'project--xl', 'project--l', 'project
         addEventListener('visibilitychange', apply);
         // the second half of the same guard: if playback starts when it is
         // not wanted (a stray autoplay, a restored session), undo it
-        rv.addEventListener('play', () => { if (!want()) rv.pause(); spin(); });
-        rv.addEventListener('pause', spin);
-        rv.addEventListener('loadeddata', spin);
+        rv.addEventListener('play', () => { if (!want()) rv.pause(); });
 
         // prefers-reduced-motion: a 24-shot cut running at half-bar pace
         // is exactly what that setting exists to stop. Poster only, and a
