@@ -116,7 +116,16 @@ const sizes = ['project--l', 'project--r', 'project--xl', 'project--l', 'project
            Blender plate exists. Spec §9: biggest single asset, still TBD. -->
       <div class="reel__room" aria-hidden="true"></div>
 
-      <button class="reel__sound" id="soundBtn" aria-pressed="false"><span>Sound</span></button>
+      <!-- The Sound toggle (board 9) is OUT for now — ruled by JJ
+           2026-08-20. It was already inert, and with a real reel under it
+           a live-looking control that does nothing is worse than no
+           control. The beat is silent until the 5-stem bed is wired, and
+           the bed waits on the marsh: there is no backdrop variation yet
+           to arrange against, so there is nothing for the stems to mark.
+           Everything else survives — `.reel__sound` styling is still in
+           scroll.css, reelbed.js is still in src/scripts, and the opus
+           stems are still in public/reel-lab/audio. Bringing it back is
+           this button plus a handler, not a rebuild. -->
 
       <!-- 2026-08-20 (JJ): the locked v04 cut is LIVE here, ahead of the
            marsh. This is rung 1 of the eclipse ladder minus its backdrop --
@@ -432,14 +441,8 @@ const sizes = ['project--l', 'project--r', 'project--xl', 'project--l', 'project
         place();
       }
 
-      // ---- board 9: sound toggle, off by default -------------------
-      const sound = document.getElementById('soundBtn');
-      if (sound) {
-        sound.addEventListener('click', () => {
-          const on = sound.getAttribute('aria-pressed') === 'true';
-          sound.setAttribute('aria-pressed', String(!on));
-        });
-      }
+      // (board 9 sound toggle removed 2026-08-20 with its button — the
+      // reel beat is silent until the bed is wired. See the markup above.)
 
       // ---- the reel: the locked v04 cut, looping on the wall clock ----
       // The scroll-scrub rig that used to live here is GONE. It mapped
@@ -453,9 +456,18 @@ const sizes = ['project--l', 'project--r', 'project--xl', 'project--l', 'project
       const rv = document.getElementById('reelVideo');
       if (rv) {
         // Decode is not free and this beat sits well below the fold, so
-        // the reel only runs while it is near the viewport. rootMargin
-        // starts it a full screen early, so it is already at speed on
-        // arrival instead of flashing its poster.
+        // the reel only runs while it is near the viewport (rootMargin
+        // below), and it is already at speed on arrival instead of
+        // flashing its poster.
+        //
+        // The markup carries `autoplay` so the reel still runs if this script
+        // never does. The moment it DOES run, JS takes ownership — otherwise
+        // the two race: the observer's first callback can land while the
+        // video is still paused (so its pause() is a no-op), and the autoplay
+        // algorithm then starts playback with nothing left to stop it. Caught
+        // as a flaky headless failure, which is the only way this shows up.
+        rv.autoplay = false;
+
         let near = false;
         const want = () => !reduce && near && document.visibilityState !== 'hidden';
 
@@ -508,7 +520,9 @@ const sizes = ['project--l', 'project--r', 'project--xl', 'project--l', 'project
           ).observe(rv);
         } else { near = true; apply(); }
         addEventListener('visibilitychange', apply);
-        rv.addEventListener('play', spin);
+        // the second half of the same guard: if playback starts when it is
+        // not wanted (a stray autoplay, a restored session), undo it
+        rv.addEventListener('play', () => { if (!want()) rv.pause(); spin(); });
         rv.addEventListener('pause', spin);
         rv.addEventListener('loadeddata', spin);
 
