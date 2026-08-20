@@ -12,6 +12,8 @@ npm-debug.log*
 
 preview-out.log
 dev-out.log
+push-out.log
+build-out.log
 
 _thumbgrab/
 
