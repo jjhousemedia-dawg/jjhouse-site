@@ -113,24 +113,28 @@ const sizes = ['project--l', 'project--r', 'project--xl', 'project--l', 'project
     <!-- Board 9's environment, and it is a real render now: the hero still
          off the marsh scene (`ReelBG_hero_cleanenv_f257`, 5760x3240), not
          the perspective-grid stand-in. The stage pins for the whole beat
-         and takes NO flow space (sticky + a negative margin equal to its
-         own height), so the frame below it starts at the section's top and
-         the two overlap.
+         and takes NO flow space (sticky inside an absolute wrapper), so the
+         frame below it starts at the section's top and the two overlap. The
+         wrapper is also the clamp: it spans exactly the section, so the
+         plate cannot overhang into Works the way the old negative-margin
+         version did (see .reel__stagewrap in scroll.css).
 
          The ladder is AVIF -> WebP -> JPEG at six widths; a 20px WebP is
          inlined as the background so something in the right colours paints
          before any rung arrives. `--plate-pos` is the crop anchor: 16:9
          art on a portrait phone has to lose something, and this is the
          knob that decides what. -->
-    <div class="reel__stage" aria-hidden="true">
-      <picture>
-        <source type="image/avif" sizes="100vw" srcset="/reel-bg/marsh_day_640.avif 640w, /reel-bg/marsh_day_960.avif 960w, /reel-bg/marsh_day_1280.avif 1280w, /reel-bg/marsh_day_1920.avif 1920w, /reel-bg/marsh_day_2560.avif 2560w, /reel-bg/marsh_day_3840.avif 3840w" />
-        <source type="image/webp" sizes="100vw" srcset="/reel-bg/marsh_day_640.webp 640w, /reel-bg/marsh_day_960.webp 960w, /reel-bg/marsh_day_1280.webp 1280w, /reel-bg/marsh_day_1920.webp 1920w, /reel-bg/marsh_day_2560.webp 2560w, /reel-bg/marsh_day_3840.webp 3840w" />
-        <img
-          class="reel__plate" alt="" decoding="async" loading="lazy" fetchpriority="low"
-          src="/reel-bg/marsh_day_1920.jpg" sizes="100vw" srcset="/reel-bg/marsh_day_640.jpg 640w, /reel-bg/marsh_day_960.jpg 960w, /reel-bg/marsh_day_1280.jpg 1280w, /reel-bg/marsh_day_1920.jpg 1920w, /reel-bg/marsh_day_2560.jpg 2560w, /reel-bg/marsh_day_3840.jpg 3840w"
-        />
-      </picture>
+    <div class="reel__stagewrap" aria-hidden="true">
+      <div class="reel__stage">
+        <picture>
+          <source type="image/avif" sizes="100vw" srcset="/reel-bg/marsh_day_640.avif 640w, /reel-bg/marsh_day_960.avif 960w, /reel-bg/marsh_day_1280.avif 1280w, /reel-bg/marsh_day_1920.avif 1920w, /reel-bg/marsh_day_2560.avif 2560w, /reel-bg/marsh_day_3840.avif 3840w" />
+          <source type="image/webp" sizes="100vw" srcset="/reel-bg/marsh_day_640.webp 640w, /reel-bg/marsh_day_960.webp 960w, /reel-bg/marsh_day_1280.webp 1280w, /reel-bg/marsh_day_1920.webp 1920w, /reel-bg/marsh_day_2560.webp 2560w, /reel-bg/marsh_day_3840.webp 3840w" />
+          <img
+            class="reel__plate" alt="" decoding="async" loading="lazy" fetchpriority="low"
+            src="/reel-bg/marsh_day_1920.jpg" sizes="100vw" srcset="/reel-bg/marsh_day_640.jpg 640w, /reel-bg/marsh_day_960.jpg 960w, /reel-bg/marsh_day_1280.jpg 1280w, /reel-bg/marsh_day_1920.jpg 1920w, /reel-bg/marsh_day_2560.jpg 2560w, /reel-bg/marsh_day_3840.jpg 3840w"
+          />
+        </picture>
+      </div>
     </div>
 
       <!-- The Sound toggle (board 9) is OUT for now — ruled by JJ
@@ -404,12 +408,14 @@ const sizes = ['project--l', 'project--r', 'project--xl', 'project--l', 'project
       const frame = document.getElementById('reelFrame');
       if (frame && reel && !reduce) {
         let cur = 0, raf = null, idle = 0;
-        // read once per resize, not per frame: both are media-query values
-        let depth = 0.45, travel = 0;
+        // read once per resize, not per frame: all are media-query values
+        let depth = 0.667, travel = 0, resty = 0.49, svh = 0;
         const stage = reel.querySelector('.reel__stage');
+        const pic = frame.querySelector('.reel__video');
         const measure = () => {
           const cs = getComputedStyle(frame);
-          depth = parseFloat(cs.getPropertyValue('--recede-depth')) || 0.45;
+          depth = parseFloat(cs.getPropertyValue('--recede-depth')) || 0.667;
+          resty = parseFloat(cs.getPropertyValue('--recede-resty')) || 0.49;
           // ⛔ --recede-travel is a UNITLESS MULTIPLIER, deliberately.
           // getComputedStyle hands back custom properties as raw tokens, so
           // a value of `100svh` parseFloats to 100 and the recede finished
@@ -421,8 +427,17 @@ const sizes = ['project--l', 'project--r', 'project--xl', 'project--l', 'project
           // 100svh — svh and not innerHeight, because on phones the URL bar
           // showing and hiding changes innerHeight mid-scroll and used to
           // make the scale jump.
-          const svh = (stage && stage.offsetHeight) || window.innerHeight;
+          svh = (stage && stage.offsetHeight) || window.innerHeight;
           travel = svh * (parseFloat(cs.getPropertyValue('--recede-travel')) || 1);
+
+          // Live-tunable from any preview URL while JJ settles the numbers,
+          // same deal as the touch-ink factors in erode.js: ?depth= &travel=
+          // &resty= (e.g. ?depth=0.7&resty=0.52). Bake the winners into
+          // scroll.css when he calls them.
+          const q = new URLSearchParams(location.search);
+          if (q.has('depth'))  depth  = parseFloat(q.get('depth'))  || depth;
+          if (q.has('travel')) travel = svh * (parseFloat(q.get('travel')) || 1);
+          if (q.has('resty'))  resty  = parseFloat(q.get('resty'))  || resty;
         };
         const tick = () => {
           const r = reel.getBoundingClientRect();
@@ -430,13 +445,20 @@ const sizes = ['project--l', 'project--r', 'project--xl', 'project--l', 'project
           cur += (target - cur) * 0.16;
           if (Math.abs(target - cur) < 0.0004) { cur = target; idle++; } else { idle = 0; }
           frame.style.setProperty('--recede', String(1 - cur * depth));
-          // The frame is pinned by its TOP, and it is taller than the window
-          // (picture + reflection), so scaling alone would leave it hanging
-          // off the bottom. This walks its centre to the window's centre as
-          // it recedes. Applied left of scale() in the transform list, so
-          // the offset is in real pixels and does not shrink with it.
-          frame.style.setProperty('--reeldy',
-            (((window.innerHeight - frame.offsetHeight) / 2) * cur).toFixed(1) + 'px');
+          // The frame is pinned by its TOP and scales about its own centre,
+          // so the picture's bottom edge sits at F/2 + (V - F/2)·s plus the
+          // translate. Solve for the translate that rests that edge at
+          // resty·svh — just above the marsh's far waterline, mirror on the
+          // water — and walk there on the same eased clock as the scale.
+          // (The old version walked the frame's centre to the window's
+          // centre, which parked the picture wherever the frame's height
+          // said, half off the top of the screen at the settled scale.)
+          // Applied left of scale() in the transform list, so the offset is
+          // in real pixels and does not shrink with it.
+          const F = frame.offsetHeight;
+          const V = (pic && pic.offsetHeight) || F;
+          const dyEnd = resty * svh - F / 2 - (V - F / 2) * (1 - depth);
+          frame.style.setProperty('--reeldy', (dyEnd * cur).toFixed(1) + 'px');
           if (idle > 20) { raf = null; return; }   // settled — sleep until the next scroll
           raf = requestAnimationFrame(tick);
         };

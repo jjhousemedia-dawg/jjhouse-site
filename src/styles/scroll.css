@@ -164,12 +164,24 @@ body.scroll.is-dark::before { opacity: 1; }
 .reel { position: relative; padding: 0; }
 .reel__hold { height: var(--reel-hold, 130svh); pointer-events: none; }
 
-/* The environment. Pinned for the whole beat and NO flow space of its own —
-   the negative margin cancels its height so the frame below starts at the
-   section's top and the two overlap. */
+/* The environment. Pinned for the whole beat, clamped to it, and NO flow
+   space of its own — the stage is sticky inside an ABSOLUTE wrapper that
+   spans the section, so the frame below starts at the section's top and the
+   two overlap.
+
+   ⛔ The previous shape cancelled the flow height with `margin-bottom:
+   -100svh` on the sticky element itself. The sticky clamp holds the MARGIN
+   box inside the containing block, and that margin pulled the bottom margin
+   edge up to the element's top — so the plate was free to overhang a full
+   viewport past the section, and its bottom edge landed halfway through the
+   first Works title (caught by JJ 2026-08-20). An absolute wrapper removes
+   the flow height without touching the margin box, so the plate un-pins
+   when its bottom meets the section's end and Works arrives on clean
+   paper. */
+.reel__stagewrap { position: absolute; inset: 0; z-index: 0; pointer-events: none; }
 .reel__stage {
-  position: sticky; top: 0; z-index: 0;
-  height: 100svh; margin-bottom: -100svh;
+  position: sticky; top: 0;
+  height: 100svh;
   overflow: hidden; pointer-events: none;
   background-color: var(--ink);
 }
@@ -206,13 +218,24 @@ body.scroll.is-dark::before { opacity: 1; }
   will-change: transform;
   display: block;
 
-  /* How far it shrinks, and how much scroll that takes — the latter in
-     VIEWPORTS, not pixels. Both are read by the script, so a media query
-     is enough to retune the whole mechanic. Keep them unitless: JS reads
-     custom properties as raw text, so a length here parses to a bare
-     number and silently means something else. */
-  --recede-depth: 0.45;
+  /* How far it shrinks, how much scroll that takes (in VIEWPORTS, not
+     pixels), and where the picture's bottom edge comes to rest, as a
+     fraction of the viewport's height. All three are read by the script,
+     so a media query is enough to retune the whole mechanic. Keep them
+     unitless: JS reads custom properties as raw text, so a length here
+     parses to a bare number and silently means something else.
+
+     0.667 → the settled reel is a third of the page wide, which is where
+     noth.in lands its showreel (inline `width: 33.3%` at rest, measured
+     live 2026-08-20; the old 0.45 left it at more than half the page and
+     it never read as sitting IN the environment). 0.49 rests the picture's
+     bottom edge just above the marsh plate's far waterline, so the
+     mirrored pass under it falls on the water. Both are live-tunable from
+     any preview URL — ?depth= &travel= &resty= — same deal as the touch
+     factors in erode.js; bake the winners back in here. */
+  --recede-depth: 0.667;
   --recede-travel: 1;
+  --recede-resty: 0.49;
 }
 
 /* ---- 05 work ------------------------------------------------ */
