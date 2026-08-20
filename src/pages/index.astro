@@ -110,11 +110,28 @@ const sizes = ['project--l', 'project--r', 'project--xl', 'project--l', 'project
 
   <!-- ================= 04 REEL — the flip point ================= -->
   <section class="reel" id="reel">
-    <div class="reel__sticky">
-      <!-- Board 9. The pink drawing on JJ's board is the environment the
-           video sits inside. Grid below stands in for that room until the
-           Blender plate exists. Spec §9: biggest single asset, still TBD. -->
-      <div class="reel__room" aria-hidden="true"></div>
+    <!-- Board 9's environment, and it is a real render now: the hero still
+         off the marsh scene (`ReelBG_hero_cleanenv_f257`, 5760x3240), not
+         the perspective-grid stand-in. The stage pins for the whole beat
+         and takes NO flow space (sticky + a negative margin equal to its
+         own height), so the frame below it starts at the section's top and
+         the two overlap.
+
+         The ladder is AVIF -> WebP -> JPEG at six widths; a 20px WebP is
+         inlined as the background so something in the right colours paints
+         before any rung arrives. `--plate-pos` is the crop anchor: 16:9
+         art on a portrait phone has to lose something, and this is the
+         knob that decides what. -->
+    <div class="reel__stage" aria-hidden="true">
+      <picture>
+        <source type="image/avif" sizes="100vw" srcset="/reel-bg/marsh_day_640.avif 640w, /reel-bg/marsh_day_960.avif 960w, /reel-bg/marsh_day_1280.avif 1280w, /reel-bg/marsh_day_1920.avif 1920w, /reel-bg/marsh_day_2560.avif 2560w, /reel-bg/marsh_day_3840.avif 3840w" />
+        <source type="image/webp" sizes="100vw" srcset="/reel-bg/marsh_day_640.webp 640w, /reel-bg/marsh_day_960.webp 960w, /reel-bg/marsh_day_1280.webp 1280w, /reel-bg/marsh_day_1920.webp 1920w, /reel-bg/marsh_day_2560.webp 2560w, /reel-bg/marsh_day_3840.webp 3840w" />
+        <img
+          class="reel__plate" alt="" decoding="async" loading="lazy" fetchpriority="low"
+          src="/reel-bg/marsh_day_1920.jpg" sizes="100vw" srcset="/reel-bg/marsh_day_640.jpg 640w, /reel-bg/marsh_day_960.jpg 960w, /reel-bg/marsh_day_1280.jpg 1280w, /reel-bg/marsh_day_1920.jpg 1920w, /reel-bg/marsh_day_2560.jpg 2560w, /reel-bg/marsh_day_3840.jpg 3840w"
+        />
+      </picture>
+    </div>
 
       <!-- The Sound toggle (board 9) is OUT for now — ruled by JJ
            2026-08-20. It was already inert, and with a real reel under it
@@ -127,11 +144,19 @@ const sizes = ['project--l', 'project--r', 'project--xl', 'project--l', 'project
            stems are still in public/reel-lab/audio. Bringing it back is
            this button plus a handler, not a rebuild. -->
 
-      <!-- 2026-08-20 (JJ): the locked v04 cut is LIVE here, ahead of the
-           marsh. This is rung 1 of the eclipse ladder minus its backdrop --
-           the reel loops on the wall clock, the grid room above still
-           stands in for the plate. When PLATE_DAY lands it goes BEHIND
-           this element and nothing in here has to change. -->
+      <!-- 2026-08-20 (JJ): the locked v04 cut, looping on the wall clock.
+
+           ENTRY, re-ruled 2026-08-20 off another look at noth.in: the reel
+           arrives at the FULL WIDTH OF THE PAGE and travels up with the
+           document like any other block. It only pins, and only then starts
+           receding, once the top of its own frame reaches the top of the
+           window. The previous version centred it in a pinned panel at
+           min(90%, 60rem) and began receding the moment the section did,
+           so it never had a full-width moment at all.
+
+           `position: sticky; top: 0` IS that behaviour, exactly, with no
+           scroll maths: below the fold it flows, at the fold it stops. The
+           script only owns what comes after the pin. -->
       <div class="reel__frame" id="reelFrame">
         <video
           class="reel__video" id="reelVideo"
@@ -154,10 +179,21 @@ const sizes = ['project--l', 'project--r', 'project--xl', 'project--l', 'project
         <canvas class="reel__mirror" id="reelMirror" width="320" height="100" aria-hidden="true"></canvas>
       </div>
 
-      <!-- 04-A: a line sits here beside the reel, without any house wordplay
-           (ruled 2026-08-11). JJ's words to come — no visible placeholder in
-           the meantime (dev notes stripped from previews 2026-08-17). -->
-    </div>
+    <!-- The scroll the recede spends, as a real element.
+
+         TRAP, and it cost a test run: `padding-bottom` on the section does
+         NOT do this. A sticky element is constrained to its containing
+         block, which is its parent's CONTENT box — padding is outside it,
+         so the frame's pin range came out as zero and it simply scrolled
+         away while the recede was still easing. Symptom to recognise: the
+         frame's untransformed top tracks scroll exactly (top === -offset)
+         and the scale never reaches its floor. A spacer is content, so the
+         range is unambiguous. -->
+    <div class="reel__hold" aria-hidden="true"></div>
+
+    <!-- 04-A: a line sits here beside the reel, without any house wordplay
+         (ruled 2026-08-11). JJ's words to come — no visible placeholder in
+         the meantime (dev notes stripped from previews 2026-08-17). -->
   </section>
 
   <!-- ================= 05 WORK ================= -->
@@ -347,40 +383,67 @@ const sizes = ['project--l', 'project--r', 'project--xl', 'project--l', 'project
         setTheme();
       }
 
-      // ---- the reel recedes as you scroll through it ----
+      // ---- the reel recedes, but only AFTER it has pinned ----------
+      // Re-ruled 2026-08-20 (JJ, off noth.in): the reel is full page width
+      // on arrival and stays that way until the top of its frame reaches
+      // the top of the window. CSS `position: sticky; top: 0` does the
+      // arriving and the pinning; this loop owns only what happens after,
+      // and its clock is `-r.top` — how far the section's top has travelled
+      // past the fold, which is EXACTLY how far the frame has been pinned,
+      // because the frame's static position is the section's top. Before
+      // the pin that number is negative, so p clamps to 0 and the reel is
+      // untouched at full width. No separate "has it pinned yet" state to
+      // keep in sync with the browser's.
+      //
       // rAF + lerp, NOT scroll events + a CSS transition. The old shape
       // (write --recede per scroll event, let `transition: transform 120ms
       // linear` chase it) stuttered badly on phones: momentum scrolling
       // delivers scroll events in irregular bursts, so the transition kept
       // restarting toward stale targets — visible as the jagged crop-in JJ
-      // flagged 2026-08-17. Now a per-frame loop eases the current scale
-      // toward the live scroll position and writes the transform directly;
-      // it sleeps once settled and wakes on the next scroll.
-      // Progress divides by the STICKY PANEL's height (svh-stable), not
-      // window.innerHeight — on phones the URL bar showing/hiding changes
-      // innerHeight mid-scroll and used to make the scale jump.
+      // flagged 2026-08-17.
       const frame = document.getElementById('reelFrame');
       if (frame && reel && !reduce) {
-        const sticky = reel.querySelector('.reel__sticky');
-        let cur = 1, raf = null, idle = 0;
+        let cur = 0, raf = null, idle = 0;
+        // read once per resize, not per frame: both are media-query values
+        let depth = 0.45, travel = 0;
+        const stage = reel.querySelector('.reel__stage');
+        const measure = () => {
+          const cs = getComputedStyle(frame);
+          depth = parseFloat(cs.getPropertyValue('--recede-depth')) || 0.45;
+          // ⛔ --recede-travel is a UNITLESS MULTIPLIER, deliberately.
+          // getComputedStyle hands back custom properties as raw tokens, so
+          // a value of `100svh` parseFloats to 100 and the recede finished
+          // in a hundred pixels of scroll. It read as a snap rather than a
+          // move, and nothing threw. Never put a CSS length in a custom
+          // property that JS is going to do arithmetic on.
+          //
+          // The viewport height comes off the STAGE, which CSS sizes at
+          // 100svh — svh and not innerHeight, because on phones the URL bar
+          // showing and hiding changes innerHeight mid-scroll and used to
+          // make the scale jump.
+          const svh = (stage && stage.offsetHeight) || window.innerHeight;
+          travel = svh * (parseFloat(cs.getPropertyValue('--recede-travel')) || 1);
+        };
         const tick = () => {
           const r = reel.getBoundingClientRect();
-          const vh = (sticky && sticky.offsetHeight) || window.innerHeight;
-          const total = r.height - vh;
-          let target = cur;
-          if (total > 0) {
-            const p = Math.min(1, Math.max(0, -r.top / total));
-            target = 1 - p * 0.45;
-          }
+          const target = Math.min(1, Math.max(0, -r.top / travel));
           cur += (target - cur) * 0.16;
           if (Math.abs(target - cur) < 0.0004) { cur = target; idle++; } else { idle = 0; }
-          frame.style.setProperty('--recede', String(cur));
+          frame.style.setProperty('--recede', String(1 - cur * depth));
+          // The frame is pinned by its TOP, and it is taller than the window
+          // (picture + reflection), so scaling alone would leave it hanging
+          // off the bottom. This walks its centre to the window's centre as
+          // it recedes. Applied left of scale() in the transform list, so
+          // the offset is in real pixels and does not shrink with it.
+          frame.style.setProperty('--reeldy',
+            (((window.innerHeight - frame.offsetHeight) / 2) * cur).toFixed(1) + 'px');
           if (idle > 20) { raf = null; return; }   // settled — sleep until the next scroll
           raf = requestAnimationFrame(tick);
         };
         const wake = () => { if (!raf) raf = requestAnimationFrame(tick); };
         addEventListener('scroll', wake, { passive: true });
-        addEventListener('resize', wake);
+        addEventListener('resize', () => { measure(); wake(); });
+        measure();
         wake();
       }
 

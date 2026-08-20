@@ -156,32 +156,63 @@ body.scroll.is-dark::before { opacity: 1; }
 .arrival__foot { display: flex; justify-content: space-between; align-items: end; gap: 1rem; flex-wrap: wrap; }
 
 /* ---- 04 reel ------------------------------------------------ */
-.reel { min-height: 180svh; position: relative; padding: 0; }
-.reel__sticky { position: sticky; top: 0; height: 100svh; display: grid; place-items: center; overflow: hidden; }
-.reel__frame {
-  /* recedes as you scroll: full bleed -> a screen at the end of a room.
-     NO transition here on purpose: the scale is eased per-frame by a rAF
-     lerp in index.astro. A transition chasing per-scroll-event targets is
-     what made the crop-in jitter on phones (fixed 2026-08-17). */
-  width: 100%; height: 100%;
-  transform: scale(var(--recede, 1));
-  will-change: transform;
-  display: grid; place-items: center;
-  /* align-content, not just align-items: the plate and its reflection are
-     two auto rows, and the default (stretch) hands the sticky panel's
-     spare height to the rows, which drifts the reflection away from the
-     picture it belongs to. Centred as a PAIR, they stay joined. */
-  align-content: center;
-  background: var(--ink);
-  color: #b0aa9c;
+/* The section is exactly as tall as the reel needs plus the scroll budget
+   the recede spends. NOT a fixed multiple of the viewport: the frame is an
+   in-flow block whose height comes from the page width, so the section has
+   to be content height + travel, or the pin ends before the recede does.
+   And that travel has to be a CHILD, not padding — see .reel__hold. */
+.reel { position: relative; padding: 0; }
+.reel__hold { height: var(--reel-hold, 130svh); pointer-events: none; }
 
-  /* One number sizes both plates. Height-first, because the constraint
-     that actually bites is the sticky panel: the picture plus its
-     reflection plus the gap is 14/9 of this, so 54svh fills about 84% of
-     the panel and leaves the Sound button its own air. min() against the
-     width cap keeps the old min(90%, 60rem) behaviour on a wide desktop,
-     where width runs out long before height does. */
-  --plate-h: min(54svh, calc(min(90vw, 60rem) * 9 / 16));
+/* The environment. Pinned for the whole beat and NO flow space of its own —
+   the negative margin cancels its height so the frame below starts at the
+   section's top and the two overlap. */
+.reel__stage {
+  position: sticky; top: 0; z-index: 0;
+  height: 100svh; margin-bottom: -100svh;
+  overflow: hidden; pointer-events: none;
+  background-color: var(--ink);
+}
+.reel__stage picture { display: contents; }
+.reel__plate {
+  position: absolute; inset: 0; width: 100%; height: 100%;
+  object-fit: cover;
+  /* 16:9 art, arbitrary viewport. This is the knob that decides what a
+     portrait phone loses: 50%/50% keeps the channel centred and drops the
+     outer clouds and reed banks. Move it right and up to hold the sun. */
+  object-position: var(--plate-pos, 50% 50%);
+  /* a 20px WebP, inlined at the markup's srcset — paints instantly in the
+     right colours so the beat never flashes flat ink */
+  background: url('data:image/webp;base64,UklGRooAAABXRUJQVlA4IH4AAABQBACdASoUAAsAPrVKnkonJCKhsAgA4BaJQBagXAW/+A3yGqnXtDfNVAqAAP6W5WFYwrK+eXt98B9+c9Kc4GsCQuG/z7ddQ1d9+cWICz9xfzbfczB+o3s/NP+IpWrL6bSknBCqDRbVtP60GNQsDcumw0PJhA1Bm0HTZFLnsAA=') center / cover no-repeat;
+}
+
+.reel__frame {
+  /* THE ENTRY (JJ, 2026-08-20, off noth.in). Full page width, in flow, and
+     `sticky; top: 0` pins it the instant its own top edge reaches the top
+     of the window — which is the exact moment the recede is allowed to
+     start. The browser owns the arriving and the pinning; index.astro's
+     rAF loop owns only what happens afterwards.
+
+     NO transition here on purpose: the scale is eased per-frame by that
+     loop. A transition chasing per-scroll-event targets is what made the
+     crop-in jitter on phones (fixed 2026-08-17).
+
+     translateY BEFORE scale in the list, so the offset stays in real
+     pixels instead of shrinking along with the picture. */
+  position: sticky; top: 0; z-index: 1;
+  width: 100%;
+  transform: translateY(var(--reeldy, 0px)) scale(var(--recede, 1));
+  transform-origin: 50% 50%;
+  will-change: transform;
+  display: block;
+
+  /* How far it shrinks, and how much scroll that takes — the latter in
+     VIEWPORTS, not pixels. Both are read by the script, so a media query
+     is enough to retune the whole mechanic. Keep them unitless: JS reads
+     custom properties as raw text, so a length here parses to a bare
+     number and silently means something else. */
+  --recede-depth: 0.45;
+  --recede-travel: 1;
 }
 
 /* ---- 05 work ------------------------------------------------ */
@@ -332,6 +363,8 @@ body.scroll.is-dark::before { opacity: 1; }
   body.scroll { transition: none; }
   body.scroll::before { transition: none; }
   .reel__frame { transform: none !important; }
+  /* with no recede there is nothing to hold the beat open */
+  .reel { --reel-hold: 0; }
 }
 
 /* ============================================================
@@ -556,6 +589,10 @@ html[data-loading] body > *:not(#loader) { visibility: hidden; }
 }
 
 /* ---- 04 REEL — boards 3, 4, 9 ------------------------------ */
+/* RETIRED 2026-08-20: `.reel__room` was the perspective-grid stand-in for
+   the environment. The marsh hero still replaced it (see .reel__stage).
+   Kept, unused, because it is the only fallback if the plate is ever
+   pulled — delete it once the render ladder is settled for good. */
 .reel__room { position: absolute; inset: 0; z-index: 0; overflow: hidden; pointer-events: none; }
 .reel__room::before,
 .reel__room::after {
@@ -626,6 +663,12 @@ html[data-loading] body > *:not(#loader) { visibility: hidden; }
 .pp__next { margin-top: 4rem; display: flex; justify-content: space-between; gap: 1rem; flex-wrap: wrap; }
 
 @media (max-width: 46rem) {
+  /* A full-width reel on a phone is already small, and 0.45 of shrink on
+     top of that leaves a postage stamp. Less recede, and less scroll spent
+     getting there, so the beat does not outstay its welcome on a thumb. */
+  .reel__frame { --recede-depth: 0.26; --recede-travel: 0.7; }
+  .reel { --reel-hold: 95svh; }
+
   .morph__cols { grid-template-columns: 1fr; }
   .pp__beat { grid-template-columns: 1fr; gap: 0.35rem; }
 
@@ -720,22 +763,19 @@ html.menu-open body { overflow: hidden; }
 .pp__play:hover { background: rgba(14, 13, 11, 0.85); }
 
 /* ---- reel plates — the locked v04 cut, live 2026-08-20 ------- */
-/* Sized by HEIGHT with the ratio deriving the width, so the picture can
-   never be taller than the panel it sits in. Setting width and capping
-   height instead breaks the ratio and object-fit pillarboxes it. */
+/* Full page width on arrival, per the noth.in ruling. The frame is what
+   scales; these two just fill it, so their edges can never disagree. */
 .reel__video {
-  height: var(--plate-h); width: auto; aspect-ratio: 16 / 9;
-  max-width: min(90%, 60rem);
+  width: 100%; height: auto; aspect-ratio: 16 / 9;
   object-fit: cover; display: block;
   background: var(--ink);
 }
 
-/* The mirrored pass. 5/9 of the plate height lands it at exactly the
-   plate's width, so the two edges line up at every recede value without
-   a second measurement. Blur is doing real work here: the canvas is
-   320px wide and would otherwise show its own pixels once it scales up. */
+/* The mirrored pass, directly under the picture and the same width by
+   construction. Blur is doing real work here: the canvas is 320px wide
+   and would otherwise show its own pixels once it scales up. */
 .reel__mirror {
-  height: calc(var(--plate-h) * 5 / 9); width: auto; aspect-ratio: 16 / 5;
+  width: 100%; height: auto; aspect-ratio: 16 / 5;
   display: block; margin-top: 0.5rem;
   opacity: 0.34;
   filter: blur(1.5px);
