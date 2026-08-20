@@ -251,8 +251,11 @@ body.scroll.is-dark::before { opacity: 1; }
      --recede-cap bounds the settled width as a fraction of the page, for
      viewports whose crop blows the slot up past sense (portrait phones
      crop the plate's sides, so the slot can come out wider than the
-     screen). --frame-line is the border the reel earns as it recedes,
-     in visual px at rest — the script counter-scales it so it holds.
+     screen). --frame-line is a frame the reel CAN earn as it recedes, in
+     visual px at rest, counter-scaled by the script so it holds. JJ
+     auditioned it at 3 on 2026-08-20 and cut it on sight — it stays
+     wired at 0 so ?bw= can audition it again without a deploy. Do not
+     turn it back on without him.
 
      Keep every one of these unitless: JS reads custom properties as raw
      tokens, so a CSS length here parses to a bare number and silently
@@ -264,7 +267,7 @@ body.scroll.is-dark::before { opacity: 1; }
   --screen-w: 0.3413;
   --recede-cap: 1;
   --recede-travel: 1;
-  --frame-line: 3;
+  --frame-line: 0;
 }
 
 /* ---- 05 work ------------------------------------------------ */
@@ -821,11 +824,13 @@ html.menu-open body { overflow: hidden; }
 /* Full page width on arrival, per the noth.in ruling. The frame is what
    scales; the video just fills it, so their edges can never disagree.
 
-   The outline is the frame line: zero while the reel is full-bleed, eased
-   in during the recede, held at a constant VISUAL width by the script
-   (--bw is the target divided by the current scale). outline and not
-   border, deliberately — outline takes no layout space, so the frame's
-   box (which the recede maths reads every tick) never changes under it. */
+   The outline is the frame line — OFF by ruling (JJ tried 3px on
+   2026-08-20 and cut it the same day; --frame-line defaults to 0 and
+   only ?bw= turns it on). The plumbing stays: eased in with the recede,
+   counter-scaled by the script to a constant VISUAL width. outline and
+   not border, deliberately — outline takes no layout space, so the
+   frame's box (which the recede maths reads every tick) never changes
+   under it. */
 .reel__video {
   width: 100%; height: auto; aspect-ratio: 16 / 9;
   object-fit: cover; display: block;

@@ -96,6 +96,23 @@ project memory (`jjhouse-website`):
   clean — title, roles, player — never the bracket scaffold. The overlay rides
   its own Lenis instance; the page Lenis stops underneath, menu-fab (z 900)
   stays above the overlay (z 800).
+- **Reel beat (2026-08-20, three rounds — commits 13bda5c, 0cf55e8, 6df4a98 and after):** the
+  locked v04 cut arrives at full page width per noth.in and recedes into the marsh hero still
+  (`ReelBG_hero_cleanenv_f257` → `public/reel-bg/marsh_day_*`). Plate, cast shadow and reel
+  frame all ride ONE sticky `.reel__pin`, so they pin, hold and depart together — never let the
+  reel scroll away ahead of the environment. The settle rect is the REEL_Screen rectangle
+  measured off the v023 Blender matte (centre x 50.00 %, width 34.13 % of frame, bottom edge
+  45.46 % of frame height), stored as image fractions (`--screen-x/y/w`) and projected through
+  the plate's cover-crop, so web matches Blender at any viewport; `--recede-cap` (0.74 on
+  phones) bounds portrait crops. The canvas mirror is CUT — the render owns the water
+  reflection, and the plan of record is an animated mask reveal of the rendered reflection
+  (raw + k·REEL lightgroup pass) once the video backdrop lands. Meanwhile a cast shadow hugs
+  the reel's bottom edge across the foreground steps and bed mid-recede and dissipates at
+  settle. A white frame line was auditioned and cut the same day (`--frame-line: 0`; only
+  `?bw=` turns it on). Tuning knobs from any preview URL: `?sw= &sy= &cap= &travel= &bw=` —
+  bake winners into `scroll.css`. ⛔ Never cancel a sticky element's flow height with a
+  negative bottom margin — sticky clamps the margin box; that bug bled the marsh a viewport
+  into Works.
 - **Remaining real gaps:** 04-A line beside the reel · 06-C Little Dot story · hero second clause
   (workshop with JJ — sensibilities, not operations) · ( connect ) closing line · Field Journal
   hero videos + comic pages (on JJ's external drive) · featured-six confirmation + credit fixes.
