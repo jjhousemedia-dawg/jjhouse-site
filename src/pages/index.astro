@@ -118,20 +118,31 @@ const sizes = ['project--l', 'project--r', 'project--xl', 'project--l', 'project
 
       <button class="reel__sound" id="soundBtn" aria-pressed="false"><span>Sound</span></button>
 
-      <!-- data-beauty / data-reflect: set these to the water-room plate URLs
-           when they exist and the scrub rig below takes over automatically. -->
-      <div class="reel__frame" id="reelFrame" data-beauty="" data-reflect="">
-        <div class="ph" style="width:min(90%,60rem);aspect-ratio:16/9">
-          REEL &mdash; beauty plate
-          <small>enters full bleed, recedes with perspective as you scroll</small>
-          <small>board 4: returns to full size on scroll up</small>
-        </div>
-        <!-- Board 9 + verified on noth.in: CLEAN.mp4 stacked directly above
-             REFLECT.mp4, exactly one video height apart. Separate pass, not
-             a CSS trick, once the Blender render exists. -->
-        <div class="ph reel__reflect" style="width:min(90%,60rem);aspect-ratio:16/5" aria-hidden="true">
-          reflection pass
-        </div>
+      <!-- 2026-08-20 (JJ): the locked v04 cut is LIVE here, ahead of the
+           marsh. This is rung 1 of the eclipse ladder minus its backdrop --
+           the reel loops on the wall clock, the grid room above still
+           stands in for the plate. When PLATE_DAY lands it goes BEHIND
+           this element and nothing in here has to change. -->
+      <div class="reel__frame" id="reelFrame">
+        <video
+          class="reel__video" id="reelVideo"
+          poster="/reel/reel_v04_poster.jpg"
+          muted loop playsinline autoplay preload="metadata"
+          disablepictureinpicture disableremoteplayback
+        >
+          <source src="/reel/reel_v04_1080p.av1.mp4" type='video/mp4; codecs="av01.0.09M.10"' />
+          <source src="/reel/reel_v04_1080p.hevc.mp4" type='video/mp4; codecs="hvc1"' />
+          <source src="/reel/reel_v04_1080p.mp4" type="video/mp4" />
+        </video>
+
+        <!-- The reflection is ONE decode, not two. Board 9's separate
+             REFLECT.mp4 pass belongs to the Blender render; until that
+             exists, a second 1080p decode buys nothing and costs a phone
+             its battery, so the beauty plate is mirrored into a small
+             canvas per frame instead. Normal blend at 0.34 -- screen blend
+             is invisible over a bright backdrop and this cut is mostly
+             dark (measured on /reel-lab, 2026-08-19). -->
+        <canvas class="reel__mirror" id="reelMirror" width="320" height="100" aria-hidden="true"></canvas>
       </div>
 
       <!-- 04-A: a line sits here beside the reel, without any house wordplay
@@ -430,34 +441,86 @@ const sizes = ['project--l', 'project--r', 'project--xl', 'project--l', 'project
         });
       }
 
-      // ---- reel scrub rig — noth.in's actual gallery mechanic --------
-      // Two pre-rendered plates, scroll-scrubbed. Inert until data-beauty
-      // is set (the water-room renders). fastSeek where available.
-      const rig = document.getElementById('reelFrame');
-      const srcB = rig && rig.dataset.beauty;
-      if (rig && srcB && reel && !reduce) {
-        const mk = (src, cls) => {
-          const v = document.createElement('video');
-          v.src = src; v.muted = true; v.playsInline = true;
-          v.preload = 'auto'; v.className = cls;
-          return v;
+      // ---- the reel: the locked v04 cut, looping on the wall clock ----
+      // The scroll-scrub rig that used to live here is GONE. It mapped
+      // scroll position onto currentTime, which meant the cut only moved
+      // while you did — you could never actually watch it. Ruled
+      // 2026-08-19 on /reel-lab: the reel runs on AMBIENT time, a wall
+      // clock that always advances and is never scrubbed. Scroll's whole
+      // budget in this beat is the recede above (and, later, the eclipse
+      // dial behind). L = 720 frames = 30.000s; the file is cut to exactly
+      // 720 frames so the native `loop` seam lands on the beat.
+      const rv = document.getElementById('reelVideo');
+      if (rv) {
+        // Decode is not free and this beat sits well below the fold, so
+        // the reel only runs while it is near the viewport. rootMargin
+        // starts it a full screen early, so it is already at speed on
+        // arrival instead of flashing its poster.
+        let near = false;
+        const want = () => !reduce && near && document.visibilityState !== 'hidden';
+
+        // ---- the reflection, mirrored off the one decode ---------------
+        // Deliberately tiny. The result is masked away by 72% and blurred,
+        // so the extra pixels would be thrown out anyway; 320x100 keeps the
+        // per-frame drawImage off a phone's critical path. Canvas y=0 is
+        // the BOTTOM row of the picture — that is what a reflection shows.
+        const mir = document.getElementById('reelMirror');
+        const g = mir && mir.getContext && !reduce ? mir.getContext('2d') : null;
+        const W = mir ? mir.width : 0;
+        const FH = (W * 9) / 16;        // the whole frame, drawn at canvas width
+        let mraf = null;
+        const draw = () => {
+          if (rv.readyState >= 2) {
+            g.setTransform(1, 0, 0, -1, 0, FH);
+            g.drawImage(rv, 0, 0, W, FH);
+            g.setTransform(1, 0, 0, 1, 0, 0);
+          }
+          mraf = requestAnimationFrame(draw);
         };
-        const vb = mk(srcB, 'reel__video');
-        const vr = rig.dataset.reflect ? mk(rig.dataset.reflect, 'reel__video reel__video--reflect') : null;
-        rig.innerHTML = '';
-        rig.appendChild(vb);
-        if (vr) rig.appendChild(vr);
-        const scrub = () => {
-          const r = reel.getBoundingClientRect();
-          const total = r.height - window.innerHeight;
-          if (total <= 0 || !vb.duration) return;
-          const p = Math.min(1, Math.max(0, -r.top / total));
-          const t = p * vb.duration * 0.999;
-          if (vb.fastSeek) vb.fastSeek(t); else vb.currentTime = t;
-          if (vr && vr.duration) vr.currentTime = Math.min(t, vr.duration * 0.999);
+        // TRAP, cost a test run: this used to be driven ONLY by the video's
+        // own play/pause events, and it never started. `autoplay` fires
+        // `play` before the IntersectionObserver's first callback lands, so
+        // at that instant near===false and the loop declined to start — and
+        // no second `play` event ever came, because by the time the observer
+        // said yes the video was already playing. Anything gated on the same
+        // state as playback has to be re-evaluated wherever that state is
+        // written, not only where playback changes.
+        const spin = () => {
+          if (!g) return;
+          const on = want() && !rv.paused;
+          if (on && !mraf) mraf = requestAnimationFrame(draw);
+          if (!on && mraf) { cancelAnimationFrame(mraf); mraf = null; }
         };
-        addEventListener('scroll', scrub, { passive: true });
-        vb.addEventListener('loadedmetadata', scrub);
+
+        const apply = () => {
+          if (want()) { const pr = rv.play(); if (pr && pr.catch) pr.catch(() => {}); }
+          else if (!rv.paused) rv.pause();
+          spin();
+        };
+        // 50%, not 100%: at 100% the reel is already inside the root at
+        // scroll 0 and starts decoding 1080p while the hero's WebGL erode
+        // is still the only thing on screen. Half a viewport is more than
+        // enough lead for the video to be at speed on arrival.
+        if ('IntersectionObserver' in window) {
+          new IntersectionObserver(
+            (es) => { near = es.some((e) => e.isIntersecting); apply(); },
+            { rootMargin: '50% 0px' }
+          ).observe(rv);
+        } else { near = true; apply(); }
+        addEventListener('visibilitychange', apply);
+        rv.addEventListener('play', spin);
+        rv.addEventListener('pause', spin);
+        rv.addEventListener('loadeddata', spin);
+
+        // prefers-reduced-motion: a 24-shot cut running at half-bar pace
+        // is exactly what that setting exists to stop. Poster only, and a
+        // click starts it for anyone who does want to watch.
+        if (reduce) {
+          rv.removeAttribute('autoplay');
+          rv.pause();
+          rv.style.cursor = 'pointer';
+          rv.addEventListener('click', () => { if (rv.paused) rv.play(); else rv.pause(); });
+        }
       }
 
       // (board 12 morph script removed with the 07b beat, 2026-08-17)

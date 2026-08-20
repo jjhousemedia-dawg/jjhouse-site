@@ -167,8 +167,21 @@ body.scroll.is-dark::before { opacity: 1; }
   transform: scale(var(--recede, 1));
   will-change: transform;
   display: grid; place-items: center;
+  /* align-content, not just align-items: the plate and its reflection are
+     two auto rows, and the default (stretch) hands the sticky panel's
+     spare height to the rows, which drifts the reflection away from the
+     picture it belongs to. Centred as a PAIR, they stay joined. */
+  align-content: center;
   background: var(--ink);
   color: #b0aa9c;
+
+  /* One number sizes both plates. Height-first, because the constraint
+     that actually bites is the sticky panel: the picture plus its
+     reflection plus the gap is 14/9 of this, so 54svh fills about 84% of
+     the panel and leaves the Sound button its own air. min() against the
+     width cap keeps the old min(90%, 60rem) behaviour on a wide desktop,
+     where width runs out long before height does. */
+  --plate-h: min(54svh, calc(min(90vw, 60rem) * 9 / 16));
 }
 
 /* ---- 05 work ------------------------------------------------ */
@@ -703,8 +716,39 @@ html.menu-open body { overflow: hidden; }
 }
 .pp__play:hover { background: rgba(14, 13, 11, 0.85); }
 
-/* ---- reel scrub plates (inert until the water room lands) ---- */
-.reel__video { width: min(90%, 60rem); aspect-ratio: 16 / 9; object-fit: cover; display: block; }
+/* ---- reel plates — the locked v04 cut, live 2026-08-20 ------- */
+/* Sized by HEIGHT with the ratio deriving the width, so the picture can
+   never be taller than the panel it sits in. Setting width and capping
+   height instead breaks the ratio and object-fit pillarboxes it. */
+.reel__video {
+  height: var(--plate-h); width: auto; aspect-ratio: 16 / 9;
+  max-width: min(90%, 60rem);
+  object-fit: cover; display: block;
+  background: var(--ink);
+}
+
+/* The mirrored pass. 5/9 of the plate height lands it at exactly the
+   plate's width, so the two edges line up at every recede value without
+   a second measurement. Blur is doing real work here: the canvas is
+   320px wide and would otherwise show its own pixels once it scales up. */
+.reel__mirror {
+  height: calc(var(--plate-h) * 5 / 9); width: auto; aspect-ratio: 16 / 5;
+  display: block; margin-top: 0.5rem;
+  opacity: 0.34;
+  filter: blur(1.5px);
+  -webkit-mask-image: linear-gradient(to bottom, rgba(0,0,0,0.9), transparent 72%);
+  mask-image: linear-gradient(to bottom, rgba(0,0,0,0.9), transparent 72%);
+  pointer-events: none;
+}
+/* TRAP: this override has to live AFTER .reel__mirror, not up in the
+   reduced-motion block near the top of the file. Same specificity, so
+   source order decides, and up there `display: block` won and the
+   reduced-motion page carried an empty grey band under the poster. */
+@media (prefers-reduced-motion: reduce) {
+  .reel__mirror { display: none; }
+}
+
+/* kept for the Blender render's separate REFLECT pass — see board 9 */
 .reel__video--reflect {
   margin-top: 0.5rem; opacity: 0.5;
   -webkit-mask-image: linear-gradient(to bottom, rgba(0,0,0,0.9), transparent 72%);
