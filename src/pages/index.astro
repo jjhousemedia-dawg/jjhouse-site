@@ -469,7 +469,7 @@ const sizes = ['project--l', 'project--r', 'project--xl', 'project--l', 'project
       if (frame && reel && !reduce) {
         let cur = 0, raf = null, idle = 0;
         // read once per resize, not per frame: all are media-query values
-        let travel = 0, svh = 0, sEnd = 0.34, dxEnd = 0, yEnd = 0, line = 0, cover = 0, exitE = 0;
+        let travel = 0, svh = 0, sEnd = 0.34, dxEnd = 0, yEnd = 0, line = 0, cover = 0, exitE = 0, gapPx = 0;
         const stage = reel.querySelector('.reel__stage');
         const shadow = reel.querySelector('.reel__shadow');
         const pin = reel.querySelector('.reel__pin');
@@ -505,6 +505,10 @@ const sizes = ['project--l', 'project--r', 'project--xl', 'project--l', 'project
           svh = (stage && stage.offsetHeight) || window.innerHeight;
           travel = svh * (parseFloat(cs.getPropertyValue('--recede-travel')) || 1);
           exitE = svh * (parseFloat(cs.getPropertyValue('--exit-ease')) || 0);
+          // The locked dwell between the recede finishing and the ramp
+          // starting (JJ, 2026-08-21). Unitless viewport multiple, like
+          // everything else here.
+          gapPx = svh * (parseFloat(cs.getPropertyValue('--exit-gap')) || 0);
 
           // Live-tunable from any preview URL while JJ settles the numbers,
           // same deal as the touch-ink factors in erode.js: ?sw= (slot
@@ -519,6 +523,7 @@ const sizes = ['project--l', 'project--r', 'project--xl', 'project--l', 'project
           if (q.has('bw'))     line   = parseFloat(q.get('bw'))     || line;
           if (q.has('cover'))  { const v = parseFloat(q.get('cover')); if (isFinite(v)) cover = v; }
           if (q.has('exit'))   { const v = parseFloat(q.get('exit'));  if (isFinite(v)) exitE = svh * v; }
+          if (q.has('gap'))    { const v = parseFloat(q.get('gap'));   if (isFinite(v)) gapPx = svh * v; }
 
           // Project the slot through the plate's cover-crop, so the settled
           // reel matches the Blender construction at ANY viewport:
@@ -607,11 +612,28 @@ const sizes = ['project--l', 'project--r', 'project--xl', 'project--l', 'project
           // padding swallows the seam. Transform, never margin: the
           // sticky clamp holds the margin box (the old marsh-into-Works
           // bug), but a transform is applied after clamping.
-          if (pin && exitE > 0) {
+          //
+          // ⭐ 2026-08-21 (JJ: "the page scrolls up a tad while the reel is
+          // still receding"). The ramp used to start at a fixed
+          // release - exitE, which on BOTH layouts fell INSIDE the recede
+          // — desktop 0.90svh vs a recede ending at 1.00, phone 0.65 vs
+          // 0.70 — so the pin, and with it the plate's framing, crept up
+          // under a reel that had not landed yet. The start is now clamped
+          // to whichever comes LATER: the ramp's own length, or the recede
+          // plus the locked dwell (--exit-gap). E is re-derived from the
+          // zone that actually remains, which keeps the slope identity
+          // intact — d/dx of -0.5·E·q² is -q, so visible speed still ramps
+          // 0 -> 1 and meets document speed exactly at the release, for
+          // any E. If the hold is ever tuned so short that nothing is
+          // left, E goes <= 0 and the ramp simply sits out; the framing
+          // stays locked, which is the half that matters.
+          if (pin) {
             const release = r.height - svh;   // where the pin would un-pin
-            const zq = Math.min(1, Math.max(0, (-r.top - (release - exitE)) / exitE));
+            const startAt = Math.min(release, Math.max(release - exitE, travel + gapPx));
+            const E = release - startAt;
+            const zq = E > 0 ? Math.min(1, Math.max(0, (-r.top - startAt) / E)) : 0;
             pin.style.transform = zq > 0
-              ? 'translate3d(0, ' + (-0.5 * exitE * zq * zq).toFixed(1) + 'px, 0)'
+              ? 'translate3d(0, ' + (-0.5 * E * zq * zq).toFixed(1) + 'px, 0)'
               : '';
           }
           if (idle > 20) { raf = null; return; }   // settled — sleep until the next scroll

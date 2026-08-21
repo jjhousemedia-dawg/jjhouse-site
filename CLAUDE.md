@@ -176,6 +176,23 @@ project memory (`jjhouse-website`):
   opens with Little Dot's own mark under "( at )", brands under the verbs label — traced
   (potrace 5x) from the 200px wordmark JJ supplied; swap in the brand-kit vector when he
   brings one home.
+- **Round 7 (2026-08-21) — the locked dwell.** JJ: *"the page scrolls up a tad while the reel
+  is still receding. Make sure the framing of that BG stays locked until one scroll move after
+  the reel video has fully receded."* Round 6's exit ramp started at a FIXED `release -
+  --exit-ease`, and on both layouts that landed **inside the recede** — desktop 0.90svh against
+  a recede ending at 1.00, phones 0.65 against 0.70 — so `.reel__pin` (plate, shadow and frame
+  together) crept upward while the reel was still pulling back. Two halves to the fix:
+  (a) `--exit-gap` (0.15, `?gap=`) — a LOCKED dwell the ramp may not start before, and the
+  script clamps the ramp's start to `max(release - --exit-ease, travel + --exit-gap)`, deriving
+  E from whatever zone is actually left. The slope identity survives any E (d/dx of −E·q²/2 is
+  −q), so the ramp still meets document speed exactly at the release; a short hold now costs
+  ramp length, never lock. (b) `--reel-hold` grew to fit all three parts of the budget —
+  **155svh desktop** (1.0 travel + 0.15 gap + 0.4 ease) and **115svh phones** (0.7 + 0.15 + 0.3)
+  — from 130/95, which were shorter than travel + ease alone. The settled Blender-screen
+  composition now actually holds still, which it never did before. Verified headless at
+  1440×900 and 390×780, twice: plate rect top is 0 through the whole recede and the dwell, and
+  the ramp lands at exactly −E/2 at release (−180px / −117px).
+
 - **Remaining real gaps:** 04-A line beside the reel · 06-C Little Dot story · hero second clause
   (workshop with JJ — sensibilities, not operations) · ( connect ) closing line · Field Journal
   hero videos + comic pages (on JJ's external drive) · featured-six confirmation + credit fixes.

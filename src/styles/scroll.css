@@ -160,9 +160,18 @@ body.scroll.is-dark::before { opacity: 1; }
    spends: .reel__pin (100svh, sticky) + .reel__hold. The pin stays put
    for exactly the hold's height, so the recede travel AND the settled
    dwell both come out of --reel-hold. That budget has to be a CHILD, not
-   padding — see the trap on .reel__hold below. */
+   padding — see the trap on .reel__hold below.
+
+   ⭐ The budget is spent in THREE parts, in this order, and the hold has
+   to be long enough for all three or they collide:
+     --recede-travel   the recede itself          (1.0 desktop / 0.7 phone)
+     --exit-gap        the LOCKED dwell after it  (0.15)
+     --exit-ease       the departure ramp         (0.4 desktop / 0.3 phone)
+   130svh was shorter than travel + ease alone, so the ramp began BEFORE
+   the recede had finished and the whole pin — plate included — crept up
+   while the reel was still pulling back (JJ, 2026-08-21). 1.0+0.15+0.4. */
 .reel { position: relative; padding: 0; }
-.reel__hold { height: var(--reel-hold, 130svh); pointer-events: none; }
+.reel__hold { height: var(--reel-hold, 155svh); pointer-events: none; }
 
 /* The beat is ONE pinned unit (JJ, 2026-08-20 round 2): plate, shadow and
    reel frame all ride a single sticky container, so when the pin releases
@@ -284,6 +293,15 @@ body.scroll.is-dark::before { opacity: 1; }
      beat leaves on an ease instead of a cut. Unitless viewport multiple,
      like every knob here. Tunable: ?exit= */
   --exit-ease: 0.4;
+  /* THE LOCKED DWELL (JJ, 2026-08-21: "the page scrolls up a tad while the
+     reel is still receding — keep the framing of that BG locked until one
+     scroll move after the reel has fully receded"). The departure ramp may
+     not start until the recede has been finished for this much scroll. The
+     script clamps the ramp's start to max(release - --exit-ease, travel +
+     --exit-gap), so this wins even if the hold is retuned short: worst
+     case the ramp gets shorter, never earlier. Unitless viewport multiple
+     — 0.15 is roughly one wheel notch on a laptop. Tunable: ?gap= */
+  --exit-gap: 0.15;
 }
 
 /* ---- 05 work ------------------------------------------------ */
@@ -876,7 +894,8 @@ html[data-loading] body > *:not(#loader) { visibility: hidden; }
      must stay free to overflow the pin's BOTTOM while full-bleed, which
      is the same reason the pin itself never gets overflow: hidden. */
   .reel__pin { overflow-x: clip; }
-  .reel { --reel-hold: 95svh; }
+  /* travel 0.7 + gap 0.15 + ease 0.3 — see .reel__hold */
+  .reel { --reel-hold: 115svh; }
 
   .morph__cols { grid-template-columns: 1fr; }
   .pp__beat { grid-template-columns: 1fr; gap: 0.35rem; }
