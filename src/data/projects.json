@@ -326,7 +326,8 @@
       ],
       "category": "work",
       "featured": false,
-      "anecdote": null
+      "anecdote": null,
+      "credits": "dir Luke Orlando · dp Pedro Bringas · 1st ac Scott Ji · steadicam Justin Jach · gaffer Oscar Martinez · key grip Griffin Voth · production design TJ Hamouzas · helmet design Ash Davis · video synthesist + laser Clayton McCracken · hair + makeup Ulrica Zou · editor Dan Carr · colorist Dante Pasquinelli · VFX Daniel Felipe Mangosing · shot at Lodge Room + Night Light Studios · JJ House: producer, additional VFX"
     },
     {
       "slug": "charli-xcx-baby",
@@ -613,6 +614,23 @@
         "The final output is 15 seconds and looks effortless (unless you’re also a VFX artist). It’s right here and it’s short, just watch it. I’m glad Jeff called. The job inspired me: when I later creative-directed a campaign for a small fashion label called Field Journal, the first setup I wrote was a duplication moment. <a href=\"/work/field-journal\">Check it out here.</a>"
       ],
       "credits": "dir Jeff Prosser · client AMIRI · JJ House: VFX"
+    },
+    {
+      "slug": "beyond-ordinary-the-tetrads",
+      "title": "Beyond Ordinary — The Tetrads",
+      "artist": "Beyond Ordinary Software Solutions",
+      "work": "The Tetrads",
+      "video": {
+        "type": "vimeo",
+        "id": "1102311283"
+      },
+      "roles": [
+        "3D"
+      ],
+      "category": "work",
+      "featured": false,
+      "anecdote": null,
+      "credits": "produced by PROSS · creative direction Jeffrey Prosser · design, scripts, sound, edit + 2D Jeffrey Prosser · commissioned by Jacob Anderson + Beyond Ordinary Software Solutions · JJ House: 3D rigging, Blender"
     },
     {
       "slug": "field-journal",
