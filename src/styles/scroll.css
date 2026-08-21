@@ -322,6 +322,30 @@ body.scroll.is-dark::before { opacity: 1; }
 .viewall a { font-family: var(--font-display); font-weight: 300; font-size: clamp(1.75rem, 5vw, 3.25rem); color: inherit; text-decoration: none; letter-spacing: -0.02em; }
 .viewall a:hover { text-decoration: underline; text-underline-offset: 0.15em; }
 
+/* ---- 06 digital agency: the client row ----------------------
+   Marks all render currentColor at watermark-adjacent opacity — below
+   the flip that is paper on ink, which is the whole ask ("tasteful and
+   all the same white or off-white"). --h is the per-mark optical size
+   correction set in ClientLogos.astro: these wordmarks carry wildly
+   different internal heights (a speech bubble vs a lowercase word), so
+   a single shared height reads uneven; the multiplier evens the felt
+   size instead. */
+.clients { margin-top: clamp(2.5rem, 6vh, 4rem); }
+.clients__row {
+  list-style: none; margin: 1.6rem 0 0; padding: 0;
+  display: flex; flex-wrap: wrap; align-items: center;
+  gap: clamp(1.4rem, 3.5vw, 2.6rem) clamp(1.8rem, 4.5vw, 3.6rem);
+}
+.clients__mark { display: block; }
+.clients__mark svg {
+  display: block; width: auto;
+  height: calc(var(--h, 1) * clamp(1.05rem, 2vw, 1.45rem));
+  fill: currentColor;
+  opacity: 0.72;
+  transition: opacity 300ms var(--ease);
+}
+.clients__mark:hover svg { opacity: 1; }
+
 /* ---- 08 how I work ------------------------------------------ */
 .principles { display: grid; gap: clamp(2.5rem, 6vh, 4.5rem); margin-top: 3rem; max-width: 52rem; }
 
@@ -823,7 +847,7 @@ html[data-loading] body > *:not(#loader) { visibility: hidden; }
   }
   .viewall a { display: inline-block; padding: 0.5rem 0.4rem 0.5rem 0; margin: -0.5rem -0.4rem -0.5rem 0; }
   .reel__sound { padding: 0.7rem 1.15rem; }
-  .wo__sound { padding: 0.7rem 1.15rem; }
+  .wo__sound { width: 3rem; height: 3rem; }
 }
 
 @media (prefers-reduced-motion: reduce) {
@@ -986,15 +1010,23 @@ html.wo-open body { overflow: hidden; }
   cursor: pointer;
 }
 .wo__sound {
+  /* an icon, not a word (JJ, 2026-08-20 round 5): speaker + x while
+     muted, speaker + waves when live. Same material as the parked
+     .reel__sound pill, circled around the glyph. */
   position: absolute; top: 0.9rem; left: 50%; transform: translateX(-50%); z-index: 3;
-  font-family: var(--font-mono); font-size: 0.625rem; letter-spacing: 0.16em; text-transform: uppercase;
-  border: 1px solid var(--paper); border-radius: 999px; padding: 0.4rem 0.9rem;
+  width: 2.6rem; height: 2.6rem; padding: 0;
+  display: grid; place-items: center;
+  border: 1px solid var(--paper); border-radius: 999px;
   background: rgba(14, 13, 11, 0.55); color: var(--paper); cursor: pointer; opacity: 0.8;
   backdrop-filter: blur(4px);
-  transition: opacity 200ms var(--ease), background-color 200ms var(--ease);
+  transition: opacity 200ms var(--ease), background-color 200ms var(--ease), color 200ms var(--ease);
 }
 .wo__sound:hover { opacity: 1; }
 .wo__sound[aria-pressed='true'] { background: var(--paper); color: var(--ink); opacity: 1; }
+.wo__ico { width: 1.15rem; height: 1.15rem; display: block; fill: currentColor; }
+.wo__stroke { fill: none; stroke: currentColor; stroke-width: 1.8; stroke-linecap: round; }
+.wo__sound[aria-pressed='false'] .wo__ico--on { display: none; }
+.wo__sound[aria-pressed='true'] .wo__ico--off { display: none; }
 
 @media (prefers-reduced-motion: reduce) {
   .menu { transition: none; }

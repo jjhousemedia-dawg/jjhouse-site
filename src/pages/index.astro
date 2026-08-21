@@ -4,6 +4,7 @@ import data from '../data/projects.json';
 import Wordmark from '../components/Wordmark.astro';
 import ConnectGate from '../components/ConnectGate.astro';
 import WorkOverlay from '../components/WorkOverlay.astro';
+import ClientLogos from '../components/ClientLogos.astro';
 
 // --- beat 05 selection -------------------------------------------------
 // PLACEHOLDER PICK, being replaced one slot at a time as the written
@@ -275,13 +276,18 @@ const sizes = ['project--l', 'project--r', 'project--xl', 'project--l', 'project
       <!-- "Not everything I make is a film." → JJ's direction 2026-08-17:
            straightforward, "digital agency work or something like that." -->
       <h2 class="statement">Digital agency work.</h2>
+      <!-- "at Little Dot Studios" added 2026-08-20 per JJ ("worth figuring
+           out the copy and clarifying that I work at Little Dot Studios").
+           Kept to the minimum factual insertion; he iterates copy at word
+           level, so anything beyond naming the studio waits for him. -->
       <div class="prose" style="margin-top:2.5rem">
         <p>
-          {LDS.channels} brand and creator channels. {LDS.views} views and {LDS.subs} subscribers
-          across the tenure. Love Island packaging, Pokemon, originals programmed and written and
-          thumbnailed.
+          {LDS.channels} brand and creator channels at Little Dot Studios. {LDS.views} views and
+          {LDS.subs} subscribers across the tenure. Love Island packaging, Pokemon, originals
+          programmed and written and thumbnailed.
         </p>
       </div>
+      <ClientLogos />
     </div>
   </section>
 
@@ -399,24 +405,26 @@ const sizes = ['project--l', 'project--r', 'project--xl', 'project--l', 'project
       // IntersectionObserver did exactly that when scroll restoration
       // landed past the reel).
       //
-      // WHERE it flips, re-ruled 2026-08-20 (JJ, mobile pass): the moment
-      // the recede has fully settled — the marsh is fully seen, the plate
-      // still covers the whole viewport, so the 900ms crossfade runs where
-      // nobody can see it. The old midpoint rule put the flip 2svh AFTER
-      // the pin released on phones (hold 95svh, section midpoint 97.5svh),
-      // so the fade played out in the open on the way into Works — the
-      // "extra beat of background colour change" JJ flagged. The recede
-      // loop hands the settle distance over via settlePx (it already knows
-      // travel, including any ?travel= override); the midpoint rule stays
-      // as the fallback for reduced motion, where there is no recede.
+      // WHERE it flips, re-re-ruled 2026-08-20 round 5 (JJ): MID-RECEDE,
+      // at --flip-at of the travel (0.45). Round 4 flipped at settle, but
+      // on a phone the URL bar collapses and the visible viewport grows
+      // past the 100svh pin, so a strip of page background peeks below the
+      // plate and JJ could still feel the crossfade there at the bottom of
+      // the screen late in the beat. Flipping while the reel is still
+      // receding puts the fade inside the beat's own motion, and by the
+      // hold it is long finished in both the plate and the strip. The
+      // recede loop hands the distance over via flipPx (it already knows
+      // travel, including ?travel=); ?flip= tunes the fraction from any
+      // preview URL. The midpoint rule stays as the reduced-motion
+      // fallback, where there is no recede.
       const reel = document.getElementById('reel');
-      let settlePx = null;   // set by the recede loop's measure()
+      let flipPx = null;   // set by the recede loop's measure()
       let setTheme = () => {};
       if (reel) {
         setTheme = () => {
           const r = reel.getBoundingClientRect();
-          const dark = settlePx != null
-            ? -r.top >= settlePx
+          const dark = flipPx != null
+            ? -r.top >= flipPx
             : r.top + r.height / 2 <= window.innerHeight / 2;
           document.body.classList.toggle('is-dark', dark);
         };
@@ -510,9 +518,10 @@ const sizes = ['project--l', 'project--r', 'project--xl', 'project--l', 'project
           dxEnd = ox + sx * dw - pw / 2;           // 0 while the slot is centred
           yEnd  = oy + sy * dh;                    // settled BOTTOM edge of the picture
 
-          // hand the settle distance to the theme flip: dark the moment
-          // the recede completes, while the plate still owns the viewport
-          settlePx = travel;
+          // hand the flip distance to the theme script: dark mid-recede
+          // (JJ, round 5), while the beat's own motion carries the fade
+          const flipAt = q.has('flip') ? (parseFloat(q.get('flip')) || 0.45) : 0.45;
+          flipPx = travel * flipAt;
           setTheme();
         };
         const tick = () => {

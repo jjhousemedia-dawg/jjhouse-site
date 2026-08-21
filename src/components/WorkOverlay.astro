@@ -112,10 +112,16 @@
       const src = type === 'youtube'
         ? `https://www.youtube-nocookie.com/embed/${encodeURIComponent(id)}?autoplay=1&mute=1&controls=0&rel=0&playsinline=1&iv_load_policy=3&disablekb=1&fs=0&color=white&enablejsapi=1&origin=${encodeURIComponent(location.origin)}`
         : `https://player.vimeo.com/video/${encodeURIComponent(id)}?autoplay=1&muted=1&controls=0&title=0&byline=0&portrait=0&pip=0&keyboard=0&transparent=0&color=ffffff&dnt=1`;
+      // The sound control is an ICON, not a word (JJ, 2026-08-20 round 5):
+      // speaker with an x while muted, speaker with waves once sound is on.
+      // Inline SVG, currentColor, so it obeys the b/w system for free.
       return `<div class="pp__media wo__media" data-player="${type}">
         <iframe src="${src}" title="${esc(title)}" allow="autoplay; fullscreen; encrypted-media" allowfullscreen></iframe>
         <button class="wo__shield" type="button" aria-label="Play or pause"></button>
-        <button class="wo__sound" type="button" aria-pressed="false"><span>Sound</span></button>
+        <button class="wo__sound" type="button" aria-pressed="false" aria-label="Sound">
+          <svg class="wo__ico wo__ico--off" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 9.5v5h3.2L12 18.5v-13L7.2 9.5H4z"/><path class="wo__stroke" d="M15.5 9.5l5 5m0-5l-5 5"/></svg>
+          <svg class="wo__ico wo__ico--on" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 9.5v5h3.2L12 18.5v-13L7.2 9.5H4z"/><path class="wo__stroke" d="M15.5 8.8a4.6 4.6 0 0 1 0 6.4M17.8 6.6a7.9 7.9 0 0 1 0 10.8"/></svg>
+        </button>
       </div>`;
     };
 
@@ -132,7 +138,17 @@
       const send = (msg) => {
         try { iframe.contentWindow.postMessage(JSON.stringify(msg), HOST); } catch (e) {}
       };
-      const yt = (func, args) => send({ event: 'command', func, args: args || [] });
+      // ⛔ THE HANDSHAKE (found via JJ's "not working on desktop",
+      // 2026-08-20): a YouTube widget silently DISCARDS every command
+      // until the parent has introduced itself with a `listening` event —
+      // that is what the official iframe_api script does under the hood;
+      // enablejsapi=1 alone is not enough, and nothing errors. Sent when
+      // the iframe loads AND again before each command: it is idempotent,
+      // and re-greeting survives a slow player boot or a src swap.
+      const hello = () => { if (type === 'youtube') send({ event: 'listening', id: 1, channel: 'widget' }); };
+      iframe.addEventListener('load', hello);
+      hello();
+      const yt = (func, args) => { hello(); send({ event: 'command', func, args: args || [], id: 1, channel: 'widget' }); };
       const vm = (method, value) => send(value === undefined ? { method } : { method, value });
       let playing = true, muted = true;
       shield.addEventListener('click', () => {
@@ -356,5 +372,18 @@
       const slug = slugFrom(a);
       if (slug) fetchProject(slug).catch(() => {});
     }, { passive: true });
+
+    // ---- refresh-mid-overlay recovery (JJ, 2026-08-20) -------------------
+    // Refreshing /work/slug used to strand the visitor on the static page:
+    // no scroll-out, no overlay, "sorta locked". The static page now
+    // detects that case (history.state.wo survives a reload) and redirects
+    // here with ?open=. Rebuild the intended stack from scratch: clean the
+    // URL back to the host page, then open the overlay exactly as if the
+    // row had been clicked — pushState, scroll-exit, ESC and back all work.
+    const boot = new URLSearchParams(location.search).get('open');
+    if (boot && /^[\w-]+$/.test(boot)) {
+      history.replaceState(null, '', HOST_PATH);
+      requestAnimationFrame(() => openOverlay(boot));
+    }
   }
 </script>

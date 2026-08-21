@@ -118,10 +118,9 @@ project memory (`jjhouse-website`):
   `--entry-cover: 1` under 46rem, `?cover=` tunes) and the recede lerps pose-to-pose to the
   slot, so it reads as pulling straight back instead of shrinking down the page; the pin gets
   `overflow-x: clip` (clip, never hidden — hidden grows scrollWidth) for the crop's side
-  overflow. The theme flip now lands the moment the recede SETTLES (`settlePx` handed from the
-  recede loop to `setTheme`), so the 900ms crossfade runs while the plate still owns the
-  viewport — the old midpoint rule fired 2svh AFTER the pin released on phones and the fade
-  played out in the open before Works; midpoint stays as the reduced-motion fallback. The
+  overflow. The theme flip moved off the old midpoint rule (which fired 2svh AFTER the
+  pin released on phones, fading in the open before Works) — see round 5 below for where it
+  landed; midpoint stays as the reduced-motion fallback. The
   two-finger paint ZONE (erode.js `uZoneRect`) allows ink at full strength from the deck line
   to the reel frame's top, full width — the wordmark video rect was silently fencing phones to
   a ~220px band (`?zone=0` restores, `?zonefade=` tunes). The work overlay's players are
@@ -135,6 +134,30 @@ project memory (`jjhouse-website`):
   instead of hover; no caption by ruling. The S animates the `<g class="wm-s">` wrapper in
   Wordmark.astro — a CSS transform directly on the path would REPLACE its attribute
   translate/flip and throw the glyph off the canvas.
+- **Round 5 (2026-08-20 evening):** the theme flip lands MID-RECEDE at 0.45 of the travel
+  (`flipPx` from the recede loop; `?flip=` tunes) — flipping at settle still let JJ feel the
+  crossfade in the strip below the 100svh pin once a phone's URL bar collapses; mid-recede the
+  beat's own motion carries it. The overlay Sound control is an ICON (speaker + x / speaker +
+  waves, inline SVG, currentColor) and its commands now WORK: ⛔ a YouTube iframe silently
+  discards every postMessage command until the parent sends the `listening` handshake
+  (`{event:'listening',id,channel:'widget'}`) — enablejsapi=1 alone does nothing and nothing
+  errors; the handshake is sent on iframe load and re-sent before each command. Refreshing
+  with the overlay open no longer strands the visitor on the static /work/ page: the static
+  page detects `history.state.wo` (it survives reload — that state EXISTS only if an overlay
+  was open) and `location.replace`s to `/work/?open=slug`; WorkOverlay boots from `?open=`,
+  cleans the URL, and reopens the overlay with a working history stack. Direct visits and
+  shared links have no state.wo and keep the static page — the 8/19 "shareable and honest"
+  ruling holds, and crawlers never see a redirect. New content: **Rayburn** in the archive
+  (unlisted YouTube `ulmBagAFM6w`, thumb from the YT poster at the q72 webp recipe; roles
+  Write · Story, anecdote and credits from JJ's own words — Britton Stoeckel's show, JJ wrote
+  and created the character Cult). The Little Dot beat names the studio in the prose and
+  carries `ClientLogos.astro`: seven public brand marks (Pokemon, T-Mobile, Prime Video, Hulu,
+  NBCUniversal, Bravo, Peacock) inlined as single-fill currentColor SVGs under the label
+  "( packaged, programmed and thumbnailed for )" — the label reuses the paragraph's own verbs
+  so the row can never read as creative-directed-for. Sources + mono pipeline in the website
+  Drive folder under `06_Assets/agency-logos/`. Still owed: Little Dot's own mark (JJ pulls
+  it from the brand kit) and the monster-trucks channel mark (which property, exactly — JJ
+  to confirm).
 - **Remaining real gaps:** 04-A line beside the reel · 06-C Little Dot story · hero second clause
   (workshop with JJ — sensibilities, not operations) · ( connect ) closing line · Field Journal
   hero videos + comic pages (on JJ's external drive) · featured-six confirmation + credit fixes.

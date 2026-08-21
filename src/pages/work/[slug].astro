@@ -21,6 +21,22 @@ const next = data.projects[(idx + 1) % data.projects.length];
     Pages with a written story (p.story) are index-eligible per that same
     logic: the brackets are gone. First one: Used To Know Me, 2026-08-17. */}
 <Scroll dark={true} noindex={!p.story} title={`${p.title} — JJ House`} desc={`${p.title}. ${p.roles.join(', ')}.`}>
+  <script is:inline>
+    // Refresh-mid-overlay recovery (JJ, 2026-08-20). The overlay pushes
+    // /work/slug with history.state.wo set, and that state SURVIVES a
+    // reload — so landing here with it means the visitor refreshed while
+    // the overlay was open, and this static page would strand them with
+    // no scroll-out. Hand them back to the intended setup: the archive
+    // underneath, the overlay on top (WorkOverlay boots from ?open=).
+    // location.replace keeps this page out of history. A direct visit or
+    // shared link has no state.wo and stays right here — the static page
+    // is still the real, shareable, no-JS artifact (ruled 8/19).
+    (function () {
+      if (!(history.state && history.state.wo)) return;
+      var m = location.pathname.match(/^\/work\/([\w-]+)\/?$/);
+      if (m) location.replace('/work/?open=' + encodeURIComponent(m[1]));
+    })();
+  </script>
   <div class="pp">
     <a class="pp__back" href="/#work">&#8624; Back</a>
 
