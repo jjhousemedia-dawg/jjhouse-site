@@ -48,7 +48,7 @@
         "But do I think you’ll like it? Yes.<br>Is it true to heart? Absolutely.<br>Did I say what I meant to say? I’m not sure.",
         "But hey—if I tried, and if I failed… at least I…"
       ],
-      "credits": "dp Pedro Bringas · starring Redondo Red & Tanya · film, dev + scan Spectra Film · a West of 20 post · JJ House: director, editor, VFX"
+      "credits": "dp Pedro Bringas · starring Redondo Red & Tanya Quigley · gaffer Eddy Scully · 1st ac Mitch Boyce · swing Alex Waxenbaum · production coordinator Skarlett Redd · film, dev + scan Spectra Film · extra scan Thom Kuo · a West of 20 production · JJ House: director, producer, editor, VFX"
     },
     {
       "slug": "gnome-sometimes-the-grass-is-greener",
@@ -509,7 +509,7 @@
         "The video came out, did good numbers, and everyone got paid real money (music videos sometimes only pay in stardust and dreams); the only casualty of the whole job was one ceiling light tile, which wasn’t actually broken, it had to be turned 90°. Used To Know Me was 4 years ago. If I got this job today I’d lock the brand architecture faster and put myself deeper inside the creative conversation from the start, which is not a note on anybody so much as what four more years of life and learning buys you.",
         "Used To Know Me is positioned at a frontier point for Charli. Crash was the self-aware sellout album, and Used To Know Me was the last album single release before brat. My read, which is just my own, is that the energy was already all there, one album before it clarified. I’m not the lore person. But we love YouTube comments. Lightning went into a bottle. Then it came out."
       ],
-      "credits": "dir Alex Lill · dp Andrea Gavazzi · creative direction Imogene Strauss · choreography Nathan Kim · a West of 20 production · JJ House: supervising producer, editor, VFX"
+      "credits": "dir Alex Lill · dp Andrea Gavazzi · creative direction Imogene Strauss · steadicam Jun Li · production design Hugh Zeigler · choreography Nathan Kim · styling Chris Horan · hair Sami Knight · makeup Lily Keys · exec producer Pedro Bringas · producer Jack Dahlin · a West of 20 production for Atlantic Records UK · JJ House: executive producer, editor, VFX"
     },
     {
       "slug": "charli-xcx-every-rule",
@@ -539,11 +539,34 @@
       },
       "roles": [
         "Produce",
-        "VFX + Edit"
+        "Edit",
+        "VFX"
       ],
       "category": "work",
       "featured": false,
-      "anecdote": null
+      "anecdote": "Sand dunes night shoot, infinite-zoom oner, the VFX was the edit. Barely made it out alive. Fitzcarraldo, but the mountain was After Effects.",
+      "story": [
+        "The video was supposed to work like this. You are inside a photograph. Then you are inside the next one, and the next, and it never cuts. An infinite zoom, dreamy and flash-lit and saturated, pulling you through image after image with the band inside every frame.",
+        "Before I was on this job, the team had commissioned a photographer whose AI work does exactly that, and does it beautifully. The plan was for her to make the video. She proved it couldn’t be done before anyone shot a frame. The models available in early 2024 could not hold the likenesses of three specific guys through the transformation, at that velocity, lip synced. The reference survived. The method didn’t. What was left was a beautiful idea, a delivery date, and nobody who had made something quite like this before.",
+        "So we shopped it. Every VFX house came back with the same shape of answer: yes, here are three ways, and all three cost more than the entire production budget.",
+        "The director found the Oceano dunes and wanted to go look, so we went. Him, the band’s management, my co-producer and me, in a Bronco. The public way onto that sand is to drive down onto the beach, off-road along it, and cross a tidal canal that’s only open at low tide. We made the crossing, got out and scouted. The place was gorgeous and completely unusable.",
+        "Two days later I found an RV campground whose back gate opens straight onto prime dune. No canal, no basecamp on open beach. The dunes ran west of the gate, so the sun set straight into our backgrounds at the end of the day. Real dunes were back on the menu.",
+        "The shoot was two days, both splits, afternoon into night. Day one was the dunes. The first setups were natural light with minimal grip, where “minimal” meant an 8x8 frame, sandbags, and a video village for client, hauled roughly 600 yards through loose sand. We shot the furthest-out setups first and retreated toward the campground as the sun dropped.",
+        "Day two was motels rented by the hour, from owners who were kind about a request that perplexed them. That night we invented a blackout scene in a parking lot, then ran around town with the band and one strobe, stealing stills.",
+        "In post it was hard to see an edit, because on this video the edit was the effect. Every setup was a locked-off plate that had to be rigged onto a moving scale rig and rendered before anyone could see whether a cut worked. We had about 40 seconds assembled when our editor had to jump to a prior obligation. He had helped invent the system and taught us how to wrangle it, bless him, and then he was gone, so I took over the cut.",
+        "Warning: very technical section.",
+        "The wall turned out to be a units problem. After Effects expresses scale as a percentage, and apparent velocity is not linear in percentage, so a pass-by that reads as continuous cannot be one object getting bigger. It has to be a relay race of nulls, each one scaling up and handing off to the next before it outruns usable resolution, with pre-comps strung onto them, each pre-comp carrying a performance that has to stay lip synced the whole way it travels. Then roto on all of it. Then the seams, because the plates were a mix of video and enormous stills, and at that scale the joins show.",
+        "So I ran content-aware fill in After Effects, took the frame into Photoshop, generated the missing material there, kept only the transparent region the fill had added, and tracked that patch back onto the moving plate. It works. I accept my Razzie for Most Deranged Method, thank you. The patch also drops track in the middle of a move, and pulls off register when parts of the frame parallax at different rates from center, which required even more noodling.",
+        "For the bridge, I stopped cutting and started building. I pulled the real dunes out of the plates, rebuilt the dune architecture in Blender, and ran a camera-speed-matched setup for a more graphical desert passage.",
+        "Pass-bys read continuous, the three faces stay themselves the whole way through.",
+        "If I got this job today, the first thing I’d do is insist on a VFX supervisor. I want to be precise about why I didn’t, because it wasn’t laziness or ego. Early on in prep, I knew enough to brainstorm the effect out loud. We could try it this way, or this way, what about this, and those ideas got yeses, and the yeses built trust, and the trust came back to me as “let’s go with your guidance on this.”",
+        "Knowledge you happen to have is not the same as knowledge you should be underwriting by yourself.",
+        "The second thing is structural. On this project the creative director was also the director and also, functionally, our executive producer, which means the same person hearing every creative ambition was hearing every logistics constraint, and was understandably very committed to landing the ambition. My co-producer and I were both freelance. There was nobody to bring a pure production concern to, because the person you’d bring it to was the person the concern was about.",
+        "That’s a diagnosis and not a complaint, and I know the difference because the same team’s next two videos had an actual executive producer from the management side, and simpler concepts, and both came out beautifully. Same band, same director’s eye, different structure, and nobody had to invent anything. That’s not a note on anybody. It’s what a missing chair at the table costs.",
+        "I rewatched it for the first time in a long time. When we finished I was too far inside it to see anything, and I think I assumed I’d never like it.",
+        "I actually think it’s a pretty cool video."
+      ],
+      "credits": "dir Katzki · dp Pedro Bringas · producer Eva Barragan · 1st ac Jacob Lallas · 2nd ac Jake Deverian · gaffer Graham Wade · key grip Mitch Storey · styling Aidan Palermo · hair + makeup Nicole Maguire · JJ House: producer, 1st AD, editor, VFX"
     },
     {
       "slug": "jordana-go-slow",
