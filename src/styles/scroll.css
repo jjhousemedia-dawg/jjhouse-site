@@ -275,6 +275,15 @@ body.scroll.is-dark::before { opacity: 1; }
      stays 0; phones set 1 below. The sides that overflow are clipped at
      the viewport edge by body's overflow-x. Tunable: ?cover= */
   --entry-cover: 0;
+  /* THE DEPARTURE RAMP (JJ, 2026-08-20 round 6: the un-pin "snaps back"
+     and the page jumps). The pin's release is a velocity step — 0 px/s
+     of visible motion during the dwell, full scroll speed the instant
+     the sticky lets go. Over the LAST --exit-ease viewports of the hold
+     the script pre-slides the whole pin up on a q² curve whose slope
+     ramps 0 -> 1, hitting exactly document speed at the release, so the
+     beat leaves on an ease instead of a cut. Unitless viewport multiple,
+     like every knob here. Tunable: ?exit= */
+  --exit-ease: 0.4;
 }
 
 /* ---- 05 work ------------------------------------------------ */
@@ -331,6 +340,8 @@ body.scroll.is-dark::before { opacity: 1; }
    a single shared height reads uneven; the multiplier evens the felt
    size instead. */
 .clients { margin-top: clamp(2.5rem, 6vh, 4rem); }
+.clients__group + .clients__group { margin-top: clamp(2rem, 5vh, 3.2rem); }
+.clients__group .label { margin-bottom: 0; }
 .clients__row {
   list-style: none; margin: 1.6rem 0 0; padding: 0;
   display: flex; flex-wrap: wrap; align-items: center;
@@ -425,6 +436,11 @@ body.scroll.is-dark::before { opacity: 1; }
   transform-box: fill-box;
   transform-origin: 50% 100%;
 }
+/* The coil dips below the baseline and the stretch overshoots the cap
+   line — both live OUTSIDE the svg's viewBox, and svg clips by default,
+   which is why the bottom of the S was cropping on hover (JJ, round 6).
+   Scoped to the closing mark; the hero and loader marks never move. */
+.closing-mark svg { overflow: visible; }
 .smark {
   /* the S's slice of the 4433-wide drawing: glyph x 2777..3603 */
   position: absolute; top: 0; left: 62.6%; width: 18.7%; height: 100%;
@@ -433,33 +449,75 @@ body.scroll.is-dark::before { opacity: 1; }
 }
 /* hover = a hint of the coil; press = loaded. Sibling selector, not
    :has() — the .smark sits before the svg in the markup for exactly
-   this, and it keeps the hint working in older engines. */
+   this, and it keeps the hint working in older engines.
+
+   SQUASH AND STRETCH (JJ, round 6: "a bit more stretch and squeeze"):
+   every pose pairs an inverse scaleX with its scaleY, so the glyph
+   reads as a spring conserving volume — wider as it loads, narrower as
+   it flies — instead of type being resized. */
 @media (hover: hover) {
   .closing-mark .wm-s { transition: transform 260ms var(--ease); }
-  .smark:hover ~ svg .wm-s  { transform: translateY(2.5%) scaleY(0.94); }
-  .smark:active ~ svg .wm-s { transform: translateY(6%) scaleY(0.8); transition-duration: 120ms; }
+  .smark:hover ~ svg .wm-s  { transform: translateY(2%) scale(1.06, 0.9); }
+  .smark:active ~ svg .wm-s { transform: translateY(4.5%) scale(1.13, 0.76); transition-duration: 120ms; }
 }
 /* release: the spring fires. Overshoot is in the keyframes, so the
    timing curve stays simple. */
-.closing-mark .wm-s.is-firing { animation: s-fire 760ms var(--ease) 1; }
+.closing-mark .wm-s.is-firing { animation: s-fire 820ms var(--ease) 1; }
 @keyframes s-fire {
-  0%   { transform: translateY(6%) scaleY(0.78); }
-  36%  { transform: translateY(-13%) scaleY(1.14); }
-  62%  { transform: translateY(3.5%) scaleY(0.95); }
-  82%  { transform: translateY(-1.5%) scaleY(1.03); }
+  0%   { transform: translateY(4.5%) scale(1.13, 0.76); }
+  32%  { transform: translateY(-16%) scale(0.88, 1.24); }
+  58%  { transform: translateY(3%) scale(1.07, 0.9); }
+  79%  { transform: translateY(-2%) scale(0.97, 1.06); }
   100% { transform: none; }
 }
 /* touch: no hover to hint with, so the S itself breathes a slow spring
    every few seconds — subtle, semi-frequent, enough to earn the tap. */
 @media (hover: none) {
   .closing-mark .wm-s { animation: s-idle 6.5s ease-in-out infinite; }
-  .closing-mark .wm-s.is-firing { animation: s-fire 760ms var(--ease) 1; }
+  .closing-mark .wm-s.is-firing { animation: s-fire 820ms var(--ease) 1; }
   @keyframes s-idle {
     0%, 80%, 100% { transform: none; }
-    85% { transform: translateY(2%) scaleY(0.95); }
-    90% { transform: translateY(-2.5%) scaleY(1.05); }
-    95% { transform: translateY(1%) scaleY(0.985); }
+    85% { transform: translateY(2%) scale(1.04, 0.94); }
+    90% { transform: translateY(-3%) scale(0.97, 1.06); }
+    95% { transform: translateY(1%) scale(1.01, 0.985); }
   }
+}
+
+/* ---- the chevrons (JJ, round 6): while the S is tensed under the
+   cursor, two chevrons surface just above it pointing up, each rim
+   carrying a slow chase light — one bright dash running the stroke,
+   the second offset half a cycle so the pair alternates. The path
+   length is ~51.2 units; dasharray = one 8-unit dash + the remainder,
+   and the offset animates one full length per loop. Hover-only by
+   construction (they announce what the click will do); touch keeps the
+   idle spring as its hint instead. */
+/* .closing-mark .schev, not bare .schev: the older `.closing-mark svg
+   { width: 100% }` rule outranks a single class and was blowing the
+   chevrons up to the full mark width (and 219px past the phone's right
+   edge). Two classes win. */
+.closing-mark .schev {
+  position: absolute; left: 68.2%; width: 7.5%; height: auto; bottom: calc(100% + 0.4rem);
+  overflow: visible;
+  fill: none; stroke: currentColor; stroke-width: 3.5;
+  stroke-linecap: round; stroke-linejoin: round;
+  opacity: 0; transform: translateY(35%);
+  transition: opacity 300ms var(--ease), transform 300ms var(--ease);
+  pointer-events: none;
+}
+@media (hover: hover) {
+  .smark:hover ~ .schev,
+  .smark:focus-visible ~ .schev { opacity: 1; transform: none; }
+}
+.schev__p { opacity: 0.22; }
+.schev__c {
+  stroke-dasharray: 8 44.5;
+  animation: chev-chase 1.4s linear infinite;
+  opacity: 0.95;
+}
+.schev__c--b { animation-delay: -0.7s; }
+@keyframes chev-chase {
+  from { stroke-dashoffset: 52.5; }
+  to   { stroke-dashoffset: 0; }
 }
 
 .colophon {
@@ -811,7 +869,7 @@ html[data-loading] body > *:not(#loader) { visibility: hidden; }
      so phones get their own version of the desktop full-screen moment,
      and the recede reads as the reel pulling straight back into the
      marsh instead of shrinking down the page. */
-  .reel__frame { --recede-cap: 0.74; --recede-travel: 0.7; --entry-cover: 1; }
+  .reel__frame { --recede-cap: 0.74; --recede-travel: 0.7; --entry-cover: 1; --exit-ease: 0.3; }
   /* The cover-scaled frame overflows the pin's sides by design (it is the
      9:16 crop). clip, not hidden — hidden makes the pin a scroll
      container and grows scrollWidth; clip just cuts. x only: the frame
@@ -847,7 +905,6 @@ html[data-loading] body > *:not(#loader) { visibility: hidden; }
   }
   .viewall a { display: inline-block; padding: 0.5rem 0.4rem 0.5rem 0; margin: -0.5rem -0.4rem -0.5rem 0; }
   .reel__sound { padding: 0.7rem 1.15rem; }
-  .wo__sound { width: 3rem; height: 3rem; }
 }
 
 @media (prefers-reduced-motion: reduce) {
@@ -996,37 +1053,13 @@ html.wo-open body { overflow: hidden; }
 .wo__tail { height: 72svh; display: grid; place-items: center; }
 .wo__cue { opacity: 0.35; }
 
-/* ---- overlay player, stripped to the floor (JJ, 2026-08-20) ---
-   controls=0 on both hosts, so the iframe draws nothing. The shield is
-   a full-bleed transparent button OVER the iframe: the host never sees
-   the pointer, so its hover/tap chrome never wakes, and the click drives
-   play/pause over postMessage instead. The Sound pill is the one control
-   the beat needs — autoplay lands muted, this unmutes — in the same
-   dress as the parked .reel__sound. */
+/* ---- overlay player (native-minimal, re-ruled JJ 2026-08-20 round 6) --
+   The host's own bottom bar is the UI — volume + white scrub, auto-
+   hiding — with everything else stripped at the URL (see the embed()
+   comment in WorkOverlay.astro). The round-5 shield + site Sound pill
+   were CUT by JJ ("isn't working aesthetically or functionally"); their
+   rules are gone with them, git history keeps the shapes. */
 .wo__media { position: relative; }
-.wo__shield {
-  position: absolute; inset: 0; z-index: 2;
-  background: none; border: 0; padding: 0; margin: 0;
-  cursor: pointer;
-}
-.wo__sound {
-  /* an icon, not a word (JJ, 2026-08-20 round 5): speaker + x while
-     muted, speaker + waves when live. Same material as the parked
-     .reel__sound pill, circled around the glyph. */
-  position: absolute; top: 0.9rem; left: 50%; transform: translateX(-50%); z-index: 3;
-  width: 2.6rem; height: 2.6rem; padding: 0;
-  display: grid; place-items: center;
-  border: 1px solid var(--paper); border-radius: 999px;
-  background: rgba(14, 13, 11, 0.55); color: var(--paper); cursor: pointer; opacity: 0.8;
-  backdrop-filter: blur(4px);
-  transition: opacity 200ms var(--ease), background-color 200ms var(--ease), color 200ms var(--ease);
-}
-.wo__sound:hover { opacity: 1; }
-.wo__sound[aria-pressed='true'] { background: var(--paper); color: var(--ink); opacity: 1; }
-.wo__ico { width: 1.15rem; height: 1.15rem; display: block; fill: currentColor; }
-.wo__stroke { fill: none; stroke: currentColor; stroke-width: 1.8; stroke-linecap: round; }
-.wo__sound[aria-pressed='false'] .wo__ico--on { display: none; }
-.wo__sound[aria-pressed='true'] .wo__ico--off { display: none; }
 
 @media (prefers-reduced-motion: reduce) {
   .menu { transition: none; }
@@ -1035,4 +1068,5 @@ html.wo-open body { overflow: hidden; }
   .wo, .wo__body { transition: none; }
   /* the S holds still; the #top link still works as a plain jump */
   .closing-mark .wm-s { animation: none !important; transition: none; transform: none !important; }
+  .closing-mark .schev { display: none; }
 }

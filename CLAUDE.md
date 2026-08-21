@@ -158,6 +158,24 @@ project memory (`jjhouse-website`):
   Drive folder under `06_Assets/agency-logos/`. Still owed: Little Dot's own mark (JJ pulls
   it from the brand kit) and the monster-trucks channel mark (which property, exactly — JJ
   to confirm).
+- **Round 6 (2026-08-21):** the overlay player is NATIVE-MINIMAL by re-ruling — the round-5
+  shield + site Sound pill are CUT (JJ: "isn't working aesthetically or functionally");
+  `controls=1` brings back the host's own volume + white scrub bar, everything else stays
+  stripped at the URL, autoplay still lands muted, and captions are forced off via
+  `unloadModule('captions')`/`('cc')` over the postMessage handshake (no URL param can do it).
+  The beat's DEPARTURE got an exit ramp: over the last `--exit-ease` viewports of the hold
+  (0.4 desktop / 0.3 phones, `?exit=` tunes) the script pre-slides the whole `.reel__pin` up
+  by (E/2)·q², whose slope ramps 0→1 and matches document speed exactly at the sticky release
+  — kills the "scroll snaps back and the page jumps" step. Transform, never margin (sticky
+  clamps the margin box). The S got squash-and-stretch (inverse scaleX paired with every
+  scaleY) and `overflow: visible` on the closing mark's svg — the coil dips below the viewBox
+  and svg clips by default, which was the "bottom of the S cropping". On hover, chevrons
+  surface above the S with a dash chase light running their rims (`.schev`, hover-only,
+  decorative; ⛔ selector must be `.closing-mark .schev` — bare `.schev` loses width:100% to
+  `.closing-mark svg` on specificity and blows up to full mark width). The client row now
+  opens with Little Dot's own mark under "( at )", brands under the verbs label — traced
+  (potrace 5x) from the 200px wordmark JJ supplied; swap in the brand-kit vector when he
+  brings one home.
 - **Remaining real gaps:** 04-A line beside the reel · 06-C Little Dot story · hero second clause
   (workshop with JJ — sensibilities, not operations) · ( connect ) closing line · Field Journal
   hero videos + comic pages (on JJ's external drive) · featured-six confirmation + credit fixes.

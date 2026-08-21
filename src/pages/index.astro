@@ -353,7 +353,20 @@ const sizes = ['project--l', 'project--r', 'project--xl', 'project--l', 'project
            so with JS off it is still an ordinary jump-to-top link; the
            layout's anchor handler carries the Lenis scroll, and the
            inline script below only owns the spring. -->
-      <div class="closing-mark"><a class="smark" id="sTop" href="#top" aria-label="Back to top"></a><Wordmark /></div>
+      <div class="closing-mark">
+        <a class="smark" id="sTop" href="#top" aria-label="Back to top"></a>
+        <!-- Round 6 (JJ): while the S tenses under the cursor, chevrons
+             surface above it with a chase light on their rims — the tell
+             for what the click will do. Decorative; the .smark link
+             carries the semantics. -->
+        <svg class="schev" viewBox="0 0 60 44" aria-hidden="true">
+          <path class="schev__p" d="M10 40 30 24 50 40" />
+          <path class="schev__p" d="M10 24 30 8 50 24" />
+          <path class="schev__c" d="M10 40 30 24 50 40" />
+          <path class="schev__c schev__c--b" d="M10 24 30 8 50 24" />
+        </svg>
+        <Wordmark />
+      </div>
     </div>
     <div class="colophon">
       <span class="meta">&copy; 2026 JJ House &middot; Los Angeles</span>
@@ -456,9 +469,10 @@ const sizes = ['project--l', 'project--r', 'project--xl', 'project--l', 'project
       if (frame && reel && !reduce) {
         let cur = 0, raf = null, idle = 0;
         // read once per resize, not per frame: all are media-query values
-        let travel = 0, svh = 0, sEnd = 0.34, dxEnd = 0, yEnd = 0, line = 0, cover = 0;
+        let travel = 0, svh = 0, sEnd = 0.34, dxEnd = 0, yEnd = 0, line = 0, cover = 0, exitE = 0;
         const stage = reel.querySelector('.reel__stage');
         const shadow = reel.querySelector('.reel__shadow');
+        const pin = reel.querySelector('.reel__pin');
         const pic = frame.querySelector('.reel__video');
         const AR = 16 / 9;   // the plate's aspect (5760x3240 render)
         const measure = () => {
@@ -490,6 +504,7 @@ const sizes = ['project--l', 'project--r', 'project--xl', 'project--l', 'project
           // make the scale jump.
           svh = (stage && stage.offsetHeight) || window.innerHeight;
           travel = svh * (parseFloat(cs.getPropertyValue('--recede-travel')) || 1);
+          exitE = svh * (parseFloat(cs.getPropertyValue('--exit-ease')) || 0);
 
           // Live-tunable from any preview URL while JJ settles the numbers,
           // same deal as the touch-ink factors in erode.js: ?sw= (slot
@@ -503,6 +518,7 @@ const sizes = ['project--l', 'project--r', 'project--xl', 'project--l', 'project
           if (q.has('travel')) travel = svh * (parseFloat(q.get('travel')) || 1);
           if (q.has('bw'))     line   = parseFloat(q.get('bw'))     || line;
           if (q.has('cover'))  { const v = parseFloat(q.get('cover')); if (isFinite(v)) cover = v; }
+          if (q.has('exit'))   { const v = parseFloat(q.get('exit'));  if (isFinite(v)) exitE = svh * v; }
 
           // Project the slot through the plate's cover-crop, so the settled
           // reel matches the Blender construction at ANY viewport:
@@ -575,6 +591,28 @@ const sizes = ['project--l', 'project--r', 'project--xl', 'project--l', 'project
             shadow.style.setProperty('--shh', shh.toFixed(1) + 'px');
             shadow.style.setProperty('--shy', (bottomNow - shh * 0.4).toFixed(1) + 'px');
             shadow.style.setProperty('--sho', (1.8 * cur * (1 - cur)).toFixed(3));
+          }
+
+          // THE DEPARTURE RAMP (JJ, 2026-08-20 round 6: the un-pin "snaps
+          // back" and the page jumps). The sticky release is a velocity
+          // step: the pinned beat shows 0 px/s of motion through the
+          // dwell, then full scroll speed the instant the clamp lets go.
+          // Over the last exitE px of the hold, slide the WHOLE pin up by
+          // (exitE/2)·q² where q is progress through that zone: the
+          // derivative w.r.t. scroll is exactly q, so visible speed ramps
+          // 0 -> 1 and MATCHES document speed at the release — no cut,
+          // and scroll-driven, so it reverses perfectly. Past release the
+          // offset holds at exitE/2; the strip it opens under the plate
+          // is plain ink (the flip is long done), and Works' own top
+          // padding swallows the seam. Transform, never margin: the
+          // sticky clamp holds the margin box (the old marsh-into-Works
+          // bug), but a transform is applied after clamping.
+          if (pin && exitE > 0) {
+            const release = r.height - svh;   // where the pin would un-pin
+            const zq = Math.min(1, Math.max(0, (-r.top - (release - exitE)) / exitE));
+            pin.style.transform = zq > 0
+              ? 'translate3d(0, ' + (-0.5 * exitE * zq * zq).toFixed(1) + 'px, 0)'
+              : '';
           }
           if (idle > 20) { raf = null; return; }   // settled — sleep until the next scroll
           raf = requestAnimationFrame(tick);

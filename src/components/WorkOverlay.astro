@@ -90,78 +90,61 @@
       return m ? m[1] : null;
     };
 
-    // ---- the player. NO host chrome at all (JJ, 2026-08-20). ----
-    // controls=0 on both hosts, autoplay lands MUTED (which is what makes
-    // the browser allow it), and every popup the params can reach is off:
-    // related videos capped to the channel (rel=0 is as far as YouTube
-    // goes), annotations (iv_load_policy=3), keyboard overlays
-    // (disablekb=1), the fullscreen button (fs=0), Vimeo's title/byline/
-    // portrait/pip. Vimeo honours controls=0 only when the video's OWNER
-    // is on a paid plan — best-effort by ruling (JJ, 2026-08-20) until
-    // the Mux migration makes the whole question moot.
+    // ---- the player. NATIVE-MINIMAL (re-ruled by JJ, 2026-08-20 round
+    // 6: "bring back the more youtube native audio on/off, and a super
+    // minimal scrub bar"). The fully-stripped round-5 build put a site
+    // Sound pill top-centre and JJ cut it on sight — aesthetically and
+    // functionally wrong. So: the host's own bottom bar comes back
+    // (controls=1 — volume and the white progress bar, auto-hiding
+    // during playback), and everything else stays stripped: related
+    // videos capped to the channel (rel=0 is as far as YouTube goes),
+    // annotations (iv_load_policy=3), keyboard overlays (disablekb=1),
+    // the fullscreen button (fs=0), Vimeo's title/byline/portrait/pip.
+    // Autoplay still lands MUTED (that is what makes the browser allow
+    // it); the native volume control is the unmute.
     //
-    // With the chrome gone the iframe can't be the control surface, so a
-    // transparent SHIELD button sits over it — the host never sees the
-    // pointer (its hover chrome never wakes) and the click drives
-    // play/pause over postMessage. The Sound pill is the one visible
-    // control: unmute, in the same dress as the parked .reel__sound.
-    // The static /work/ pages deliberately KEEP native controls: they
-    // are the no-JS fallback, and postMessage needs JS.
+    // CAPTIONS: OFF, ruled by JJ round 6. There is no supported URL param
+    // that force-disables them, but the player API's unloadModule tears
+    // the caption module out entirely — sent over the postMessage
+    // handshake below, under both module names the player has used.
+    // The static /work/ pages keep their own untouched native embeds:
+    // they are the no-JS fallback, and postMessage needs JS.
     const esc = (s) => String(s).replace(/&/g, '&amp;').replace(/"/g, '&quot;').replace(/</g, '&lt;');
     const embed = (type, id, title) => {
       const src = type === 'youtube'
-        ? `https://www.youtube-nocookie.com/embed/${encodeURIComponent(id)}?autoplay=1&mute=1&controls=0&rel=0&playsinline=1&iv_load_policy=3&disablekb=1&fs=0&color=white&enablejsapi=1&origin=${encodeURIComponent(location.origin)}`
-        : `https://player.vimeo.com/video/${encodeURIComponent(id)}?autoplay=1&muted=1&controls=0&title=0&byline=0&portrait=0&pip=0&keyboard=0&transparent=0&color=ffffff&dnt=1`;
-      // The sound control is an ICON, not a word (JJ, 2026-08-20 round 5):
-      // speaker with an x while muted, speaker with waves once sound is on.
-      // Inline SVG, currentColor, so it obeys the b/w system for free.
+        ? `https://www.youtube-nocookie.com/embed/${encodeURIComponent(id)}?autoplay=1&mute=1&controls=1&rel=0&playsinline=1&iv_load_policy=3&disablekb=1&fs=0&color=white&enablejsapi=1&origin=${encodeURIComponent(location.origin)}`
+        : `https://player.vimeo.com/video/${encodeURIComponent(id)}?autoplay=1&muted=1&title=0&byline=0&portrait=0&pip=0&keyboard=0&transparent=0&color=ffffff&dnt=1`;
       return `<div class="pp__media wo__media" data-player="${type}">
         <iframe src="${src}" title="${esc(title)}" allow="autoplay; fullscreen; encrypted-media" allowfullscreen></iframe>
-        <button class="wo__shield" type="button" aria-label="Play or pause"></button>
-        <button class="wo__sound" type="button" aria-pressed="false" aria-label="Sound">
-          <svg class="wo__ico wo__ico--off" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 9.5v5h3.2L12 18.5v-13L7.2 9.5H4z"/><path class="wo__stroke" d="M15.5 9.5l5 5m0-5l-5 5"/></svg>
-          <svg class="wo__ico wo__ico--on" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 9.5v5h3.2L12 18.5v-13L7.2 9.5H4z"/><path class="wo__stroke" d="M15.5 8.8a4.6 4.6 0 0 1 0 6.4M17.8 6.6a7.9 7.9 0 0 1 0 10.8"/></svg>
-        </button>
       </div>`;
     };
 
-    // The two hosts speak different postMessage dialects; both are fine
-    // with fire-and-forget commands. State is tracked locally — with the
-    // chrome gone there is nothing on the far side to disagree with.
+    // ⛔ THE HANDSHAKE (found via JJ's "not working on desktop",
+    // 2026-08-20): a YouTube widget silently DISCARDS every postMessage
+    // command until the parent has introduced itself with a `listening`
+    // event — that is what the official iframe_api script does under the
+    // hood; enablejsapi=1 alone is not enough, and nothing errors. Sent
+    // on iframe load and re-sent on a delay: unloadModule needs the
+    // player BOOTED, and the boot races the load event.
     const wirePlayer = (media) => {
       const type = media.dataset.player;
       const iframe = media.querySelector('iframe');
-      const shield = media.querySelector('.wo__shield');
-      const pill = media.querySelector('.wo__sound');
-      if (!iframe || !shield || !pill) return;
-      const HOST = type === 'youtube' ? 'https://www.youtube-nocookie.com' : 'https://player.vimeo.com';
+      if (!iframe || type !== 'youtube') return;
       const send = (msg) => {
-        try { iframe.contentWindow.postMessage(JSON.stringify(msg), HOST); } catch (e) {}
+        try { iframe.contentWindow.postMessage(JSON.stringify(msg), 'https://www.youtube-nocookie.com'); } catch (e) {}
       };
-      // ⛔ THE HANDSHAKE (found via JJ's "not working on desktop",
-      // 2026-08-20): a YouTube widget silently DISCARDS every command
-      // until the parent has introduced itself with a `listening` event —
-      // that is what the official iframe_api script does under the hood;
-      // enablejsapi=1 alone is not enough, and nothing errors. Sent when
-      // the iframe loads AND again before each command: it is idempotent,
-      // and re-greeting survives a slow player boot or a src swap.
-      const hello = () => { if (type === 'youtube') send({ event: 'listening', id: 1, channel: 'widget' }); };
-      iframe.addEventListener('load', hello);
-      hello();
-      const yt = (func, args) => { hello(); send({ event: 'command', func, args: args || [], id: 1, channel: 'widget' }); };
-      const vm = (method, value) => send(value === undefined ? { method } : { method, value });
-      let playing = true, muted = true;
-      shield.addEventListener('click', () => {
-        playing = !playing;
-        if (type === 'youtube') yt(playing ? 'playVideo' : 'pauseVideo');
-        else vm(playing ? 'play' : 'pause');
+      const captionsOff = () => {
+        send({ event: 'listening', id: 1, channel: 'widget' });
+        for (const mod of ['captions', 'cc']) {
+          send({ event: 'command', func: 'unloadModule', args: [mod], id: 1, channel: 'widget' });
+        }
+      };
+      iframe.addEventListener('load', () => {
+        captionsOff();
+        setTimeout(captionsOff, 900);
+        setTimeout(captionsOff, 2600);
       });
-      pill.addEventListener('click', () => {
-        muted = !muted;
-        if (type === 'youtube') { yt(muted ? 'mute' : 'unMute'); if (!muted) yt('setVolume', [100]); }
-        else { vm('setMuted', muted); if (!muted) vm('setVolume', 1); }
-        pill.setAttribute('aria-pressed', String(!muted));
-      });
+      captionsOff();
     };
 
     const render = (html, slug) => {
