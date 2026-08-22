@@ -464,6 +464,18 @@ body.scroll.is-dark::before { opacity: 1; }
   position: absolute; top: 0; left: 62.6%; width: 18.7%; height: 100%;
   display: block; background: none; border: 0; padding: 0; margin: 0;
   cursor: pointer;
+  /* PHONE, 2026-08-22 (JJ): press-and-hold on the S raised Chrome's link
+     sheet ("Open in new tab / Copy link"), which is the wrong answer to a
+     press that is supposed to be loading a spring. The hold IS the
+     interaction here, so the browser's own hold gesture has to stand down:
+     no callout sheet (iOS Safari), no text selection, no blue tap flash,
+     and no 300ms click delay. The contextmenu event is cancelled in JS
+     too — Chrome on Android ignores touch-callout. */
+  -webkit-touch-callout: none;
+  -webkit-user-select: none;
+  user-select: none;
+  -webkit-tap-highlight-color: transparent;
+  touch-action: manipulation;
 }
 /* hover = a hint of the coil; press = loaded. Sibling selector, not
    :has() — the .smark sits before the svg in the markup for exactly

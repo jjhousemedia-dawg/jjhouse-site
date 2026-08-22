@@ -354,7 +354,7 @@ const sizes = ['project--l', 'project--r', 'project--xl', 'project--l', 'project
            layout's anchor handler carries the Lenis scroll, and the
            inline script below only owns the spring. -->
       <div class="closing-mark" data-chev="sweep">
-        <a class="smark" id="sTop" href="#top" aria-label="Back to top"></a>
+        <a class="smark" id="sTop" href="#top" aria-label="Back to top" draggable="false"></a>
         <!-- Round 6 (JJ): while the S tenses under the cursor, chevrons
              surface above it pointing up, and a light climbs them. That
              light was a dash chasing each rim; re-cut 2026-08-21 into
@@ -837,6 +837,12 @@ const sizes = ['project--l', 'project--r', 'project--xl', 'project--l', 'project
         // scroll.css keeps the specificity identical to plain :active.
         const tense = (on) => sTop.classList.toggle('is-tensed', on);
         sTop.addEventListener('pointerdown', () => tense(true));
+        // Press-and-hold is the tell, so the browser's hold gesture must not
+        // answer over it (JJ, 2026-08-22, Chrome on the phone): no link sheet,
+        // no drag of the anchor. CSS carries the iOS/selection half; this is
+        // the half Android Chrome only honours as an event.
+        sTop.addEventListener('contextmenu', (e) => e.preventDefault());
+        sTop.addEventListener('dragstart', (e) => e.preventDefault());
         ['pointerup', 'pointercancel', 'pointerleave', 'blur'].forEach(
           (ev) => sTop.addEventListener(ev, () => tense(false))
         );
