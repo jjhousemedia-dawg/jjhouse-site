@@ -353,17 +353,46 @@ const sizes = ['project--l', 'project--r', 'project--xl', 'project--l', 'project
            so with JS off it is still an ordinary jump-to-top link; the
            layout's anchor handler carries the Lenis scroll, and the
            inline script below only owns the spring. -->
-      <div class="closing-mark">
+      <div class="closing-mark" data-chev="sweep">
         <a class="smark" id="sTop" href="#top" aria-label="Back to top"></a>
         <!-- Round 6 (JJ): while the S tenses under the cursor, chevrons
-             surface above it with a chase light on their rims — the tell
-             for what the click will do. Decorative; the .smark link
-             carries the semantics. -->
+             surface above it pointing up, and a light climbs them. That
+             light was a dash chasing each rim; re-cut 2026-08-21 into
+             three upward treatments (sweep / relay / ghost, ?chev=), all
+             of which quicken while the S is pressed. See scroll.css.
+             Decorative; the .smark link carries the semantics.
+             The <defs> feed the default "sweep": a gradient band inside
+             a mask, translated upward across both rims. Its ids are
+             document-global, so this markup may exist only once. -->
         <svg class="schev" viewBox="0 0 60 44" aria-hidden="true">
+          <defs>
+            <!-- The band, softened 2026-08-21 (JJ/ "a little more of a
+                 gradient on the sweep"). The white plateau is now barely a
+                 sliver and the ramps run most of the band, with a mid stop
+                 at each end so the falloff reads long rather than linear.
+                 The rect grew 34 -> 46 units to carry it; chev-sweep's
+                 travel in scroll.css is sized off that height. -->
+            <linearGradient id="schevBand" x1="0" y1="1" x2="0" y2="0">
+              <stop offset="0" stop-color="#000" />
+              <stop offset="0.20" stop-color="#3a3a3a" />
+              <stop offset="0.44" stop-color="#fff" />
+              <stop offset="0.58" stop-color="#fff" />
+              <stop offset="0.80" stop-color="#3a3a3a" />
+              <stop offset="1" stop-color="#000" />
+            </linearGradient>
+            <mask id="schevSweep" style="color-interpolation:sRGB" maskUnits="userSpaceOnUse" x="-12" y="-48" width="84" height="150">
+              <rect class="schev__band" x="-12" y="44" width="84" height="46" fill="url(#schevBand)" />
+            </mask>
+          </defs>
           <path class="schev__p" d="M10 40 30 24 50 40" />
           <path class="schev__p" d="M10 24 30 8 50 24" />
+          <g class="schev__sweep" mask="url(#schevSweep)">
+            <path d="M10 40 30 24 50 40" />
+            <path d="M10 24 30 8 50 24" />
+          </g>
           <path class="schev__c" d="M10 40 30 24 50 40" />
           <path class="schev__c schev__c--b" d="M10 24 30 8 50 24" />
+          <path class="schev__g" d="M10 40 30 24 50 40" />
         </svg>
         <Wordmark />
       </div>
@@ -784,17 +813,50 @@ const sizes = ['project--l', 'project--r', 'project--xl', 'project--l', 'project
       // no offsetWidth. animationend is filtered by name so the touch
       // idle spring (s-idle, same element) can never eat the class.
       const sTop = document.getElementById('sTop');
-      if (sTop && !reduce) {
-        const mark = sTop.closest('.closing-mark');
-        const sGlyph = mark && mark.querySelector('.wm-s');
-        if (sGlyph) {
+      const sMark = sTop && sTop.closest('.closing-mark');
+      if (sMark) {
+        // Live tunables, 2026-08-21. The light above the S and the size
+        // of its wiggle are taste calls, so they ride the URL like the
+        // rest of the beat: ?chev=sweep|relay|ghost, ?quiver= and ?buzz=
+        // in degrees, ?chevrate= in seconds.
+        const q = new URLSearchParams(location.search);
+        const chev = q.get('chev');
+        if (chev === 'sweep' || chev === 'relay' || chev === 'ghost') sMark.dataset.chev = chev;
+        const tune = (key, prop, unit) => {
+          const v = parseFloat(q.get(key));
+          if (isFinite(v)) sMark.style.setProperty(prop, v + unit);
+        };
+        tune('quiver', '--s-quiver', 'deg');
+        tune('buzz', '--s-buzz', 'deg');
+        tune('chevrate', '--chev-rate', 's');
+
+        // The pressed state is ALSO carried by a class. `:active` on a link
+        // is unreliable on touch engines (iOS only honours it once something
+        // is listening for touches), and on a phone the press is the whole
+        // tell, so it cannot be left to chance. :is(:active, .is-tensed) in
+        // scroll.css keeps the specificity identical to plain :active.
+        const tense = (on) => sTop.classList.toggle('is-tensed', on);
+        sTop.addEventListener('pointerdown', () => tense(true));
+        ['pointerup', 'pointercancel', 'pointerleave', 'blur'].forEach(
+          (ev) => sTop.addEventListener(ev, () => tense(false))
+        );
+
+        const sGlyph = sMark.querySelector('.wm-s');
+        if (sGlyph && !reduce) {
           sTop.addEventListener('click', () => {
             sGlyph.classList.remove('is-firing');
+            sMark.classList.remove('is-firing');
             void sGlyph.getBoundingClientRect().width;
             sGlyph.classList.add('is-firing');
+            // the chevrons leave upward on the same beat; the class sits
+            // on the mark because .schev is not inside .wm-s
+            sMark.classList.add('is-firing');
           });
           sGlyph.addEventListener('animationend', (e) => {
-            if (e.animationName === 's-fire') sGlyph.classList.remove('is-firing');
+            if (e.animationName === 's-fire') {
+              sGlyph.classList.remove('is-firing');
+              sMark.classList.remove('is-firing');
+            }
           });
         }
       }

@@ -476,7 +476,7 @@ body.scroll.is-dark::before { opacity: 1; }
 @media (hover: hover) {
   .closing-mark .wm-s { transition: transform 260ms var(--ease); }
   .smark:hover ~ svg .wm-s  { transform: translateY(2%) scale(1.06, 0.9); }
-  .smark:active ~ svg .wm-s { transform: translateY(4.5%) scale(1.13, 0.76); transition-duration: 120ms; }
+  .smark:is(:active, .is-tensed) ~ svg .wm-s { transform: translateY(4.5%) scale(1.13, 0.76); transition-duration: 120ms; }
 }
 /* release: the spring fires. Overshoot is in the keyframes, so the
    timing curve stays simple. */
@@ -501,20 +501,105 @@ body.scroll.is-dark::before { opacity: 1; }
   }
 }
 
-/* ---- the chevrons (JJ, round 6): while the S is tensed under the
-   cursor, two chevrons surface just above it pointing up, each rim
-   carrying a slow chase light — one bright dash running the stroke,
-   the second offset half a cycle so the pair alternates. The path
-   length is ~51.2 units; dasharray = one 8-unit dash + the remainder,
-   and the offset animates one full length per loop. Hover-only by
-   construction (they announce what the click will do); touch keeps the
-   idle spring as its hint instead. */
-/* .closing-mark .schev, not bare .schev: the older `.closing-mark svg
+
+/* ---- the anticipation quiver (JJ, 2026-08-21) ------------------
+   "when it's hovered over, and pressed down, and in its squeezed
+   positions, I want to feel the anticipation more. Like, a little
+   excited wiggle. Not the whole thing shaking."
+
+   TWO TRANSFORM LAYERS, deliberately. The POSE (hover / press / fire)
+   stays on .wm-s where it already lives; the WIGGLE rides a nested
+   <g class="wm-s__q"> inside it. One element cannot hold both: the pose
+   is a transition on `transform`, and a running keyframe on that same
+   property outranks it and would eat the squash entirely.
+
+   The wiggle is a rotation about the same bottom-centre pivot, so only
+   the top of the glyph wags and the baseline stays planted. Amplitude is
+   deliberately small: 1.5deg tips the cap line about 3px on a laptop.
+   The hover rhythm is uneven on purpose. It holds still for half the
+   loop, then shudders and settles, which reads as a thought rather than
+   a motor. The press swaps it for a tight fast tremor that never rests,
+   so the harder the S is compressed the more it buzzes. */
+.closing-mark {
+  --s-quiver: 1.5deg;      /* hover wag, measured at the cap line */
+  --s-quiver-rate: 1.25s;
+  --s-buzz: 0.85deg;       /* pressed tremor: tighter, faster, no rest */
+  --s-buzz-rate: 0.28s;
+  --chev-rate: 2s;         /* the moving light above the S (see below) */
+  --chev-lag: 0.30s;
+}
+.closing-mark .wm-s__q { transform-box: fill-box; transform-origin: 50% 100%; }
+/* `rotate` and `translate` as their own properties, not `transform`:
+   they compose with whatever `transform` holds instead of replacing it,
+   which is what keeps this layer independent of the pose above it. */
+@keyframes s-quiver {
+  0%, 44%, 100% { rotate: 0deg; translate: 0 0; }
+  51% { rotate: var(--s-quiver);               translate: 0 -0.5%; }
+  59% { rotate: calc(var(--s-quiver) * -0.80); translate: 0 0.25%; }
+  67% { rotate: calc(var(--s-quiver) *  0.45); translate: 0 -0.20%; }
+  75% { rotate: calc(var(--s-quiver) * -0.20); translate: 0 0; }
+}
+@keyframes s-buzz {
+  0%, 100% { rotate: var(--s-buzz);              translate: 0 0; }
+  38%      { rotate: calc(var(--s-buzz) * -1);   translate: 0 0.10%; }
+  70%      { rotate: calc(var(--s-buzz) * 0.55); translate: 0 -0.06%; }
+}
+@media (hover: hover) {
+  .smark:hover ~ svg .wm-s__q,
+  .smark:focus-visible ~ svg .wm-s__q { animation: s-quiver var(--s-quiver-rate) var(--ease) infinite; }
+  .smark:is(:active, .is-tensed) ~ svg .wm-s__q        { animation: s-buzz var(--s-buzz-rate) ease-in-out infinite; }
+  /* the keyboard route gets the pose too. The chevrons already answered
+     :focus-visible, so without this the tell announced a tension the
+     glyph never showed. */
+  .smark:focus-visible ~ svg .wm-s    { transform: translateY(2%) scale(1.06, 0.9); }
+}
+/* the launch is the payoff; nothing wiggles through it */
+.closing-mark .wm-s.is-firing .wm-s__q { animation: none; }
+
+/* Touch has no hover to tense with, so the press itself has to carry the
+   whole tell: the idle spring gives way to the loaded pose, the buzz and
+   the chevrons. s-idle is an animation, so it has to be switched off by
+   name before a plain transform can take the glyph back. */
+@media (hover: none) {
+  .smark:is(:active, .is-tensed) ~ svg .wm-s {
+    animation: none;
+    transform: translateY(4.5%) scale(1.13, 0.76);
+    transition: transform 120ms var(--ease);
+  }
+  .smark:is(:active, .is-tensed) ~ svg .wm-s__q { animation: s-buzz var(--s-buzz-rate) ease-in-out infinite; }
+  .smark:is(:active, .is-tensed) ~ .schev { opacity: 1; transform: none; }
+}
+
+/* ---- the chevrons (JJ, round 6; the light re-cut 2026-08-21) ---
+   While the S is tensed, two chevrons surface above it pointing up.
+   The PAIR is the sign and stays solid; only the LIGHT moves, and it
+   only ever moves up.
+
+   What was here: a dash chasing each rim (dasharray 8/44.5 over ~51.2
+   path units). Killed 2026-08-21. A dash running the outline spends most
+   of its travel going sideways and DOWN the two legs, which is the exact
+   opposite of what the control does. JJ: "that chase light could be
+   replaced with something that... evokes the idea of 'go up' more. And
+   participates in the anticipation. But doesn't steal the show."
+
+   Three treatments ship, because this is a taste call. ?chev= picks one
+   from any preview URL:
+     sweep (default)  a soft band of light travels up ACROSS both rims
+     relay            the lower rim lights, hands off to the upper, rests
+     ghost            a third chevron climbs the stack and leaves the top
+   All three run on --chev-rate, and the press cuts that to 0.66s, so the
+   chevrons join the S's anticipation instead of keeping their own clock.
+
+   .closing-mark .schev, not bare .schev: the older `.closing-mark svg
    { width: 100% }` rule outranks a single class and was blowing the
    chevrons up to the full mark width (and 219px past the phone's right
    edge). Two classes win. */
 .closing-mark .schev {
-  position: absolute; left: 68.2%; width: 7.5%; height: auto; bottom: calc(100% + 0.4rem);
+  /* Sized 2026-08-21 (JJ: "make the chevrons a tad smaller"). The pair
+     stays centred on the S, whose slice of the drawing runs 62.6%..81.3%:
+     centre is 71.95%, so left = 71.95 - width/2. Change one, change both.
+     stroke-width is in viewBox units, so the rims thin down with it. */
+  position: absolute; left: 68.7%; width: 6.5%; height: auto; bottom: calc(100% + 0.45rem);
   overflow: visible;
   fill: none; stroke: currentColor; stroke-width: 3.5;
   stroke-linecap: round; stroke-linejoin: round;
@@ -526,16 +611,81 @@ body.scroll.is-dark::before { opacity: 1; }
   .smark:hover ~ .schev,
   .smark:focus-visible ~ .schev { opacity: 1; transform: none; }
 }
-.schev__p { opacity: 0.22; }
-.schev__c {
-  stroke-dasharray: 8 44.5;
-  animation: chev-chase 1.4s linear infinite;
-  opacity: 0.95;
+/* the resting pair, and the three light layers, all dark until asked */
+.schev__p { opacity: 0.22; transition: opacity 200ms var(--ease); }
+.schev__c, .schev__g { opacity: 0; }
+.schev__sweep { opacity: 0; transition: opacity 200ms var(--ease); }
+
+/* pressed: the stack leans up a notch, the pair firms, the light races.
+   --chev-rate lands on .schev itself here, so it beats both the
+   .closing-mark default and the per-variant override below. */
+.smark:is(:active, .is-tensed) ~ .schev { transform: translateY(-7%); --chev-rate: 0.66s; --chev-lag: 0.12s; }
+.smark:is(:active, .is-tensed) ~ .schev .schev__p { opacity: 0.34; }
+
+/* sweep, the default. A band of light crossing the pair from below.
+   The band is a gradient rect inside a <mask>, so only the rect moves
+   and the chevrons themselves never budge or drift out of register.
+   TRAP: `color-interpolation: sRGB` is load-bearing. An SVG <mask>
+   computes luminance in linearRGB by default, which crushes the mid
+   greys so hard the band renders all but invisible; the white plateau
+   in the gradient is there for the same reason. TRAP: mask and gradient
+   ids are document-global. This mark is the only instance on the page.
+   A second copy would need its own ids or it would steal this one. */
+[data-chev="sweep"] .smark:hover ~ .schev .schev__sweep,
+[data-chev="sweep"] .smark:focus-visible ~ .schev .schev__sweep { opacity: 0.9; }
+[data-chev="sweep"] .smark:hover ~ .schev .schev__band,
+[data-chev="sweep"] .smark:focus-visible ~ .schev .schev__band { animation: chev-sweep var(--chev-rate) linear infinite; }
+/* Travel = band height (46) + the stack (32) + clearance, so the light
+   fully leaves the top and the pair gets a real beat of rest before the
+   next pass. Retune this whenever the band rect in index.astro changes. */
+@keyframes chev-sweep {
+  0%   { translate: 0 0; }
+  100% { translate: 0 -94px; }
 }
-.schev__c--b { animation-delay: -0.7s; }
-@keyframes chev-chase {
-  from { stroke-dashoffset: 52.5; }
-  to   { stroke-dashoffset: 0; }
+
+/* relay: the two rims light bottom to top, then a beat of rest */
+.closing-mark[data-chev="relay"], .closing-mark[data-chev="ghost"] { --chev-rate: 1.7s; }
+[data-chev="relay"] .smark:hover ~ .schev .schev__c,
+[data-chev="relay"] .smark:focus-visible ~ .schev .schev__c { animation: chev-climb var(--chev-rate) var(--ease) infinite; }
+[data-chev="relay"] .schev__c--b { animation-delay: var(--chev-lag); }
+@keyframes chev-climb {
+  0%        { opacity: 0;    translate: 0 3px; }
+  16%       { opacity: 0.85; translate: 0 0.5px; }
+  34%       { opacity: 0.22; translate: 0 -2.5px; }
+  46%, 100% { opacity: 0;    translate: 0 -5px; }
+}
+
+/* ghost: a third chevron climbs through the stack and leaves at the top */
+[data-chev="ghost"] .smark:hover ~ .schev .schev__g,
+[data-chev="ghost"] .smark:focus-visible ~ .schev .schev__g { animation: chev-rise var(--chev-rate) linear infinite; }
+@keyframes chev-rise {
+  0%        { opacity: 0;    translate: 0 9px; }
+  14%       { opacity: 0.75; translate: 0 4px; }
+  42%       { opacity: 0.50; translate: 0 -10px; }
+  56%, 100% { opacity: 0;    translate: 0 -19px; }
+}
+
+/* release: the chevrons leave upward with the page. .is-firing lands on
+   the .closing-mark (the S keeps its own copy on .wm-s), and `forwards`
+   holds them gone for the length of the launch, by which time the jump
+   has carried the top of the page back under the cursor. */
+.closing-mark.is-firing .schev { animation: schev-launch 560ms var(--ease) 1 forwards; }
+.closing-mark.is-firing .schev__c,
+.closing-mark.is-firing .schev__g,
+.closing-mark.is-firing .schev__band { animation: none; }
+@keyframes schev-launch {
+  0%   { opacity: 1;    translate: 0 0;     scale: 1; }
+  30%  { opacity: 0.85; translate: 0 -18%; }
+  100% { opacity: 0;    translate: 0 -120%; scale: 1.05; }
+}
+
+/* Reduced motion: the posert, the chevrons and the jump all stay. Every
+   loop stops. Nothing switched off here carries meaning on its own. */
+@media (prefers-reduced-motion: reduce) {
+  .closing-mark .wm-s,
+  .closing-mark .wm-s__q,
+  .schev__c, .schev__g, .schev__band { animation: none; }
+  .schev__sweep { opacity: 0; }
 }
 
 .colophon {
@@ -619,7 +769,13 @@ html[data-loading] body > *:not(#loader) { visibility: hidden; }
   opacity: 0; will-change: opacity, transform;
 }
 .loader__obj.on { opacity: 1; }
-.loader__obj svg { width: 100%; height: 100%; fill: var(--paper); }
+/* the objects are rendered stills now, not filled paths, so there is no
+   fill to set — they arrive already black and white on transparency */
+.loader__obj img {
+  width: 100%; height: 100%;
+  object-fit: contain;
+  user-select: none; -webkit-user-drag: none;
+}
 
 /* the shudder: one anticipation beat before the swap, which is what makes
    the object look like it decided rather than simply cut */

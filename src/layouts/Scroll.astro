@@ -10,45 +10,36 @@ const {
   noindex = false,
 } = Astro.props;
 
-// Board 1 + spec §5. Flat matte silhouettes, dead centre, never captioned
-// and never explained. Egg is always first; the rest cycle freely because
-// absorption is felt rather than literal.
+// Board 1 + spec §5. Dead centre, never captioned and never explained.
+// Egg is always first; the rest cycle freely because absorption is felt
+// rather than literal.
 //
 // The duck is load-bearing, not a whim: a decoy is an object built to be
 // believed, and a duck on water is a composed surface with everything
 // happening underneath — which is the hero mechanic. Keystone is
 // Pennsylvania, an IYKYK.
+//
+// 2026-08-22: these were hand-authored SVG silhouettes and are now rendered
+// stills, shot from the real models in `Site-Loading-Icons_v1.blend`. Each
+// object is lit its own way — a north-window key on the egg, a raking key
+// on the decoy so the carving reads, two separately-lit planes on the
+// keystone, uplight on the saucer, a broad softbox for the wedge's face —
+// then comped to black and white with a little bloom and grain. 512px WebP,
+// straight alpha, ~12KB each and 60KB for the set.
+//
+// ⚠ This supersedes the "flat matte silhouettes, never reads as 3D" line
+// in docs/SITE-SPEC.md §5. The spec has not been updated; JJ's call.
 const OBJECTS = [
-  {
-    k: 'egg',
-    svg: `<path d="M50 8c11 0 21 18 21 37 0 21-9 38-21 38S29 66 29 45C29 26 39 8 50 8z"/>`,
-  },
-  {
-    k: 'decoy',
-    svg: `<ellipse cx="46" cy="62" rx="31" ry="16"/>
-          <path d="M62 46c0-7 5-13 12-13s12 6 12 13c0 5-3 10-8 12l-4 8-9-4 3-7c-3-2-6-5-6-9z"/>
-          <path d="M84 40l12 3-12 5z"/>
-          <path d="M15 56l-13-8 4 14z"/>`,
-  },
-  {
-    k: 'keystone',
-    svg: `<path d="M24 22h52l-9 56H33z"/>`,
-  },
-  {
-    // JJ cut the tuning fork (2026-08-11) and floated a UFO — which fits the
-    // set's own logic better than the fork did: the loader is literally a
-    // cycle of unexplained objects, and this is the canonical one. Drawn as
-    // a placeholder silhouette; swap the paths if he finds the better symbol.
-    k: 'ufo',
-    svg: `<path d="M50 26c11 0 20 8 21 17H29c1-9 10-17 21-17z"/>
-          <ellipse cx="50" cy="51" rx="34" ry="11"/>
-          <path d="M43 66h14l10 24H33z"/>`,
-  },
-  {
-    k: 'iron',
-    svg: `<path d="M63 6l7 2-19 58-7-2z"/>
-          <path d="M22 64h40c5 0 9 4 9 9v8c0 5-4 9-9 9H30c-6 0-11-5-11-11z"/>`,
-  },
+  { k: 'egg',      src: '/loader/egg.webp' },
+  { k: 'decoy',    src: '/loader/decoy.webp' },
+  { k: 'keystone', src: '/loader/keystone.webp' },
+  // JJ cut the tuning fork (2026-08-11) and floated a UFO — which fits the
+  // set's own logic better than the fork did: the loader is literally a
+  // cycle of unexplained objects, and this is the canonical one. The dome
+  // and collar were remodelled so it carries the same visual mass as the
+  // other four rather than reading as a thin disc.
+  { k: 'ufo',      src: '/loader/ufo.webp' },
+  { k: 'iron',     src: '/loader/iron.webp' },
 ];
 ---
 <!doctype html>
@@ -71,6 +62,7 @@ const OBJECTS = [
     <meta name="twitter:card" content="summary_large_image" />
     <meta name="twitter:image" content={new URL('/og.png', Astro.site)} />
     <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+    {loader && <link rel="preload" as="image" href="/loader/egg.webp" type="image/webp" />}
     <meta name="theme-color" content="#0a0908" />
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
@@ -86,7 +78,15 @@ const OBJECTS = [
           <div class="loader__objects" id="loaderObjs">
             {OBJECTS.map((o, i) => (
               <div class={`loader__obj${i === 0 ? ' on' : ''}`} data-obj={o.k}>
-                <svg viewBox="0 0 100 100" aria-hidden="true" set:html={o.svg} />
+                <img
+                  src={o.src}
+                  width="512"
+                  height="512"
+                  alt=""
+                  aria-hidden="true"
+                  decoding="async"
+                  fetchpriority={i === 0 ? 'high' : 'auto'}
+                />
               </div>
             ))}
           </div>
