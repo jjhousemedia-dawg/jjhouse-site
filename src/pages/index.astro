@@ -135,6 +135,39 @@ const sizes = ['project--l', 'project--r', 'project--xl', 'project--l', 'project
             src="/reel-bg/marsh_day_1920.jpg" sizes="100vw" srcset="/reel-bg/marsh_day_640.jpg 640w, /reel-bg/marsh_day_960.jpg 960w, /reel-bg/marsh_day_1280.jpg 1280w, /reel-bg/marsh_day_1920.jpg 1920w, /reel-bg/marsh_day_2560.jpg 2560w, /reel-bg/marsh_day_3840.jpg 3840w"
           />
         </picture>
+
+        <!-- 2026-08-24 (JJ): the plate MOVES. `REELBG_MARSH_CONFORM_v01`
+             is the same camera as the still above (framing verified: 6/255
+             mean difference over the sky and the foreground), 1920x1080,
+             exactly 720 frames at 24.000 fps — the same L as the reel, so
+             the two native `loop` seams land on the same beat.
+
+             ⛔ THIS PLATE IS CONFORMED TO THE REEL, and that is a hard
+             sync requirement, not a nicety. The reel screen is held out of
+             the render (§4.3 of the build spec) but its LIGHT is not: the
+             colour running down the channel is the cut reflecting off the
+             water. Measured over all 720 frames, the reflection's mean
+             colour correlates with the reel's at r = 0.98, peaking at a
+             lag of ONE FRAME — plate frame n carries reel frame n-1. Let
+             the two videos free-run and they drift apart within a minute,
+             and the water then reflects a shot that is not on screen. The
+             drift-trim in the script below is what holds them together.
+
+             The still stays underneath: it paints instantly, it is the
+             poster, and it is the whole plate for prefers-reduced-motion
+             and for no-JS. No `autoplay` attribute here on purpose —
+             unlike the reel, this element has no useful scriptless
+             behaviour, so JS owns playback outright and there is no race
+             to lose. -->
+        <video
+          class="reel__plate reel__plate--vid" id="reelPlate"
+          muted loop playsinline preload="metadata"
+          disablepictureinpicture disableremoteplayback
+        >
+          <source src="/reel-bg/marsh_day_1080p.av1.mp4" type='video/mp4; codecs="av01.0.09M.10"' />
+          <source src="/reel-bg/marsh_day_1080p.hevc.mp4" type='video/mp4; codecs="hvc1"' />
+          <source src="/reel-bg/marsh_day_1080p.mp4" type="video/mp4" />
+        </video>
       </div>
 
       <!-- The shadow the reel casts on its way in: an ellipse under the
@@ -752,6 +785,7 @@ const sizes = ['project--l', 'project--r', 'project--xl', 'project--l', 'project
       // dial behind). L = 720 frames = 30.000s; the file is cut to exactly
       // 720 frames so the native `loop` seam lands on the beat.
       const rv = document.getElementById('reelVideo');
+      const pv = document.getElementById('reelPlate');
       if (rv) {
         // Decode is not free and this beat sits well below the fold, so
         // the reel only runs while it is near the viewport (rootMargin
@@ -775,24 +809,95 @@ const sizes = ['project--l', 'project--r', 'project--xl', 'project--l', 'project
         // state as playback must be re-evaluated wherever that state is
         // written, not only where playback changes — which is why apply()
         // hangs off the observer, visibilitychange AND the play listener.)
-        const apply = () => {
-          if (want()) { const pr = rv.play(); if (pr && pr.catch) pr.catch(() => {}); }
-          else if (!rv.paused) rv.pause();
+        // ---- the marsh plate rides the reel's clock (JJ, 2026-08-24) --
+        // The backdrop is conformed to this cut: the colour running down
+        // the channel is the reel reflecting off the water, held out of
+        // the render as geometry but not as light. So the two are one
+        // shot, and they have to be played as one.
+        //
+        // What they will NOT do is stay together on their own. Two <video>
+        // elements have two decoders and two ideas of the wall clock, and
+        // the drift is unbounded — within a minute the water is reflecting
+        // a shot that left the screen, which is worse than no reflection
+        // because it looks like a bug rather than a choice.
+        //
+        // LAG is measured, not guessed: cross-correlating the reflection's
+        // mean colour against the reel's, over all 720 frames, peaks at
+        // r = 0.98 with the plate exactly ONE FRAME behind the reel.
+        // L is the loop both files are cut to — 720 frames at 24.000 fps.
+        const L = 30, LAG = 1 / 24;
+        // Signed shortest distance around a 30s ring. Straight subtraction
+        // reads a loop seam crossed by one video and not yet by the other
+        // as ~30s of error and would seek on every single lap.
+        const skew = () => {
+          const d = (pv.currentTime - rv.currentTime - LAG) % L;
+          return d > L / 2 ? d - L : d < -L / 2 ? d + L : d;
         };
-        // 50%, not 100%: at 100% the reel is already inside the root at
-        // scroll 0 and starts decoding 1080p while the hero's WebGL erode
-        // is still the only thing on screen. Half a viewport is more than
-        // enough lead for the video to be at speed on arrival.
+        const seat = () => { if (pv.readyState >= 1) pv.currentTime = (rv.currentTime + LAG) % L; };
+        // A seek is a visible hitch AND it lands late — the reel keeps
+        // playing through it, so correcting by seeking overshoots by
+        // however long the seek took. So seeking is reserved for real
+        // desync (a backgrounded tab, a stalled decode) and everything
+        // else is trimmed with playbackRate, proportionally: 1s of error
+        // closes in about seven seconds at a rate the eye cannot see on
+        // water with no hard edge moving through it. The deadband is two
+        // frames, wide enough that the rate is not being rewritten on
+        // every tick over rounding noise.
+        const trim = () => {
+          if (!pv || pv.paused || rv.paused || pv.readyState < 2 || rv.readyState < 2) return;
+          const d = skew();
+          if (Math.abs(d) > 2) { seat(); pv.playbackRate = 1; return; }
+          const want = Math.abs(d) < 1 / 12 ? 1 : Math.min(1.15, Math.max(0.85, 1 - d * 0.15));
+          if (Math.abs(pv.playbackRate - want) > 0.005) pv.playbackRate = want;
+        };
+
+        const apply = () => {
+          if (want()) {
+            const pr = rv.play(); if (pr && pr.catch) pr.catch(() => {});
+            if (pv) { seat(); const pp = pv.play(); if (pp && pp.catch) pp.catch(() => {}); }
+          } else {
+            if (!rv.paused) rv.pause();
+            if (pv && !pv.paused) pv.pause();
+          }
+        };
+        // Half a viewport of lead, so the videos are at speed on arrival
+        // rather than flashing a poster — but MEASURED, not a constant.
+        //
+        // ⛔ 2026-08-24: the constant `50%` had quietly stopped working.
+        // The beat now begins 150svh down the document, so an expanded
+        // root reaching half a viewport past the fold already contains the
+        // reel AT SCROLL ZERO — it was decoding 1080p behind the hero's
+        // WebGL erode for the entire top of the page, and with the marsh
+        // plate added that is two decodes, not one. Nothing about it is
+        // visible; it only shows up as a hot fan on the landing screen.
+        //
+        // So the lead is capped at whatever distance still leaves the reel
+        // outside the root at rest. It asks for half a viewport and takes
+        // less if the beat sits closer than that, which keeps the property
+        // true no matter how the beats above it are re-cut later.
+        const docTop = rv.getBoundingClientRect().top + (window.scrollY || 0);
+        const lead = Math.max(0, Math.min(innerHeight * 0.5, docTop - innerHeight - 1));
         if ('IntersectionObserver' in window) {
           new IntersectionObserver(
             (es) => { near = es.some((e) => e.isIntersecting); apply(); },
-            { rootMargin: '50% 0px' }
+            { rootMargin: `${Math.round(lead)}px 0px` }
           ).observe(rv);
         } else { near = true; apply(); }
         addEventListener('visibilitychange', apply);
         // the second half of the same guard: if playback starts when it is
         // not wanted (a stray autoplay, a restored session), undo it
         rv.addEventListener('play', () => { if (!want()) rv.pause(); });
+
+        if (pv) {
+          // fade in on the first REAL frame, not on `play` — the still
+          // underneath is the cleanenv render with no screen light in the
+          // channel, so revealing an undecoded video would flash ink
+          pv.addEventListener('playing', () => pv.classList.add('is-live'), { once: true });
+          pv.addEventListener('play', () => { if (!want()) pv.pause(); });
+          // a quarter-second tick: far tighter than drift accumulates, and
+          // trim() costs two readyState reads when nothing is playing
+          setInterval(trim, 250);
+        }
 
         // prefers-reduced-motion: a 24-shot cut running at half-bar pace
         // is exactly what that setting exists to stop. Poster only, and a

@@ -228,6 +228,32 @@ body.scroll.is-dark::before { opacity: 1; }
   background: url('data:image/webp;base64,UklGRooAAABXRUJQVlA4IH4AAABQBACdASoUAAsAPrVKnkonJCKhsAgA4BaJQBagXAW/+A3yGqnXtDfNVAqAAP6W5WFYwrK+eXt98B9+c9Kc4GsCQuG/z7ddQ1d9+cWICz9xfzbfczB+o3s/NP+IpWrL6bSknBCqDRbVtP60GNQsDcumw0PJhA1Bm0HTZFLnsAA=') center / cover no-repeat;
 }
 
+/* The moving plate (JJ, 2026-08-24). Same box, same cover-crop, same
+   --plate-pos anchor as the still — it is literally the same class plus
+   this override, so the crop knob keeps deciding for both and they can
+   never disagree about what a portrait phone loses.
+
+   The still is not replaced, it is UNDERNEATH: it paints in one decode
+   before the first video byte arrives, and it is the entire plate when
+   the video is not wanted. The fade is what stops the swap from reading
+   as a cut — the still is the `cleanenv` render with no screen light in
+   the channel, so the water genuinely changes colour when the video
+   takes over, and 320ms of linear opacity turns that into the light
+   coming up rather than a jump.
+
+   ⛔ The reduced-motion override sits IMMEDIATELY after the display it
+   overrides. Same specificity, so source order decides, and the last
+   time this rule lived up in the reduced-motion block at the top of the
+   file it lost to a `display` declared 400 lines below it. */
+.reel__plate--vid {
+  display: block;
+  background: none;
+  opacity: 0;
+  transition: opacity 320ms linear;
+}
+.reel__plate--vid.is-live { opacity: 1; }
+@media (prefers-reduced-motion: reduce) { .reel__plate--vid { display: none; } }
+
 .reel__frame {
   /* THE ENTRY (JJ, 2026-08-20, off noth.in). Full page width, sitting at
      the top of the pin, so it arrives in flow and stops the instant the
