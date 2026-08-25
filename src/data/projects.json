@@ -761,13 +761,15 @@
         "id": "ulmBagAFM6w"
       },
       "roles": [
+        "Direct",
         "Write",
-        "Story"
+        "Story",
+        "Character Design"
       ],
       "category": "work",
       "featured": false,
-      "anecdote": "Britton Stoeckel created the show in our Producing With AI class. I wrote on it, pitched story arc ideas, and created Cult, a character who is now a series regular. The sizzle is mostly Britton's cut, built off work the class did, especially me, Britton, and Spencer Paysinger.",
-      "credits": "created by Britton Stoeckel · sizzle cut by Britton Stoeckel · writing + story JJ House, Spencer Paysinger + the Producing With AI class · an AI-forward production"
+      "anecdote": "Britton Stoeckel created the show in our Producing With AI class. I directed, wrote on it, pitched story arc ideas, did character design, and created Cult, a character who is now a series regular. I did some of the AI filmmaking too. The sizzle is mostly Britton's cut, built off work the class did, especially me, Britton, and Spencer Paysinger.",
+      "credits": "created by Britton Stoeckel · sizzle cut by Britton Stoeckel · direction, character design + AI filmmaking JJ House · writing + story JJ House, Spencer Paysinger + the Producing With AI class · an AI-forward production"
     },
     {
       "slug": "portrait-party-gardengeddon",
