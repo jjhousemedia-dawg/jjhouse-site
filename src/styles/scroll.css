@@ -1060,10 +1060,6 @@ html[data-loading] body > *:not(#loader) { visibility: hidden; }
 .pp__back { font-family: var(--font-mono); font-size: 0.6875rem; letter-spacing: 0.14em; text-transform: uppercase; color: inherit; text-decoration: none; opacity: 0.6; }
 .pp__title { font-family: var(--font-display); font-weight: 300; font-size: clamp(2rem, 6vw, 4.5rem); line-height: 1.02; letter-spacing: -0.025em; margin: 2.5rem 0 1rem; }
 .pp__roles { display: flex; flex-wrap: wrap; gap: 0.5rem 1rem; margin-bottom: 2.5rem; }
-.pp__anecdote { display: grid; gap: 0; max-width: 48rem; margin-top: 3rem; border-top: 1px solid currentColor; }
-.pp__beat { display: grid; grid-template-columns: 10rem 1fr; gap: 1.5rem; padding: 1.1rem 0; border-bottom: 1px solid currentColor; }
-.pp__beat dt { font-family: var(--font-mono); font-size: 0.625rem; letter-spacing: 0.12em; text-transform: uppercase; opacity: 0.5; }
-.pp__beat dd { margin: 0; opacity: 0.55; font-size: 0.9375rem; }
 .pp__story { max-width: 44rem; margin-top: 3rem; }
 .pp__story p + p { margin-top: 1.25em; }
 .pp__credits { display: block; max-width: 44rem; margin-top: 3rem; padding-top: 1.1rem; border-top: 1px solid currentColor; opacity: 0.55; }
@@ -1092,7 +1088,6 @@ html[data-loading] body > *:not(#loader) { visibility: hidden; }
   .reel { --reel-hold: 115svh; }
 
   .morph__cols { grid-template-columns: 1fr; }
-  .pp__beat { grid-template-columns: 1fr; gap: 0.35rem; }
 
   /* Archive rows restack on phones: the desktop three-column grid was
      squeezing titles into half the screen against a fixed 3.5rem number

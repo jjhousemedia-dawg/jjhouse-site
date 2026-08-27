@@ -159,8 +159,8 @@
       const mediaHtml = media
         ? embed(media.dataset.type, media.dataset.vid, media.dataset.title || 'Video')
         : '';
-      // Clean shape (JJ, 8/19): the bracket scaffold (.pp__anecdote) is
-      // deliberately NOT picked. Story and credits ride along when they exist.
+      // Clean shape (JJ, 8/19). Story and credits ride along when they exist.
+      // (The old bracket scaffold, .pp__anecdote, left the static page 8/27.)
       body.innerHTML =
         pick('.pp__title') +
         pick('.pp__roles') +

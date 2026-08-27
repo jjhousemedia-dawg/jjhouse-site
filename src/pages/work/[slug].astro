@@ -17,9 +17,11 @@ const next = data.projects[(idx + 1) % data.projects.length];
 ---
 
 {/* noindex until the copy exists — real URLs to share, but Google should
-    never index a page of empty brackets. Ruled in (JJ, 2026-08-11).
-    Pages with a written story (p.story) are index-eligible per that same
-    logic: the brackets are gone. First one: Used To Know Me, 2026-08-17. */}
+    not index a page that is only a title, a still and a credits line.
+    Ruled in (JJ, 2026-08-11), when the slot held empty brackets; the
+    brackets are gone as of 2026-08-27 and the rule stands unchanged.
+    Pages with a written story (p.story) are index-eligible. First one:
+    Used To Know Me, 2026-08-17. */}
 <Scroll dark={true} noindex={!p.story} title={`${p.title} — JJ House`} desc={`${p.title}. ${p.roles.join(', ')}.`}>
   <script is:inline>
     // Refresh-mid-overlay recovery (JJ, 2026-08-20). The overlay pushes
@@ -58,34 +60,16 @@ const next = data.projects[(idx + 1) % data.projects.length];
       </div>
     )}
 
-    <!-- Two shapes, per the dictation pipeline. p.story is the finished
-         diary-prose memoir (array of paragraphs, sparing inline HTML for
-         emphasis); until a project has one, the Spec §7 four-line scaffold
-         holds the page: 40 to 60 words, ending on a call JJ made rather
-         than on the chaos, conditions named as causes, never people. -->
-    {p.story ? (
+    <!-- One shape (JJ, 2026-08-27). p.story is the finished diary-prose
+         write-up (array of paragraphs, sparing inline HTML for emphasis),
+         the blog-type piece UTKM and Music is Better already have. Until a
+         project has one, the page runs title, roles, media, credits and
+         nothing else. The Spec §7 four-line scaffold that used to hold
+         this slot is retired: JJ does not want a formula on the projects. -->
+    {p.story && (
       <div class="prose pp__story">
         {p.story.map((par) => <p set:html={par} />)}
       </div>
-    ) : (
-      <dl class="pp__anecdote">
-        <div class="pp__beat">
-          <dt>what it was trying to be</dt>
-          <dd>[ one line &mdash; JJ ]</dd>
-        </div>
-        <div class="pp__beat">
-          <dt>what went wrong</dt>
-          <dd>[ one line, dry, no self-pity ]</dd>
-        </div>
-        <div class="pp__beat">
-          <dt>the call</dt>
-          <dd>[ one line &mdash; load-bearing. The anecdote ends here, not on the chaos. ]</dd>
-        </div>
-        <div class="pp__beat">
-          <dt>what it bought</dt>
-          <dd>[ one line, result in it ]</dd>
-        </div>
-      </dl>
     )}
 
     {p.credits && <p class="meta pp__credits">{p.credits}</p>}

@@ -227,7 +227,12 @@ Known gaps, needing JJ:
 
 ## 7. Content commitments
 
-**A making-of anecdote per project.** Promised in the beat 03 copy, so it has to exist.
+**A making-of write-up per project, when there is one.** Promised in the beat 03 copy.
+
+> **Retired 2026-08-27 (JJ):** the four-line scaffold below no longer renders on project pages.
+> He does not want a formula on the projects; pages without a written `story` show title, roles,
+> media and credits only. Write-ups arrive as blog-type prose (the UTKM / Music is Better shape)
+> as time allows. The beats stay here as a drafting aid only.
 
 ```
 what it was trying to be     one line
