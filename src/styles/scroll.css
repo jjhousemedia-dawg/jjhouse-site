@@ -485,6 +485,55 @@ body.scroll.is-dark::before { opacity: 1; }
    which is why the bottom of the S was cropping on hover (JJ, round 6).
    Scoped to the closing mark; the hero and loader marks never move. */
 .closing-mark svg { overflow: visible; }
+
+/* ---- the nudge at the S (JJ, 2026-08-29) ---------------------------
+   The S has been the way back up since 8/20 and nothing says so — no
+   caption, by ruling, because curiosity is the label. This is the
+   smallest thing that can point without explaining: one of JJ's own
+   post-it arrows from the retired concept (`ar-director`, the darkest of
+   the four), mirrored and turned 35 degrees so it comes down from the
+   upper left into the glyph.
+   Carried as a MASK rather than an image, so it renders in currentColor
+   and stays correct on either side of the theme flip instead of being a
+   baked-in white that would vanish on paper. Decorative and inert: the
+   .smark link still owns the whole hit area. It fades out the moment the
+   S is actually hovered, handing off to the chevrons rather than
+   crowding them — the hint has done its job by then.
+   Sits after .smark in the markup so the sibling selector can reach it,
+   same as .schev. */
+.shint {
+  position: absolute;
+  /* Sized and lifted 2026-08-29 (JJ: "smaller, and higher over the S").
+     The tip still lands on the S's leading edge — right edge of the box
+     is 63.5%, the glyph starts at 62.6% — so shrinking it means moving
+     it right, not just scaling it. --shint-w / --shint-lift / --shint-op
+     are here so the three can be tuned without touching the geometry. */
+  --shint-w: 8.5%;
+  --shint-lift: 0.85rem;
+  left: calc(63.5% - var(--shint-w)); width: var(--shint-w);
+  bottom: calc(100% + var(--shint-lift));
+  aspect-ratio: 240 / 163;
+  background-color: currentColor;
+  -webkit-mask-image: url('/hint/arrow-s.webp');
+  mask-image: url('/hint/arrow-s.webp');
+  -webkit-mask-size: 100% 100%;
+  mask-size: 100% 100%;
+  -webkit-mask-repeat: no-repeat;
+  mask-repeat: no-repeat;
+  opacity: var(--shint-op, 0.5);
+  pointer-events: none;
+  transition: opacity 320ms var(--ease);
+}
+/* It gets out of the way for the whole interaction, not just the hover:
+   pointing at something the visitor has already found is nagging. Press
+   and release are outside the hover query on purpose — touch has no
+   hover, and `.is-tensed` plus `is-firing` are the only tell it has. */
+.smark:is(:active, .is-tensed) ~ .shint,
+.closing-mark.is-firing .shint { opacity: 0; }
+@media (hover: hover) {
+  .smark:hover ~ .shint,
+  .smark:focus-visible ~ .shint { opacity: 0; }
+}
 .smark {
   /* the S's slice of the 4433-wide drawing: glyph x 2777..3603 */
   position: absolute; top: 0; left: 62.6%; width: 18.7%; height: 100%;
@@ -873,6 +922,42 @@ html[data-loading] body > *:not(#loader) { visibility: hidden; }
 }
 .arrival__cta { margin-top: 1.5rem; }
 
+/* ---- ( :: Home ), the persistent way back (JJ, 2026-08-29) ----------
+   The mirror of the fab in the opposite corner, and deliberately the same
+   z-index: at 900 it clears the work overlay (800), so it is the hatch
+   out of a project as well as the road home. Same mono, same difference
+   blend, same safe-area maths as .menu-fab — one family, two corners. */
+.home-fab {
+  position: fixed;
+  top: max(1.1rem, env(safe-area-inset-top));
+  left: max(var(--gutter), env(safe-area-inset-left));
+  z-index: 900;
+  font-family: var(--font-mono); font-size: 0.6875rem; letter-spacing: 0.16em;
+  text-transform: uppercase; text-decoration: none;
+  mix-blend-mode: difference; color: var(--paper);
+  cursor: pointer; padding: 0.25rem 0; opacity: 0.85;
+  transition: opacity 340ms var(--ease);
+}
+.home-fab:hover { opacity: 1; }
+/* the front page only: nothing to go back to until the hero is behind
+   you, so it holds off rather than sitting in the opening frame */
+.home-fab.is-front { opacity: 0; pointer-events: none; }
+.home-fab.is-front.on { opacity: 0.85; pointer-events: auto; }
+.home-fab.is-front.on:hover { opacity: 1; }
+/* the same feathered backdrop the fab wears on touch, for the same
+   reason: body copy runs full width on phones and the difference blend
+   cannot separate light on light */
+@media (hover: none) {
+  .home-fab::before {
+    content: ''; position: absolute; inset: -0.6rem -0.8rem; z-index: -1;
+    -webkit-backdrop-filter: blur(7px);
+    backdrop-filter: blur(7px);
+    -webkit-mask-image: radial-gradient(ellipse at center, #000 45%, transparent 98%);
+    mask-image: radial-gradient(ellipse at center, #000 45%, transparent 98%);
+    pointer-events: none;
+  }
+}
+
 /* the erodible surface. Drag reveals the substrate underneath. */
 .surface {
   position: relative; width: 100%; cursor: crosshair; touch-action: pan-y;
@@ -1102,6 +1187,7 @@ html[data-loading] body > *:not(#loader) { visibility: hidden; }
    margin cancels the layout shift, so nothing moves visually. */
 @media (pointer: coarse) {
   .menu-fab,
+  .home-fab,
   .menu__close { padding: 0.8rem 0.9rem; margin: -0.8rem -0.9rem; }
   .arrival__foot .meta a,
   .colophon .meta a,
@@ -1237,6 +1323,10 @@ html.menu-open body { overflow: hidden; }
   opacity: 0;
 }
 .wo:focus { outline: none; }
+/* Explicit, not left to the UA rule: an author `display` on .wo would
+   silently outrank [hidden] and leave a full-viewport sheet over the
+   page. This has bitten the menu once already. */
+.wo[hidden] { display: none !important; }
 html.wo-open body { overflow: hidden; }
 .wo__scroll {
   position: absolute; inset: 0;
@@ -1268,6 +1358,15 @@ html.wo-open body { overflow: hidden; }
    were CUT by JJ ("isn't working aesthetically or functionally"); their
    rules are gone with them, git history keeps the shapes. */
 .wo__media { position: relative; }
+/* ⛔ The player is disarmed until it is asked for — see the armPlayer
+   comment in WorkOverlay.astro. A cross-origin iframe eats the wheel and
+   the touch drag, and since the scroll IS the exit, a cursor resting on
+   the video made the whole overlay read as frozen. With pointer events
+   off, every gesture reaches the frame's own scroller; one click hands
+   the host's native controls back, and leaving the media (or scrolling
+   the frame) takes them away again so the trap cannot be re-entered. */
+.wo__media iframe { pointer-events: none; }
+.wo__media.is-live iframe { pointer-events: auto; }
 
 @media (prefers-reduced-motion: reduce) {
   .menu { transition: none; }

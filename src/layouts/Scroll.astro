@@ -10,6 +10,12 @@ const {
   noindex = false,
 } = Astro.props;
 
+// ( :: Home ) — the persistent way back, 2026-08-29. On the front page it
+// is a jump to the top of the narrative; everywhere else it is a link
+// home. The href carries that difference so the control still works with
+// JS off, exactly like the S does.
+const isFront = Astro.url.pathname === '/' || Astro.url.pathname === '/index.html';
+
 // Board 1 + spec §5. Dead centre, never captioned and never explained.
 // Egg is always first; the rest cycle freely because absorption is felt
 // rather than literal.
@@ -125,6 +131,24 @@ const OBJECTS = [
          corner never doubles up. mix-blend difference keeps it legible
          across the light/dark flip. -->
     <button class="menu-fab" data-menu-open aria-expanded="false">Menu ::</button>
+
+    <!-- The way back (JJ, 2026-08-29, from a tester): there was no
+         persistent door home. "Menu ::" carried it, but a menu is a
+         decision, and a visitor who has lost their place wants a step
+         rather than a list. So: the mirror of the fab in the opposite
+         corner — same mono, same difference blend, same z-index, so it
+         survives the light/dark flip and, being 900, sits ABOVE the work
+         overlay (800). That is deliberate: it is the hatch out of the
+         overlay as well as the way home.
+         On the front page it holds still until the hero is behind you
+         (the hero has nothing to go back to, and the opening frame stays
+         clean); every other page shows it from the first frame. -->
+    <a
+      class:list={['home-fab', isFront && 'is-front']}
+      id="homeFab"
+      href={isFront ? '#top' : '/'}
+      aria-label={isFront ? 'Back to the top' : 'Home'}
+    >:: Home</a>
 
     <!-- ---- the menu. One overlay for every page; opened by any
          [data-menu-open] trigger. Always ink on paper-text regardless of
@@ -254,7 +278,14 @@ const OBJECTS = [
           menu.classList.remove('on');
           triggers.forEach((t) => t.setAttribute('aria-expanded', 'false'));
           document.documentElement.classList.remove('menu-open');
-          if (window.__lenis) window.__lenis.start();
+          // ⛔ Not while the work overlay is up. The overlay stops the page
+          // Lenis on open and owns it until it closes; the menu restarting
+          // it from underneath left the page scrolling behind an overlay
+          // that was still covering it, so a visitor came out of a project
+          // somewhere they had never been.
+          if (window.__lenis && !document.documentElement.classList.contains('wo-open')) {
+            window.__lenis.start();
+          }
           setTimeout(() => { menu.hidden = true; }, 380);
           if (lastFocus && lastFocus.focus) lastFocus.focus();
         };
@@ -289,6 +320,57 @@ const OBJECTS = [
           } else {
             close();
           }
+        });
+      })();
+    </script>
+
+    <script is:inline>
+      // ---- ( :: Home ) ------------------------------------------------
+      (function () {
+        const fab = document.getElementById('homeFab');
+        if (!fab) return;
+        const front = fab.classList.contains('is-front');
+
+        // On the front page it waits out the hero. IntersectionObserver on
+        // the hero itself rather than a scroll listener, so nothing runs
+        // per frame next to the erode canvas.
+        if (front) {
+          const hero = document.getElementById('top');
+          if (hero && 'IntersectionObserver' in window) {
+            new IntersectionObserver(
+              ([e]) => fab.classList.toggle('on', !e.isIntersecting),
+              { threshold: 0 }
+            ).observe(hero);
+          } else {
+            fab.classList.add('on');
+          }
+        }
+
+        fab.addEventListener('click', (e) => {
+          // Off the front page this is an ordinary navigation to / — the
+          // load takes the overlay with it, so nothing to unwind.
+          if (!front) return;
+          // stopPropagation, not just preventDefault: the layout's own
+          // anchor handler further down would otherwise catch this #top
+          // and start the page moving while a project is still fading.
+          e.preventDefault();
+          e.stopPropagation();
+          // A project open over the front page has to unwind the history
+          // entry it pushed before the page moves. Only WorkOverlay knows
+          // how, so it owns that.
+          const wasOpen = window.__woClose ? window.__woClose() : false;
+          const go = () => {
+            const hero = document.getElementById('top');
+            if (window.__lenis && hero) {
+              const opts = window.__anchorOpts ? window.__anchorOpts(hero) : { duration: 1.2 };
+              window.__lenis.scrollTo(hero, opts);
+            } else {
+              window.scrollTo(0, 0);
+            }
+            history.replaceState(null, '', location.pathname);
+          };
+          // let the overlay finish its fade before the page moves under it
+          if (wasOpen) setTimeout(go, 460); else go();
         });
       })();
     </script>
