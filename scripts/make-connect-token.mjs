@@ -15,14 +15,16 @@
  */
 import { webcrypto as crypto } from 'node:crypto';
 
-const DEFAULT_URL = 'https://calendar.app.google/53GJJNoNpdsB6dYK6';
+// 2026-09-09: the calendar URL is no longer defaulted here. The gate's whole
+// point is that the link never appears in the built site or the (public)
+// repo, so it has to be passed in every time.
 const ITER = 200_000;
 
 const code = process.argv[2];
-const url  = process.argv[3] || DEFAULT_URL;
+const url  = process.argv[3];
 
-if (!code) {
-  console.error('usage: node scripts/make-connect-token.mjs "<code word>" [calendar url]');
+if (!code || !url) {
+  console.error('usage: node scripts/make-connect-token.mjs "<code word>" "<calendar url>"');
   process.exit(1);
 }
 if (!url.startsWith('https://calendar.app.google/')) {

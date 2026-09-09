@@ -90,6 +90,20 @@ body.scroll.is-dark::before { opacity: 1; }
   margin: 0 0 1.5rem;
 }
 
+/* 1b. visually hidden, still read by assistive tech (the front page h1) */
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  margin: -1px;
+  padding: 0;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+  clip-path: inset(50%);
+  white-space: nowrap;
+  border: 0;
+}
+
 /* 2. mono uppercase metadata */
 .meta {
   font-family: var(--font-mono);

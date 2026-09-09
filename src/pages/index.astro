@@ -31,8 +31,13 @@ const sizes = ['project--l', 'project--r', 'project--xl', 'project--l', 'project
 ---
 
 <Scroll loader={true} title="JJ House — Creative Director & Producer" desc="JJ House. Creative director and producer in Los Angeles.">
+  <!-- <main> is a plain block wrapper (2026-09-09): the page's one landmark
+       for assistive tech, and the h1 the wordmark SVG cannot be. Neither
+       has any layout effect — no styles target either. -->
+  <main id="main">
   <!-- ================= 01 ARRIVAL ================= -->
   <header class="beat arrival" id="top">
+    <h1 class="sr-only">JJ House — creative director and producer, Los Angeles</h1>
     <div class="arrival__top">
       <div>
         <!-- 01-A trimmed to the plain clause 2026-08-17 (JJ): the second
@@ -70,13 +75,15 @@ const sizes = ['project--l', 'project--r', 'project--xl', 'project--l', 'project
              reveal texture, rect-mapped so its letters sit exactly under the
              SVG letters (frame width = mark width / 0.90, per the ortho cam's
              4.9256 scale). Codec order = first the browser can hardware-
-             decode: AV1 10-bit, HEVC for Safari, H.264 floor. crossorigin
-             keeps the WebGL texture untainted. -->
+             decode: AV1 10-bit, HEVC for Safari. The H.264 floor was cut
+             2026-09-09 (62 MB per deploy against Vercel's 10 GB Deployment
+             Storage; every current browser decodes one of the two above,
+             and the poster is the floor). crossorigin keeps the WebGL
+             texture untainted. -->
         <video class="substrate__video" muted loop autoplay playsinline preload="metadata"
                poster="/hero/house_wordmark_poster.jpg" crossorigin="anonymous" aria-hidden="true">
           <source src="/hero/house_wordmark_1080p_av1.mp4"  type='video/mp4; codecs="av01.0.08M.10"' />
           <source src="/hero/house_wordmark_1080p_hevc.mp4" type='video/mp4; codecs="hvc1"' />
-          <source src="/hero/house_wordmark_1080p_h264.mp4" type="video/mp4" />
         </video>
       </div>
       <div class="wordmark__svg"><Wordmark /></div>
@@ -93,7 +100,7 @@ const sizes = ['project--l', 'project--r', 'project--xl', 'project--l', 'project
 
     <div class="arrival__foot">
       <span class="meta">Creative direction &middot; Producing &middot; Los Angeles</span>
-      <span class="meta"><a href="https://www.linkedin.com/in/jjhousemedia/" target="_blank" rel="noopener" style="color:inherit">LinkedIn</a> / <a href="https://www.instagram.com/jj.duplex/" style="color:inherit">Instagram</a> / <a href="/JJ-House-Resume-2026.pdf" target="_blank" style="color:inherit">Resume</a></span>
+      <span class="meta"><a href="https://www.linkedin.com/in/jjhousemedia/" target="_blank" rel="noopener" style="color:inherit">LinkedIn</a> / <a href="https://www.instagram.com/jj.duplex/" style="color:inherit">Instagram</a> / <a href="/JJ-House-Resume-2026.pdf" target="_blank" rel="noopener" style="color:inherit">Resume</a></span>
     </div>
   </header>
 
@@ -453,6 +460,7 @@ const sizes = ['project--l', 'project--r', 'project--xl', 'project--l', 'project
       </span>
     </div>
   </footer>
+  </main>
 
   <script>
     // WebGL2 wordmark erosion. If it cannot start (no WebGL2, reduced

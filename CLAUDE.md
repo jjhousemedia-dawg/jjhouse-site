@@ -193,6 +193,20 @@ project memory (`jjhouse-website`):
   1440×900 and 390×780, twice: plate rect top is 0 through the whole recede and the dwell, and
   the ramp lands at exactly −E/2 at release (−180px / −117px).
 
+- **Round 21 (2026-09-09) — audit + Vercel storage.** Vercel warned at 75% of Hobby's 10 GB
+  Deployment Storage: every deploy shipped the whole 200 MB `public/`, and Vercel keeps the last
+  ~40 deployments regardless of retention policy. Done: 68 old deployments deleted (8 kept:
+  today's production + the 763b155 / 423cd1b / a3547b9 / 7781ec9 pairs), project retention set
+  to 1 day canceled/errored, 1 week pre-production, 30 days production. In the repo:
+  `public/hero/house_wordmark_1080p_h264.mp4` CUT (62 MB; AV1 + HEVC cover every current
+  browser, poster is the floor — do not re-add an H.264 source), `vercel.json` added (1-day
+  browser cache on `/hero /reel /reel-bg /thumbs /loader /hint`, nosniff + referrer-policy
+  everywhere), front page wrapped in `<main>` with a `.sr-only` h1 (a11y landmark + the h1 the
+  wordmark SVG can't be; pixel-identical at 1440×900), `rel="noopener"` on the Resume link, and
+  `scripts/make-connect-token.mjs` no longer defaults to the real calendar URL (it was sitting in
+  a public repo — the URL is still in git history, so rotating the booking link is JJ's call).
+  Still on the table, JJ's call: the reel and reel-bg H.264 fallbacks (27 MB more), `/reel-lab`
+  assets (7 MB, bench only), self-hosting the three Google Fonts, a 720p hero for phones.
 - **Remaining real gaps:** 04-A line beside the reel · 06-C Little Dot story · hero second clause
   (workshop with JJ — sensibilities, not operations) · ( connect ) closing line · Field Journal
   hero videos + comic pages (on JJ's external drive) · featured-six confirmation + credit fixes.
