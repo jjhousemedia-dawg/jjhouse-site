@@ -7,13 +7,16 @@
 import Scroll from '../../layouts/Scroll.astro';
 import data from '../../data/projects.json';
 
+// Hidden projects ("hidden": true) get no page and drop out of the Next chain.
+const projects = data.projects.filter((x) => !x.hidden);
+
 export function getStaticPaths() {
-  return data.projects.map((p) => ({ params: { slug: p.slug }, props: { p } }));
+  return data.projects.filter((x) => !x.hidden).map((p) => ({ params: { slug: p.slug }, props: { p } }));
 }
 
 const { p } = Astro.props;
-const idx = data.projects.findIndex((x) => x.slug === p.slug);
-const next = data.projects[(idx + 1) % data.projects.length];
+const idx = projects.findIndex((x) => x.slug === p.slug);
+const next = projects[(idx + 1) % projects.length];
 ---
 
 {/* noindex until the copy exists — real URLs to share, but Google should

@@ -21,7 +21,7 @@ const FEATURED = [
   'amiri-pacific-flat',
 ];
 
-const bySlug = Object.fromEntries(data.projects.map((p) => [p.slug, p]));
+const bySlug = Object.fromEntries(data.projects.filter((p) => !p.hidden).map((p) => [p.slug, p]));
 const featured = FEATURED.map((s) => bySlug[s]).filter(Boolean);
 
 // Little Dot gets its own beat. Figures are JJ's verified numbers.
